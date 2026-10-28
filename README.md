@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.0.2
+# AudioSplit Studio — v1.0.3
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, d’ajuster ses pistes et de télécharger votre propre mixage stéréo.
 

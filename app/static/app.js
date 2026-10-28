@@ -22,7 +22,9 @@ function updateOutputs() {
   document.querySelectorAll('[data-control]').forEach(input => {
     const name = input.dataset.control, param = input.dataset.param, value = +input.value;
     const output = $(`#${name}${param === 'volume' ? 'Volume' : 'Pan'}Out`);
-    output.textContent = param === 'volume' ? `${value}%` : value === 0 ? 'Centre' : `${Math.abs(value)}% ${value < 0 ? 'G' : 'D'}`;
+    output.textContent = value;
+    const gauge = input.closest('.gauge');
+    if (gauge) gauge.style.setProperty('--level', `${((value - +input.min) / (+input.max - +input.min)) * 100}%`);
   });
   updateLiveMix();
 }
@@ -36,16 +38,21 @@ function drawWaveform(name, buffer) {
   ctx.beginPath(); for (let x = 0; x < width; x++) { let min = 1, max = -1; const start = x * step; for (let i = 0; i < step && start + i < data.length; i++) { const value = data[start + i]; if (value < min) min = value; if (value > max) max = value; } const y1 = (1 + min) * height / 2, y2 = (1 + max) * height / 2; ctx.moveTo(x, y1); ctx.lineTo(x, y2); } ctx.stroke();
 }
 const stemInfo = {
-  vocals: { title: 'Voix', detail: 'Stem vocal extrait', icon: '♫' },
-  accompaniment: { title: 'Accompagnement', detail: 'Musique sans voix', icon: '≋' },
-  drums: { title: 'Batterie & kicks', detail: 'Batterie, percussions et kicks', icon: '◉' },
-  bass: { title: 'Basse', detail: 'Bassline extraite', icon: '⌁' },
-  other: { title: 'Instruments', detail: 'Autres instruments et nappes', icon: '✦' },
+  vocals: { title: 'Voix', detail: 'Stem vocal extrait', icon: 'mic' },
+  accompaniment: { title: 'Accompagnement', detail: 'Musique sans voix', icon: 'wave' },
+  drums: { title: 'Batterie & kicks', detail: 'Batterie, percussions et kicks', icon: 'drum' },
+  bass: { title: 'Basse', detail: 'Bassline extraite', icon: 'bass' },
+  other: { title: 'Instruments', detail: 'Autres instruments et nappes', icon: 'spark' },
 };
+function icon(name) {
+  const paths = { mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0012 0M12 17v4M9 21h6"/>', wave: '<path d="M3 12h3l2-6 4 12 3-8 2 2h4"/>', drum: '<ellipse cx="12" cy="16" rx="7" ry="4"/><path d="M5 10v6M19 10v6M5 10c0-2 14-2 14 0M8 6l2 4m4-4-2 4"/>', bass: '<path d="M7 3v18M7 5h6l4 4-4 4H7M7 13h6l4 4-4 4H7"/>', spark: '<path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3z"/>' };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
+}
+function speakerIcon(muted = false) { return muted ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5zM17 10l4 4m0-4-4 4"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5zM17 9a4 4 0 010 6"/></svg>'; }
 function renderTracks(names) {
-  $('#tracks').innerHTML = names.map(name => { const info = stemInfo[name]; return `<article class="track ${name}"><div class="track-icon">${info.icon}</div><div class="track-title"><h3>${info.title}</h3><p>${info.detail}</p></div><button class="mute" data-mute="${name}" aria-pressed="false" title="Couper ${info.title}">🔊</button><canvas class="waveform" data-waveform="${name}" aria-label="Forme d'onde : ${info.title}"></canvas><div class="control"><label>Volume <output id="${name}VolumeOut">100%</output></label><input data-control="${name}" data-param="volume" type="range" min="0" max="150" value="100"></div><div class="pan-control"><span class="pan-label top">G</span><input aria-label="Panoramique : ${info.title}" data-control="${name}" data-param="pan" class="vertical-pan" type="range" min="-100" max="100" value="0"><span class="pan-label bottom">D</span><output id="${name}PanOut">Centre</output></div></article>`; }).join('');
+  $('#tracks').innerHTML = names.map(name => { const info = stemInfo[name]; return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${info.title}</h3><p>${info.detail}</p></div><div class="pan-fader" title="Panoramique"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="Panoramique : ${info.title}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="0"></div><output id="${name}PanOut">0</output><span class="pan-letter">R</span></div><canvas class="waveform" data-waveform="${name}" aria-label="Forme d'onde : ${info.title}"></canvas><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="false" title="Couper ${info.title}">${speakerIcon()}</button><div class="volume-fader" title="Volume"><div class="gauge volume-gauge"><i></i><input aria-label="Volume : ${info.title}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="100"></div><output id="${name}VolumeOut">100</output></div></div></article>`; }).join('');
   document.querySelectorAll('[data-control]').forEach(el => el.oninput = updateOutputs);
-  document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.textContent = muted ? '🔊' : '🔇'; updateLiveMix(); });
+  document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.innerHTML = speakerIcon(!muted); updateLiveMix(); });
   updateOutputs();
 }
 function stop() { liveNodes.forEach(({ source }) => { try { source.stop(); } catch {} }); liveNodes = new Map(); playing = false; $('#playButton').disabled = false; $('#stopButton').disabled = true; }
@@ -72,6 +79,6 @@ async function exportMix() {
 }
 $('#chooseButton').onclick=()=>$('#fileInput').click();
 $('#fileInput').onchange=(e)=>{const f=e.target.files[0];$('#fileName').textContent=f?f.name:'';$('#separateButton').disabled=!f;status('');};
-$('#separateButton').onclick=async()=>{const file=$('#fileInput').files[0],button=$('#separateButton'),mode=document.querySelector('input[name="splitMode"]:checked').value;button.disabled=true;status(mode==='detailed'?'Séparation détaillée en cours — comptez quelques minutes…':'Séparation en cours — cela peut prendre plusieurs minutes…');const form=new FormData();form.append('file',file);form.append('mode',mode);try{const res=await fetch('/api/separate',{method:'POST',body:form}),data=await res.json();if(!res.ok)throw Error(data.detail||'Erreur de séparation');audioCtx ??= new AudioContext();const names=Object.keys(data.stems);renderTracks(names);const decoded=await Promise.all(names.map(async name=>[name,await fetch(data.stems[name]).then(r=>r.arrayBuffer()).then(b=>audioCtx.decodeAudioData(b))]));Object.keys(tracks).forEach(name=>delete tracks[name]);decoded.forEach(([name,buffer])=>{tracks[name]=buffer;drawWaveform(name,buffer);});$('#mixer').classList.remove('hidden');status('Séparation terminée. Réglez vos pistes ci-dessous.');}catch(err){status(err.message,true);button.disabled=false;}};
+$('#separateButton').onclick=async()=>{const file=$('#fileInput').files[0],button=$('#separateButton'),mode=document.querySelector('input[name="splitMode"]:checked').value;button.disabled=true;status(mode==='detailed'?'Séparation détaillée en cours — comptez quelques minutes…':'Séparation en cours — cela peut prendre plusieurs minutes…');const form=new FormData();form.append('file',file);form.append('mode',mode);try{const res=await fetch('/api/separate',{method:'POST',body:form}),data=await res.json();if(!res.ok)throw Error(data.detail||'Erreur de séparation');audioCtx ??= new AudioContext();const names=Object.keys(data.stems);renderTracks(names);const decoded=await Promise.all(names.map(async name=>[name,await fetch(data.stems[name]).then(r=>r.arrayBuffer()).then(b=>audioCtx.decodeAudioData(b))]));Object.keys(tracks).forEach(name=>delete tracks[name]);decoded.forEach(([name,buffer])=>{tracks[name]=buffer;drawWaveform(name,buffer);});$('#mixer').classList.remove('hidden');$('#playButton').disabled=false;$('#exportButton').disabled=false;status('Séparation terminée. Réglez vos pistes ci-dessous.');}catch(err){status(err.message,true);button.disabled=false;}};
 $('#playButton').onclick=playMix;$('#stopButton').onclick=stop;$('#exportButton').onclick=exportMix;
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));
