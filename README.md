@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.0
+# AudioSplit Studio — v1.0.1
 
 Application locale Windows de séparation et de mixage audio. Importez un morceau, laissez **Demucs** (open source) isoler ses stems, puis ajustez et exportez votre mixage en WAV stéréo.
 
@@ -19,7 +19,23 @@ Application locale Windows de séparation et de mixage audio. Importez un morcea
 
 > Demucs fonctionne sur CPU, mais la première séparation peut prendre plusieurs minutes. Avec une carte NVIDIA et PyTorch CUDA installé, elle est beaucoup plus rapide.
 
-## Installation
+## Installation en une commande (recommandée)
+
+Dans PowerShell, ouvrez le dossier du projet puis exécutez :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
+```
+
+Le script installe automatiquement Python 3.11 et FFmpeg via Winget si nécessaire, crée `.venv`, installe les paquets Python, valide la configuration, ouvre le navigateur puis démarre AudioSplit Studio. Le premier lancement télécharge aussi le modèle Demucs (~300 Mo).
+
+Pour seulement vérifier l’installation sans lancer le serveur :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1 -SkipServer
+```
+
+## Installation manuelle
 
 Dans PowerShell, depuis ce dossier :
 
@@ -78,6 +94,7 @@ pip install -r requirements.txt
 
 - `app/main.py` : API FastAPI, stockage temporaire et lancement local de `python -m demucs`.
 - `app/static/` : interface HTML/CSS/JavaScript et moteur de pré-écoute/export via Web Audio API.
+- `install-and-run.ps1` : installation et lancement automatiques sous Windows.
 - `data/` : fichiers importés et stems temporaires, ignorés par Git.
 
 La sortie est un WAV PCM 16 bits stéréo. Le mode simple utilise `--two-stems vocals`; le mode détaillé utilise les quatre stems natifs de Demucs.
