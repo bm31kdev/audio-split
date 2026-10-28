@@ -1,103 +1,58 @@
-# AudioSplit Studio — v1.0.1
+# AudioSplit Studio — v1.0.2
 
-Application locale Windows de séparation et de mixage audio. Importez un morceau, laissez **Demucs** (open source) isoler ses stems, puis ajustez et exportez votre mixage en WAV stéréo.
+AudioSplit Studio permet de séparer une musique directement sur votre PC, d’ajuster ses pistes et de télécharger votre propre mixage stéréo.
 
-## Fonctionnalités
+## Démarrer
 
-- Import : MP3, WAV, FLAC, M4A et OGG.
-- Deux modes de séparation : **voix + accompagnement** ou **détaillé** (voix, batterie/kicks, basse, autres instruments).
-- Traitement entièrement local : les fichiers ne sont pas envoyés vers un service externe.
-- Forme d’onde, sourdine, volume et panoramique G/D indépendants pour chaque stem.
-- Réglages appliqués instantanément pendant l’écoute.
-- Export du mixage final en WAV PCM 16 bits stéréo.
-
-## Prérequis
-
-- Windows 10/11
-- [Python 3.11 64 bits](https://www.python.org/downloads/release/python-3119/) (cocher **Add Python to PATH**)
-- FFmpeg *Shared*, requis par Demucs pour les MP3. Installation : `winget install --id Gyan.FFmpeg.Shared --exact`
-
-> Demucs fonctionne sur CPU, mais la première séparation peut prendre plusieurs minutes. Avec une carte NVIDIA et PyTorch CUDA installé, elle est beaucoup plus rapide.
-
-## Installation en une commande (recommandée)
-
-Dans PowerShell, ouvrez le dossier du projet puis exécutez :
+Téléchargez ou clonez le projet, ouvrez PowerShell dans son dossier, puis lancez cette seule commande :
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 ```
 
-Le script installe automatiquement Python 3.11 et FFmpeg via Winget si nécessaire, crée `.venv`, installe les paquets Python, valide la configuration, ouvre le navigateur puis démarre AudioSplit Studio. Le premier lancement télécharge aussi le modèle Demucs (~300 Mo).
+Au premier lancement, le script fait tout automatiquement :
 
-Pour seulement vérifier l’installation sans lancer le serveur :
+1. Installe Python 3.11 et FFmpeg si votre PC ne les possède pas.
+2. Installe les composants nécessaires à AudioSplit Studio.
+3. Ouvre le site dans votre navigateur à l’adresse <http://127.0.0.1:8000>.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1 -SkipServer
-```
+Quand le message `Installation complete: OK` s’affiche, c’est prêt. Gardez simplement la fenêtre PowerShell ouverte pendant que vous utilisez le site. Pour arrêter le programme, faites `Ctrl+C` dans cette fenêtre.
 
-## Installation manuelle
+> Vous avez déjà lancé cette commande une fois ? Relancez exactement la même : elle vérifie ce qui est installé et ne réinstalle pas inutilement les composants déjà présents.
 
-Dans PowerShell, depuis ce dossier :
+## Utiliser AudioSplit Studio
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+1. En haut de la page, choisissez le niveau de séparation souhaité.
+2. Importez votre morceau (`MP3`, `WAV`, `FLAC`, `M4A` ou `OGG`).
+3. Lancez la séparation, puis attendez la fin du traitement.
+4. Écoutez le résultat, réglez les pistes, puis exportez le mixage WAV stéréo.
 
-Ajoutez ensuite le dossier `bin` de FFmpeg au `PATH` de la fenêtre PowerShell, en adaptant la version si nécessaire :
+### Choisir le bon niveau de séparation
 
-```powershell
-$env:Path += ";$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Gyan.FFmpeg.Shared_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.2-full_build-shared\bin"
-ffmpeg -version
-```
+| Votre objectif | Choix à utiliser | Résultat |
+| --- | --- | --- |
+| Faire un karaoké ou isoler le chant | **Voix + accompagnement** | Une piste voix et une piste musique sans voix |
+| Retoucher précisément un morceau | **Détaillée** | Voix, batterie/kicks, basse et autres instruments, tous réglables séparément |
 
-La dernière commande doit afficher la version de FFmpeg. Gardez cette fenêtre ouverte tant que le serveur est lancé.
+Pendant la lecture, les changements de volume, panoramique G/D ou sourdine sont appliqués immédiatement : pas besoin de relancer le morceau. Chaque piste affiche aussi sa forme d’onde pour faciliter le repérage visuel.
 
-## Lancement
+## À savoir
 
-```powershell
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
+- Le traitement se fait sur votre ordinateur : les musiques ne sont pas envoyées vers un service en ligne.
+- La première séparation télécharge le modèle Demucs (environ 300 Mo) et peut prendre quelques minutes. Les suivantes sont plus rapides.
+- Sur un PC sans carte graphique compatible, la séparation est effectuée par le processeur ; c’est normal si elle prend du temps.
+- L’export est un fichier WAV PCM 16 bits stéréo.
 
-Ouvrez ensuite <http://127.0.0.1:8000>. Au premier lancement, Demucs télécharge ses poids (~300 Mo) dans le cache utilisateur.
+## Si quelque chose bloque
 
-Pour arrêter le serveur : `Ctrl+C`.
-
-Si une première installation a déjà installé une version plus récente de PyTorch/Torchaudio, réinstallez les versions prévues :
+Commencez par fermer PowerShell et le navigateur, puis relancez la commande de démarrage unique :
 
 ```powershell
-pip uninstall -y torch torchaudio torchcodec
-pip install -r requirements.txt
+powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 ```
 
-## Utilisation
+Si le message indique que `winget` est introuvable, installez **App Installer** depuis le Microsoft Store, puis relancez la commande. Si votre PC n’est pas sous Windows, le lanceur automatique n’est pas encore pris en charge.
 
-1. Choisissez le type de séparation avant l’import :
-   - **Voix + accompagnement** crée deux pistes, idéal pour un karaoké ou un a cappella.
-   - **Détaillée** crée quatre pistes : voix, batterie/kicks, basse et autres instruments.
-2. Importez le morceau, puis lancez la séparation.
-3. Réglez les stems avec le volume, le fader panoramique vertical G/D et le bouton de sourdine. Les changements s’entendent immédiatement pendant la lecture.
-4. Cliquez sur **Exporter le mixage WAV stéréo** pour télécharger le rendu.
+## Pour les développeurs
 
-## Dépannage
-
-| Symptôme | Solution |
-| --- | --- |
-| `py -3.11` est introuvable | Installez Python 3.11 avec `winget install --id Python.Python.3.11 --exact`, puis rouvrez PowerShell. |
-| `ffmpeg` n’est pas reconnu | Exécutez la commande d’ajout du `PATH` ci-dessus, ou rouvrez complètement le terminal après l’installation Winget. |
-| Demucs ne peut pas écrire les WAV | Exécutez `pip install -r requirements.txt` : le backend `soundfile` est inclus. |
-| La séparation est lente | C’est normal sur CPU. Une musique de 3 minutes peut prendre plusieurs minutes ; la première utilisation télécharge aussi le modèle. |
-
-## Architecture
-
-- `app/main.py` : API FastAPI, stockage temporaire et lancement local de `python -m demucs`.
-- `app/static/` : interface HTML/CSS/JavaScript et moteur de pré-écoute/export via Web Audio API.
-- `install-and-run.ps1` : installation et lancement automatiques sous Windows.
-- `data/` : fichiers importés et stems temporaires, ignorés par Git.
-
-La sortie est un WAV PCM 16 bits stéréo. Le mode simple utilise `--two-stems vocals`; le mode détaillé utilise les quatre stems natifs de Demucs.
-
-Sous Windows, `soundfile` est installé avec le projet afin que Demucs puisse écrire les stems WAV.
-
+Le projet est volontairement simple : FastAPI lance Demucs localement dans `app/main.py`, et l’interface de mixage Web Audio se trouve dans `app/static/`. Les fichiers temporaires générés par les séparations sont conservés localement dans `data/` et ne sont jamais versionnés.
