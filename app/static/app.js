@@ -1,7 +1,7 @@
 const $ = (sel) => document.querySelector(sel);
 const tracks = {};
 const automationByTrack = {};
-let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, fxCloseTimer, playheadFrame;
+let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, fxCloseTimer, changelogCloseTimer, playheadFrame;
 
 function status(message, error = false) {
   const target = $('#status'); target.textContent = message; target.style.color = error ? '#ff987f' : '';
@@ -121,6 +121,20 @@ function bindFxModal() {
   document.querySelectorAll('[data-fx]').forEach(button => button.onclick = () => openFxModal(button.dataset.fx));
   document.querySelectorAll('[data-fx-close]').forEach(button => button.onclick = closeFxModal);
 }
+function closeChangelog() {
+  const modal = $('#changelogModal');
+  if (modal.getAttribute('aria-hidden') === 'true') return;
+  modal.classList.remove('is-open');
+  changelogCloseTimer = setTimeout(() => modal.setAttribute('aria-hidden', 'true'), 240);
+  $('#versionButton').focus();
+}
+function openChangelog() {
+  const modal = $('#changelogModal');
+  clearTimeout(changelogCloseTimer);
+  modal.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => modal.classList.add('is-open'));
+  modal.querySelector('.changelog-close').focus();
+}
 function updatePlayheads(offset = 0) {
   document.querySelectorAll('[data-playhead]').forEach(playhead => {
     const buffer = tracks[playhead.dataset.playhead];
@@ -168,5 +182,7 @@ $('#chooseButton').onclick=()=>$('#fileInput').click();
 $('#fileInput').onchange=(e)=>{const f=e.target.files[0];$('#fileName').textContent=f?f.name:'';$('#separateButton').disabled=!f;status('');};
 $('#separateButton').onclick=async()=>{const file=$('#fileInput').files[0],button=$('#separateButton'),mode=document.querySelector('input[name="splitMode"]:checked').value,engine=document.querySelector('input[name="engine"]:checked').value;button.disabled=true;status(engine==='fast'?'Séparation rapide en cours…':'Séparation studio en cours — comptez quelques minutes…');const form=new FormData();form.append('file',file);form.append('mode',mode);form.append('engine',engine);try{const res=await fetch('/api/separate',{method:'POST',body:form}),data=await res.json();if(!res.ok)throw Error(data.detail||'Erreur de séparation');audioCtx ??= new AudioContext();const names=Object.keys(data.stems);renderTracks(names);const decoded=await Promise.all(names.map(async name=>[name,await fetch(data.stems[name]).then(r=>r.arrayBuffer()).then(b=>audioCtx.decodeAudioData(b))]));Object.keys(tracks).forEach(name=>delete tracks[name]);decoded.forEach(([name,buffer])=>{tracks[name]=buffer;ensureAutomation(name,buffer.duration);});$('#mixer').classList.remove('hidden');requestAnimationFrame(()=>{decoded.forEach(([name,buffer])=>drawWaveform(name,buffer));names.forEach(refreshAutomation);});$('#playButton').disabled=false;$('#exportButton').disabled=false;status(data.cacheHit?'Résultat chargé instantanément depuis le cache local.':'Séparation terminée. Glissez les points de n’importe quelle courbe pour automatiser son panoramique.');}catch(err){status(err.message,true);button.disabled=false;}};
 $('#playButton').onclick=playMix;$('#stopButton').onclick=stop;$('#exportButton').onclick=exportMix;
-document.addEventListener('keydown', event => { if (event.key === 'Escape') closeFxModal(); });
+$('#versionButton').onclick=openChangelog;
+document.querySelectorAll('[data-changelog-close]').forEach(button => button.onclick=closeChangelog);
+document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeFxModal(); closeChangelog(); } });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));
