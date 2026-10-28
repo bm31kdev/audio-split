@@ -50,10 +50,11 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     # producing unused drums/bass/other tracks and returns vocals/no_vocals.
     if mode not in {"simple", "detailed"} or engine not in {"fast", "studio"}:
         raise HTTPException(400, "Mode de séparation invalide.")
-    # mdx_q is noticeably lighter on CPU; htdemucs remains available when
-    # precision matters more than processing time. Demucs automatically uses
-    # CUDA when the installed PyTorch build exposes a compatible GPU.
-    model_name = "mdx_q" if engine == "fast" else "htdemucs"
+    # `mdx` is the light CPU-friendly, non-quantized model. Its previous
+    # `mdx_q` variant needs the optional DiffQ C++ extension, which is not
+    # installable out of the box on Windows without Visual C++ Build Tools.
+    # htdemucs remains available when precision matters more than speed.
+    model_name = "mdx" if engine == "fast" else "htdemucs"
     filenames = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav"} if mode == "simple" else {
         "vocals": "vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav",
     }

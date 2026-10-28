@@ -1,7 +1,7 @@
 const $ = (sel) => document.querySelector(sel);
 const tracks = {};
 const automationByTrack = {};
-let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false;
+let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, fxCloseTimer, playheadFrame;
 
 function status(message, error = false) {
   const target = $('#status'); target.textContent = message; target.style.color = error ? '#ff987f' : '';
@@ -102,14 +102,47 @@ function bindAutomation() {
   document.querySelectorAll('[data-automation-pan]').forEach(button => button.onclick = () => { const name = button.dataset.automationPan, automation = automationByTrack[name], point = automation.points[automation.selected]; if (!point) return; point.pan = +button.dataset.pan; refreshAutomation(name); });
   document.querySelectorAll('[data-automation-remove]').forEach(remove => remove.onclick = () => { const name = remove.dataset.automationRemove, automation = automationByTrack[name]; if (automation.selected > 0 && automation.selected < automation.points.length - 1) { automation.points.splice(automation.selected, 1); automation.selected--; refreshAutomation(name); } });
 }
+function closeFxModal() {
+  const modal = $('#fxModal');
+  if (modal.getAttribute('aria-hidden') === 'true') return;
+  modal.classList.remove('is-open');
+  fxCloseTimer = setTimeout(() => modal.setAttribute('aria-hidden', 'true'), 240);
+}
+function openFxModal(name) {
+  const info = stemInfo[name], modal = $('#fxModal');
+  clearTimeout(fxCloseTimer);
+  $('#fxModalTitle').textContent = `Fx — ${info.title}`;
+  $('#fxTrackName').textContent = info.title.toLowerCase();
+  modal.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => modal.classList.add('is-open'));
+  modal.querySelector('.fx-close').focus();
+}
+function bindFxModal() {
+  document.querySelectorAll('[data-fx]').forEach(button => button.onclick = () => openFxModal(button.dataset.fx));
+  document.querySelectorAll('[data-fx-close]').forEach(button => button.onclick = closeFxModal);
+}
+function updatePlayheads(offset = 0) {
+  document.querySelectorAll('[data-playhead]').forEach(playhead => {
+    const buffer = tracks[playhead.dataset.playhead];
+    const position = playing && buffer ? Math.min(100, Math.max(0, (offset / buffer.duration) * 100)) : 0;
+    playhead.style.left = `${position}%`;
+    playhead.classList.toggle('is-playing', playing);
+  });
+}
+function animatePlayheads() {
+  if (!playing || !audioCtx) { playheadFrame = undefined; updatePlayheads(); return; }
+  updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt));
+  playheadFrame = requestAnimationFrame(animatePlayheads);
+}
 function renderTracks(names) {
-  $('#tracks').innerHTML = names.map(name => { const info = stemInfo[name], automation = `<div class="automation-tools"><span>Pan ${info.title.toLowerCase()}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">Gauche</button><button type="button" data-automation-pan="${name}" data-pan="0">Centre</button><button type="button" data-automation-pan="${name}" data-pan="100">Droite</button><button type="button" class="remove-point" data-automation-remove="${name}" title="Supprimer le point sélectionné">×</button></div>`; return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${info.title}</h3><p>${info.detail}</p></div><div class="pan-fader" title="Panoramique"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="Panoramique : ${info.title}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="0"></div><output id="${name}PanOut">0</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="Forme d'onde : ${info.title}"></canvas>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="false" title="Couper ${info.title}">${speakerIcon()}</button><div class="volume-fader" title="Volume"><div class="gauge volume-gauge"><i></i><input aria-label="Volume : ${info.title}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="100"></div><output id="${name}VolumeOut">100</output></div></div></article>`; }).join('');
+  $('#tracks').innerHTML = names.map(name => { const info = stemInfo[name], automation = `<div class="automation-tools"><span>Pan ${info.title.toLowerCase()}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">Gauche</button><button type="button" data-automation-pan="${name}" data-pan="0">Centre</button><button type="button" data-automation-pan="${name}" data-pan="100">Droite</button><button type="button" class="remove-point" data-automation-remove="${name}" title="Supprimer le point sélectionné">×</button></div>`; return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${info.title}</h3><p>${info.detail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="Ouvrir les effets de ${info.title}">Fx</button><div class="pan-fader" title="Panoramique"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="Panoramique : ${info.title}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="0"></div><output id="${name}PanOut">0</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="Forme d'onde : ${info.title}"></canvas><span class="playhead" data-playhead="${name}" aria-hidden="true"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="false" title="Couper ${info.title}">${speakerIcon()}</button><div class="volume-fader" title="Volume"><div class="gauge volume-gauge"><i></i><input aria-label="Volume : ${info.title}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="100"></div><output id="${name}VolumeOut">100</output></div></div></article>`; }).join('');
   document.querySelectorAll('[data-control]').forEach(el => el.oninput = updateOutputs);
   document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.innerHTML = speakerIcon(!muted); updateLiveMix(); });
   bindAutomation();
+  bindFxModal();
   updateOutputs();
 }
-function stop() { liveNodes.forEach(({ source }) => { try { source.stop(); } catch {} }); liveNodes = new Map(); playing = false; $('#playButton').disabled = false; $('#stopButton').disabled = true; }
+function stop() { if (playheadFrame) cancelAnimationFrame(playheadFrame); playheadFrame = undefined; liveNodes.forEach(({ source }) => { try { source.stop(); } catch {} }); liveNodes = new Map(); playing = false; updatePlayheads(); $('#playButton').disabled = false; $('#stopButton').disabled = true; }
 function playMix() {
   stop(); audioCtx ??= new AudioContext(); playStartedAt = audioCtx.currentTime;
   for (const [name, buffer] of Object.entries(tracks)) {
@@ -117,7 +150,7 @@ function playMix() {
     source.buffer = buffer; gain.gain.value = cfg.muted ? 0 : cfg.volume; schedulePan(panner, name, cfg, playStartedAt);
     source.connect(gain).connect(panner).connect(audioCtx.destination); source.onended = () => { if (playing) stop(); }; source.start(); liveNodes.set(name, { source, gain, panner });
   }
-  playing = true; $('#playButton').disabled = true; $('#stopButton').disabled = false;
+  playing = true; updatePlayheads(); playheadFrame = requestAnimationFrame(animatePlayheads); $('#playButton').disabled = true; $('#stopButton').disabled = false;
 }
 function wavBlob(buffer) {
   const channels = buffer.numberOfChannels, length = buffer.length * channels * 2, out = new ArrayBuffer(44 + length), view = new DataView(out);
@@ -135,4 +168,5 @@ $('#chooseButton').onclick=()=>$('#fileInput').click();
 $('#fileInput').onchange=(e)=>{const f=e.target.files[0];$('#fileName').textContent=f?f.name:'';$('#separateButton').disabled=!f;status('');};
 $('#separateButton').onclick=async()=>{const file=$('#fileInput').files[0],button=$('#separateButton'),mode=document.querySelector('input[name="splitMode"]:checked').value,engine=document.querySelector('input[name="engine"]:checked').value;button.disabled=true;status(engine==='fast'?'Séparation rapide en cours…':'Séparation studio en cours — comptez quelques minutes…');const form=new FormData();form.append('file',file);form.append('mode',mode);form.append('engine',engine);try{const res=await fetch('/api/separate',{method:'POST',body:form}),data=await res.json();if(!res.ok)throw Error(data.detail||'Erreur de séparation');audioCtx ??= new AudioContext();const names=Object.keys(data.stems);renderTracks(names);const decoded=await Promise.all(names.map(async name=>[name,await fetch(data.stems[name]).then(r=>r.arrayBuffer()).then(b=>audioCtx.decodeAudioData(b))]));Object.keys(tracks).forEach(name=>delete tracks[name]);decoded.forEach(([name,buffer])=>{tracks[name]=buffer;ensureAutomation(name,buffer.duration);});$('#mixer').classList.remove('hidden');requestAnimationFrame(()=>{decoded.forEach(([name,buffer])=>drawWaveform(name,buffer));names.forEach(refreshAutomation);});$('#playButton').disabled=false;$('#exportButton').disabled=false;status(data.cacheHit?'Résultat chargé instantanément depuis le cache local.':'Séparation terminée. Glissez les points de n’importe quelle courbe pour automatiser son panoramique.');}catch(err){status(err.message,true);button.disabled=false;}};
 $('#playButton').onclick=playMix;$('#stopButton').onclick=stop;$('#exportButton').onclick=exportMix;
+document.addEventListener('keydown', event => { if (event.key === 'Escape') closeFxModal(); });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));

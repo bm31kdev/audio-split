@@ -2,7 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AudioSplit Studio</title><link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.1.0"><link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.1.0"><link rel="stylesheet" href="/static/style.css?v=1.1.0">
+  <title>AudioSplit Studio</title><link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.1.1"><link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.1.1"><link rel="stylesheet" href="/static/style.css?v=1.1.1">
+  <style>
+    .track{grid-template-columns:44px minmax(112px,142px) 42px 44px minmax(150px,1fr) 56px}.fx-button{width:42px;height:42px;padding:0;border-color:#514576;border-radius:10px;background:#251f36;color:#d8ccff;font:700 12px 'DM Mono',monospace;letter-spacing:-.5px}.fx-button:hover:not(:disabled){border-color:var(--purple);background:#34284b;color:#f4f0ff}.fx-modal{position:fixed;z-index:20;inset:0;display:grid;place-items:center;padding:20px;visibility:hidden;transition:visibility 0s linear .22s}.fx-modal[aria-hidden="false"]{visibility:visible;transition-delay:0}.fx-modal-backdrop{position:absolute;inset:0;background:#050609b8;opacity:0;backdrop-filter:blur(2px);transition:opacity .22s ease}.fx-dialog{position:relative;width:min(440px,100%);padding:23px;border:1px solid #3b344c;border-radius:18px;background:linear-gradient(145deg,#1c1a25,#111217 70%);box-shadow:0 26px 80px #000a;opacity:0;transform:translateY(18px) scale(.96);transition:opacity .24s ease,transform .24s cubic-bezier(.2,.8,.2,1)}.fx-modal.is-open .fx-modal-backdrop{opacity:1}.fx-modal.is-open .fx-dialog{opacity:1;transform:translateY(0) scale(1)}.fx-dialog-top{display:flex;align-items:start;justify-content:space-between;gap:18px}.fx-dialog-top .eyebrow{margin-bottom:7px;color:#c6b9ff}.fx-dialog h2{font-size:25px;letter-spacing:-1px}.fx-close{width:34px;height:34px;padding:0;border-radius:8px}.fx-close svg{width:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}.fx-empty-state{display:grid;justify-items:center;margin:25px 0 20px;padding:26px 18px;border:1px dashed #3c3e49;border-radius:12px;background:#15171d;text-align:center}.fx-empty-state>svg{width:28px;height:28px;margin-bottom:12px;fill:none;stroke:var(--lime);stroke-width:1.5;stroke-linecap:round}.fx-empty-state h3{font-size:15px}.fx-empty-state p{max-width:285px;margin-top:7px;color:var(--muted);font-size:12px;line-height:1.55}.fx-empty-state span{color:#d8ccff}.fx-done{display:flex;margin-left:auto;background:var(--lime);border-color:var(--lime);color:#101407}.wave-area{position:relative}.playhead{position:absolute;z-index:2;top:0;bottom:38px;left:0;width:2px;opacity:0;pointer-events:none;background:var(--lime);box-shadow:0 0 10px #d7ff54b3;transition:opacity .12s ease;will-change:left}.playhead::before{position:absolute;top:0;left:50%;width:0;height:0;border-top:6px solid var(--lime);border-right:5px solid transparent;border-left:5px solid transparent;content:"";transform:translateX(-50%)}.playhead.is-playing{opacity:1}@media(max-width:850px){.track{grid-template-columns:44px 1fr 42px 44px 56px}.fx-button{grid-column:3;grid-row:1}.pan-fader{grid-column:4;grid-row:1}.volume-stack{grid-column:5;grid-row:1}.waveform{grid-column:1/-1;grid-row:2}}@media(max-width:540px){.track{grid-template-columns:44px minmax(0,1fr) 38px 40px 50px}.fx-button{width:38px;height:38px}.pan-fader{width:40px}.volume-stack,.mute{width:50px}.waveform{grid-column:1/-1}.fx-dialog{padding:19px}.fx-empty-state{padding:22px 14px}}
+  </style>
 </head>
 <body>
   <main>
@@ -22,5 +25,20 @@
       <div id="tracks" class="tracks"></div>
       <button id="exportButton" class="export">↓ Exporter le mixage WAV stéréo</button>
     </section>
-  </main><script src="/static/app.js?v=1.1.0"></script>
+  </main>
+  <div id="fxModal" class="fx-modal" aria-hidden="true">
+    <div class="fx-modal-backdrop" data-fx-close></div>
+    <section class="fx-dialog" role="dialog" aria-modal="true" aria-labelledby="fxModalTitle">
+      <div class="fx-dialog-top">
+        <div><p class="eyebrow">EFFETS</p><h2 id="fxModalTitle">Fx — Piste</h2></div>
+        <button type="button" class="fx-close" data-fx-close aria-label="Fermer les effets" title="Fermer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+      </div>
+      <div class="fx-empty-state">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>
+        <h3>Les effets arrivent bientôt</h3>
+        <p>Cette fenêtre est prête pour les futurs effets de <span id="fxTrackName">la piste</span>.</p>
+      </div>
+      <button type="button" class="fx-done" data-fx-close>Fermer</button>
+    </section>
+  </div><script src="/static/app.js?v=1.1.1"></script>
 </body></html>
