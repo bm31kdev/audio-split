@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AudioSplit Studio</title><link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.0.4"><link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.0.4"><link rel="stylesheet" href="/static/style.css?v=1.0.4">
+  <title>AudioSplit Studio</title><link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.1.0"><link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.1.0"><link rel="stylesheet" href="/static/style.css?v=1.1.0">
 </head>
 <body>
   <main>
@@ -12,6 +12,7 @@
       <input id="fileInput" type="file" accept="audio/mpeg,audio/wav,audio/flac,audio/mp4,audio/ogg,.mp3,.wav,.flac,.m4a,.ogg" hidden>
       <div class="upload-icon" aria-hidden="true"><svg class="upload-arrow" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#d7ff54" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4a1 1 0 001 1h12a1 1 0 001-1v-4"/></svg></div><h3>Importez votre morceau</h3><p>MP3, WAV, FLAC, M4A ou OGG</p>
       <fieldset class="split-mode"><legend>Type de séparation</legend><label><input type="radio" name="splitMode" value="simple" checked> Voix + accompagnement</label><label><input type="radio" name="splitMode" value="detailed"> Détaillée : voix, batterie, basse, instruments</label></fieldset>
+      <fieldset class="split-mode engine-mode"><legend>Vitesse de séparation</legend><label><input type="radio" name="engine" value="fast" checked> Rapide — recommandé sur CPU</label><label><input type="radio" name="engine" value="studio"> Studio — meilleure précision, plus lent</label></fieldset>
       <button id="chooseButton">Choisir un fichier</button><strong id="fileName"></strong>
       <button id="separateButton" class="primary" disabled>Séparer la voix et l'accompagnement</button>
       <p id="status" class="status" aria-live="polite"></p>
@@ -21,5 +22,5 @@
       <div id="tracks" class="tracks"></div>
       <button id="exportButton" class="export">↓ Exporter le mixage WAV stéréo</button>
     </section>
-  </main><script src="/static/app.js?v=1.0.4"></script>
+  </main><script src="/static/app.js?v=1.1.0"></script>
 </body></html>
