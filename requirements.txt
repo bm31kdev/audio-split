@@ -1,0 +1,11 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-multipart==0.0.20
+# Demucs 4 utilise les API audio historiques de Torchaudio. Verrouiller cette
+# paire évite le basculement de torchaudio >= 2.9 vers TorchCodec.
+torch==2.8.0
+torchaudio==2.8.0
+# Backend WAV nécessaire à torchaudio/Demucs sous Windows.
+soundfile==0.14.0
+demucs==4.0.1
+

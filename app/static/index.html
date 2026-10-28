@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AudioSplit Studio</title><link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main>
+    <header><div class="brand-mark">AS</div><div><h1>AudioSplit <span>Studio</span></h1><p>Séparez. Mixez. Exportez.</p></div><div class="local">● Traitement local</div></header>
+    <section class="hero"><p class="eyebrow">STUDIO DE STEMS</p><h2>Redonnez de l’espace<br>à votre musique.</h2><p>Extrayez la voix, ajustez chaque piste et créez votre version stéréo.</p></section>
+    <section id="importCard" class="card import-card">
+      <input id="fileInput" type="file" accept="audio/mpeg,audio/wav,audio/flac,audio/mp4,audio/ogg,.mp3,.wav,.flac,.m4a,.ogg" hidden>
+      <div class="upload-icon">↑</div><h3>Importez votre morceau</h3><p>MP3, WAV, FLAC, M4A ou OGG</p>
+      <fieldset class="split-mode"><legend>Type de séparation</legend><label><input type="radio" name="splitMode" value="simple" checked> Voix + accompagnement</label><label><input type="radio" name="splitMode" value="detailed"> Détaillée : voix, batterie, basse, instruments</label></fieldset>
+      <button id="chooseButton">Choisir un fichier</button><strong id="fileName"></strong>
+      <button id="separateButton" class="primary" disabled>Séparer la voix et l'accompagnement</button>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+    <section id="mixer" class="mixer hidden">
+      <div class="mixer-top"><div><p class="eyebrow">MIXAGE</p><h2>Vos pistes</h2></div><div class="transport"><button id="playButton" class="play">▶ Écouter le mix</button><button id="stopButton" disabled>■</button></div></div>
+      <div id="tracks" class="tracks"></div>
+      <button id="exportButton" class="export">↓ Exporter le mixage WAV stéréo</button>
+    </section>
+  </main><script src="/static/app.js"></script>
+</body></html>
