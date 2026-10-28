@@ -20,6 +20,7 @@ UPLOADS.mkdir(parents=True, exist_ok=True)
 app = FastAPI(title="AudioSplit Studio")
 job_stems: dict[str, Path] = {}
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
+app.mount("/logo", StaticFiles(directory=ROOT / "logo"), name="logo")
 
 
 @app.get("/")
