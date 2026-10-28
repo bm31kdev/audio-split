@@ -1,7 +1,8 @@
 const $ = (sel) => document.querySelector(sel);
 const tracks = {};
 const automationByTrack = {};
-let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, fxCloseTimer, changelogCloseTimer, playheadFrame;
+const saturationByTrack = { accompaniment: 0, bass: 0 };
+let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, fxCloseTimer, changelogCloseTimer, playheadFrame, saturationTarget = 'accompaniment';
 
 function status(message, error = false) {
   const target = $('#status'); target.textContent = message; target.style.color = error ? '#ff987f' : '';
@@ -9,7 +10,7 @@ function status(message, error = false) {
 function settings(name) {
   const volume = +document.querySelector(`[data-control="${name}"][data-param="volume"]`).value / 100;
   const pan = +document.querySelector(`[data-control="${name}"][data-param="pan"]`).value / 100;
-  return { volume, pan, muted: document.querySelector(`[data-mute="${name}"]`).getAttribute('aria-pressed') === 'true' };
+  return { volume, pan, muted: document.querySelector(`[data-mute="${name}"]`).getAttribute('aria-pressed') === 'true', saturation: saturationByTrack[name] || 0 };
 }
 function updateLiveMix() {
   if (!audioCtx || !playing) return;
@@ -17,6 +18,7 @@ function updateLiveMix() {
     const cfg = settings(name), now = audioCtx.currentTime;
     nodes.gain.gain.setTargetAtTime(cfg.muted ? 0 : cfg.volume, now, 0.012);
     schedulePan(nodes.panner, name, cfg, now, Math.max(0, now - playStartedAt));
+    if (nodes.saturation) configureSaturation(nodes.saturation, cfg.saturation, audioCtx, true);
   }
 }
 function updateOutputs() {
@@ -38,6 +40,30 @@ function getAutomationPan(name, time) {
   return points.at(-1).pan;
 }
 function combinedPan(pointPan, cfg) { return Math.max(-1, Math.min(1, pointPan / 100 + cfg.pan)); }
+function saturationCurve(amount) {
+  const size = 2048, curve = new Float32Array(size), drive = 1 + Math.max(0, Math.min(100, amount)) * .3, normalizer = Math.tanh(drive);
+  for (let index = 0; index < size; index++) { const sample = (index * 2 / (size - 1)) - 1; curve[index] = Math.tanh(drive * sample) / normalizer; }
+  return curve;
+}
+function configureSaturation(effect, amount, context, smooth = false) {
+  const intensity = Math.max(0, Math.min(100, amount));
+  effect.shaper.curve = saturationCurve(intensity);
+  const wetLevel = (intensity / 100) * .36;
+  if (smooth) effect.wet.gain.setTargetAtTime(wetLevel, context.currentTime, .012);
+  else effect.wet.gain.setValueAtTime(wetLevel, context.currentTime);
+}
+function addBassSaturation(context, input, panner, amount) {
+  const filter = context.createBiquadFilter(), shaper = context.createWaveShaper(), wet = context.createGain();
+  filter.type = 'lowpass'; filter.frequency.value = 240; filter.Q.value = .8; shaper.oversample = '4x';
+  input.connect(filter).connect(shaper).connect(wet).connect(panner);
+  const effect = { filter, shaper, wet }; configureSaturation(effect, amount, context); return effect;
+}
+function createTrackNodes(context, source, name, cfg, destination) {
+  const gain = context.createGain(), panner = context.createStereoPanner();
+  gain.gain.value = cfg.muted ? 0 : cfg.volume; source.connect(gain).connect(panner);
+  const saturation = name === saturationTarget ? addBassSaturation(context, gain, panner, cfg.saturation) : null;
+  panner.connect(destination); return { gain, panner, saturation };
+}
 function schedulePan(panner, name, cfg, startAt, offset = 0) {
   panner.pan.cancelScheduledValues(startAt);
   const automation = automationByTrack[name];
@@ -112,7 +138,14 @@ function openFxModal(name) {
   const info = stemInfo[name], modal = $('#fxModal');
   clearTimeout(fxCloseTimer);
   $('#fxModalTitle').textContent = `Fx — ${info.title}`;
-  $('#fxTrackName').textContent = info.title.toLowerCase();
+  const targetInfo = stemInfo[saturationTarget], content = $('#fxModalContent');
+  if (name === saturationTarget) {
+    const value = saturationByTrack[name] || 0;
+    content.innerHTML = `<div class="fx-effect-card"><div class="fx-effect-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c2-7 4 7 6 0s4-7 6 0 3 0 4-3"/></svg></div><div><p class="eyebrow">EFFET DISPONIBLE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans devoir monter le volume.</p></div></div><label class="fx-intensity">Intensité <output id="saturationOut">${value}%</output><input id="saturationInput" type="range" min="0" max="100" value="${value}" aria-label="Intensité de la saturation basse"></label>`;
+    $('#saturationInput').oninput = event => { saturationByTrack[name] = +event.currentTarget.value; $('#saturationOut').textContent = `${event.currentTarget.value}%`; updateLiveMix(); };
+  } else {
+    content.innerHTML = `<div class="fx-empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg><h3>Aucun effet sur cette piste</h3><p>La saturation basse est disponible uniquement sur <span>${targetInfo.title.toLowerCase()}</span> pour cette séparation.</p></div>`;
+  }
   modal.setAttribute('aria-hidden', 'false');
   requestAnimationFrame(() => modal.classList.add('is-open'));
   modal.querySelector('.fx-close').focus();
@@ -149,6 +182,7 @@ function animatePlayheads() {
   playheadFrame = requestAnimationFrame(animatePlayheads);
 }
 function renderTracks(names) {
+  saturationTarget = names.includes('bass') ? 'bass' : 'accompaniment';
   $('#tracks').innerHTML = names.map(name => { const info = stemInfo[name], automation = `<div class="automation-tools"><span>Pan ${info.title.toLowerCase()}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">Gauche</button><button type="button" data-automation-pan="${name}" data-pan="0">Centre</button><button type="button" data-automation-pan="${name}" data-pan="100">Droite</button><button type="button" class="remove-point" data-automation-remove="${name}" title="Supprimer le point sélectionné">×</button></div>`; return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${info.title}</h3><p>${info.detail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="Ouvrir les effets de ${info.title}">Fx</button><div class="pan-fader" title="Panoramique"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="Panoramique : ${info.title}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="0"></div><output id="${name}PanOut">0</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="Forme d'onde : ${info.title}"></canvas><span class="playhead" data-playhead="${name}" aria-hidden="true"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="false" title="Couper ${info.title}">${speakerIcon()}</button><div class="volume-fader" title="Volume"><div class="gauge volume-gauge"><i></i><input aria-label="Volume : ${info.title}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="100"></div><output id="${name}VolumeOut">100</output></div></div></article>`; }).join('');
   document.querySelectorAll('[data-control]').forEach(el => el.oninput = updateOutputs);
   document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.innerHTML = speakerIcon(!muted); updateLiveMix(); });
@@ -160,9 +194,9 @@ function stop() { if (playheadFrame) cancelAnimationFrame(playheadFrame); playhe
 function playMix() {
   stop(); audioCtx ??= new AudioContext(); playStartedAt = audioCtx.currentTime;
   for (const [name, buffer] of Object.entries(tracks)) {
-    const source = audioCtx.createBufferSource(), gain = audioCtx.createGain(), panner = audioCtx.createStereoPanner(), cfg = settings(name);
-    source.buffer = buffer; gain.gain.value = cfg.muted ? 0 : cfg.volume; schedulePan(panner, name, cfg, playStartedAt);
-    source.connect(gain).connect(panner).connect(audioCtx.destination); source.onended = () => { if (playing) stop(); }; source.start(); liveNodes.set(name, { source, gain, panner });
+    const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, audioCtx.destination);
+    source.buffer = buffer; schedulePan(nodes.panner, name, cfg, playStartedAt);
+    source.onended = () => { if (playing) stop(); }; source.start(); liveNodes.set(name, { source, ...nodes });
   }
   playing = true; updatePlayheads(); playheadFrame = requestAnimationFrame(animatePlayheads); $('#playButton').disabled = true; $('#stopButton').disabled = false;
 }
@@ -175,7 +209,7 @@ function wavBlob(buffer) {
 async function exportMix() {
   stop(); const duration = Math.max(...Object.values(tracks).map(b => b.duration)), rate = tracks.vocals.sampleRate;
   const offline = new OfflineAudioContext(2, Math.ceil(duration * rate), rate);
-  for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),gain=offline.createGain(),panner=offline.createStereoPanner(),cfg=settings(name); source.buffer=buffer;gain.gain.value=cfg.muted?0:cfg.volume;schedulePan(panner,name,cfg,0);source.connect(gain).connect(panner).connect(offline.destination);source.start(); }
+  for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,offline.destination); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0);source.start(); }
   status('Rendu stéréo en cours…'); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();URL.revokeObjectURL(url);status('Mixage WAV stéréo exporté.');
 }
 $('#chooseButton').onclick=()=>$('#fileInput').click();
