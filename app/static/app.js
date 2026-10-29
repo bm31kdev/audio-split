@@ -1,13 +1,20 @@
 import { createBassSaturation, updateBassSaturation } from './js/effects/bass-saturation.js';
+import { createCompressor, updateCompressor } from './js/effects/compressor.js';
+import { createThreeBandEq, updateThreeBandEq } from './js/effects/three-band-eq.js';
+import { createReverb, updateReverb } from './js/effects/reverb.js';
+import { createDelay, updateDelay } from './js/effects/delay.js';
+import { createFilters, updateFilters } from './js/effects/filters.js';
+import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
 import { createChangelogModal, createFxModal, mountModalComponents } from './js/modal-manager.js';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
 const tracks = {};
 const automationByTrack = {};
-const effectDefaults = { saturation: 0 };
+const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHigh: 0, reverb: 0, delay: 0, highPass: 0, lowPass: 0, width: 100, ducking: 0 };
 const effectsByTrack = {};
-let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, playheadFrame, saturationTarget = 'accompaniment';
+let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, playheadFrame, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
 let fxModal, changelogModal;
 
 function status(message, error = false) {
@@ -23,11 +30,12 @@ function settings(name) {
 function updateLiveMix() {
   // Browser AudioParams are updated while the existing sources keep playing.
   if (!audioCtx || !playing) return;
+  const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
   for (const [name, nodes] of liveNodes) {
     const cfg = settings(name), now = audioCtx.currentTime;
     nodes.gain.gain.setTargetAtTime(cfg.muted ? 0 : cfg.volume, now, 0.012);
     schedulePan(nodes.panner, name, cfg, now, Math.max(0, now - playStartedAt));
-    updateTrackEffects(nodes, cfg.effects, audioCtx);
+    updateTrackEffects(nodes, cfg.effects, audioCtx, voiceLevel);
   }
 }
 function updateOutputs() {
@@ -57,13 +65,32 @@ function createTrackNodes(context, source, name, cfg, destination) {
   gain.gain.value = cfg.muted ? 0 : cfg.volume;
   source.connect(gain);
 
-  gain.connect(panner);
-  const saturation = name === saturationTarget ? createBassSaturation(context, gain, panner, cfg.effects.saturation) : null;
-  panner.connect(destination);
-  return { gain, panner, effects: { saturation } };
+  // Serial processors shape the main signal before panning it in the mix.
+  const eq = createThreeBandEq(context, gain, cfg.effects);
+  const filters = createFilters(context, eq.output, cfg.effects);
+  const compressor = ['vocals', 'bass'].includes(name) ? createCompressor(context, filters.output, cfg.effects.compressor) : null;
+  const width = name === widthTarget ? createStereoWidth(context, compressor?.output || filters.output, cfg.effects.width) : null;
+  const mainOutput = width?.output || compressor?.output || filters.output;
+  mainOutput.connect(panner);
+
+  // Parallel processors add ambience or grit without replacing the dry track.
+  const saturation = name === saturationTarget ? createBassSaturation(context, mainOutput, panner, cfg.effects.saturation) : null;
+  const reverb = name === 'vocals' ? createReverb(context, mainOutput, panner, cfg.effects.reverb) : null;
+  const delay = name === 'vocals' ? createDelay(context, mainOutput, panner, cfg.effects.delay) : null;
+  const ducking = name !== 'vocals' ? createVoiceDucker(context, panner) : null;
+  (ducking?.gain || panner).connect(destination);
+
+  return { gain, panner, effects: { eq, filters, compressor, width, saturation, reverb, delay, ducking } };
 }
-function updateTrackEffects(nodes, values, context) {
+function updateTrackEffects(nodes, values, context, voiceLevel = 0) {
+  updateThreeBandEq(nodes.effects.eq, values, context, true);
+  updateFilters(nodes.effects.filters, values, context, true);
+  if (nodes.effects.compressor) updateCompressor(nodes.effects.compressor, values.compressor, context, true);
+  if (nodes.effects.width) updateStereoWidth(nodes.effects.width, values.width, context, true);
   if (nodes.effects.saturation) updateBassSaturation(nodes.effects.saturation, values.saturation, context, true);
+  if (nodes.effects.reverb) updateReverb(nodes.effects.reverb, values.reverb, context, true);
+  if (nodes.effects.delay) updateDelay(nodes.effects.delay, values.delay, context, true);
+  if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, values.ducking, context, true);
 }
 function schedulePan(panner, name, cfg, startAt, offset = 0) {
   panner.pan.cancelScheduledValues(startAt);
@@ -145,12 +172,18 @@ function updatePlayheads(offset = 0) {
 }
 function animatePlayheads() {
   if (!playing || !audioCtx) { playheadFrame = undefined; updatePlayheads(); return; }
+  // Ducking shares the animation clock with the playhead to avoid another loop.
+  const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
+  for (const [name, nodes] of liveNodes) {
+    if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, settings(name).effects.ducking, audioCtx, true);
+  }
   updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt));
   playheadFrame = requestAnimationFrame(animatePlayheads);
 }
 function renderTracks(names) {
   // Detailed splits expose a bass stem; simple splits use accompaniment as the bass source.
   saturationTarget = names.includes('bass') ? 'bass' : 'accompaniment';
+  widthTarget = names.includes('other') ? 'other' : 'accompaniment';
   names.forEach(name => { effectsByTrack[name] ??= { ...effectDefaults }; });
   $('#tracks').innerHTML = names.map(name => { const info = stemInfo[name], automation = `<div class="automation-tools"><span>Pan ${info.title.toLowerCase()}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">Gauche</button><button type="button" data-automation-pan="${name}" data-pan="0">Centre</button><button type="button" data-automation-pan="${name}" data-pan="100">Droite</button><button type="button" class="remove-point" data-automation-remove="${name}" title="Supprimer le point sélectionné">×</button></div>`; return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${info.title}</h3><p>${info.detail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="Ouvrir les effets de ${info.title}">Fx</button><div class="pan-fader" title="Panoramique"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="Panoramique : ${info.title}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="0"></div><output id="${name}PanOut">0</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="Forme d'onde : ${info.title}"></canvas><span class="playhead" data-playhead="${name}" aria-hidden="true"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="false" title="Couper ${info.title}">${speakerIcon()}</button><div class="volume-fader" title="Volume"><div class="gauge volume-gauge"><i></i><input aria-label="Volume : ${info.title}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="100"></div><output id="${name}VolumeOut">100</output></div></div></article>`; }).join('');
   document.querySelectorAll('[data-control]').forEach(el => el.oninput = updateOutputs);
@@ -160,7 +193,7 @@ function renderTracks(names) {
   updateOutputs();
 }
 // Stop all live nodes together because every stem starts at the same audio clock time.
-function stop() { if (playheadFrame) cancelAnimationFrame(playheadFrame); playheadFrame = undefined; liveNodes.forEach(({ source }) => { try { source.stop(); } catch {} }); liveNodes = new Map(); playing = false; updatePlayheads(); $('#playButton').disabled = false; $('#stopButton').disabled = true; }
+function stop() { if (playheadFrame) cancelAnimationFrame(playheadFrame); playheadFrame = undefined; voiceMeter = undefined; liveNodes.forEach(({ source }) => { try { source.stop(); } catch {} }); liveNodes = new Map(); playing = false; updatePlayheads(); $('#playButton').disabled = false; $('#stopButton').disabled = true; }
 function playMix() {
   // Live sources use the same effect graph as the offline export below.
   stop(); audioCtx ??= new AudioContext(); playStartedAt = audioCtx.currentTime;
@@ -169,6 +202,8 @@ function playMix() {
     source.buffer = buffer; schedulePan(nodes.panner, name, cfg, playStartedAt);
     source.onended = () => { if (playing) stop(); }; source.start(); liveNodes.set(name, { source, ...nodes });
   }
+  // The vocal meter drives every instrumental ducking node during playback.
+  if (liveNodes.has('vocals')) voiceMeter = createVoiceMeter(audioCtx, liveNodes.get('vocals').gain);
   playing = true; updatePlayheads(); playheadFrame = requestAnimationFrame(animatePlayheads); $('#playButton').disabled = true; $('#stopButton').disabled = false;
 }
 function wavBlob(buffer) {
@@ -181,7 +216,10 @@ async function exportMix() {
   // OfflineAudioContext renders the current mix without recording speaker output.
   stop(); const duration = Math.max(...Object.values(tracks).map(b => b.duration)), rate = tracks.vocals.sampleRate;
   const offline = new OfflineAudioContext(2, Math.ceil(duration * rate), rate);
-  for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,offline.destination); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0);source.start(); }
+  const offlineNodes = new Map();
+  for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,offline.destination); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0);source.start();offlineNodes.set(name,nodes); }
+  // Offline rendering has no animation frame, so schedule the vocal envelope in advance.
+  if (tracks.vocals) for (const [name, nodes] of offlineNodes) if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline);
   status('Rendu stéréo en cours…'); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();URL.revokeObjectURL(url);status('Mixage WAV stéréo exporté.');
 }
 $('#chooseButton').onclick=()=>$('#fileInput').click();
@@ -195,6 +233,7 @@ async function initializeModalComponents() {
     fxModal = createFxModal({
       stemInfo,
       getSaturationTarget: () => saturationTarget,
+      getWidthTarget: () => widthTarget,
       getValues: (name) => effectsByTrack[name] || { ...effectDefaults },
       setValue: (name, key, value) => { effectsByTrack[name][key] = value; updateLiveMix(); },
     });

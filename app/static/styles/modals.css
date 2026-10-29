@@ -32,9 +32,6 @@
 .fx-effect-card .eyebrow { margin-bottom: 5px; color: #c7dc8a; font-size: 9px; }
 .fx-effect-card h3 { font-size: 16px; }
 .fx-effect-card p { margin-top: 5px; color: #b5bdac; font-size: 12px; line-height: 1.45; }
-.fx-intensity { display: grid; grid-template-columns: 1fr auto; gap: 9px; margin-top: 14px; color: #e6e9e0; font: 500 11px 'DM Mono', monospace; }
-.fx-intensity output { color: var(--lime); }
-.fx-intensity input { grid-column: 1 / -1; width: 100%; accent-color: var(--lime); }
 .fx-control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; margin-top: 12px; }
 .fx-control { display: grid; grid-template-columns: 1fr auto; gap: 5px; color: #cfd5c4; font: 10px 'DM Mono', monospace; }
 .fx-control output { color: var(--lime); }

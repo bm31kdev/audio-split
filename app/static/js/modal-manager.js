@@ -44,11 +44,20 @@ function createAnimatedModal(modal, closeSelector, returnFocus) {
   return { close, show };
 }
 
+// Render a conventional horizontal control for effects that do not need a fader.
+function controlMarkup(key, label, value, min, max, step = 1) {
+  return `<label class="fx-control"><span>${label}</span><output data-effect-output="${key}">${value}</output><input data-effect-input="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${label}"></label>`;
+}
+
+function effectCard(title, description, controls) {
+  return `<article class="fx-effect-card"><h3>${title}</h3><p>${description}</p><div class="fx-control-grid">${controls}</div></article>`;
+}
+
 /**
- * Create the first modular Fx controller. Track state remains in app.js,
- * while this component only renders the saturation control and returns edits.
+ * Create the Fx controller. The track/effect state belongs to app.js; this
+ * module only renders controls and reports changes through callbacks.
  */
-export function createFxModal({ stemInfo, getSaturationTarget, getValues, setValue }) {
+export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, getValues, setValue }) {
   const modal = document.querySelector('#fxModal');
   const animated = createAnimatedModal(modal, '.fx-close');
   const title = modal.querySelector('#fxModalTitle');
@@ -57,19 +66,39 @@ export function createFxModal({ stemInfo, getSaturationTarget, getValues, setVal
   const open = (name) => {
     const info = stemInfo[name];
     const values = getValues(name);
+    const cards = [];
     title.textContent = `Fx — ${info.title}`;
-    if (name === getSaturationTarget()) {
-      content.innerHTML = `<article class="fx-effect-card fx-saturation-card"><div class="fx-effect-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c2-7 4 7 6 0s4-7 6 0 3 0 4-3"/></svg></div><div class="fx-effect-copy"><p class="eyebrow">EFFET BASSE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans monter le volume.</p></div><div class="fx-saturation-fader" title="Saturation basse"><div class="fx-gauge" style="--level:${values.saturation}%"><i></i><input data-effect-input="saturation" type="range" min="0" max="100" value="${values.saturation}" aria-label="Saturation basse"></div><output data-effect-output="saturation">${values.saturation}</output></div></article>`;
-      content.querySelector('[data-effect-input="saturation"]').oninput = (event) => {
-        const value = Number(event.currentTarget.value);
-        setValue(name, 'saturation', value);
-        content.querySelector('[data-effect-output="saturation"]').textContent = value;
-        content.querySelector('.fx-gauge').style.setProperty('--level', `${value}%`);
-      };
-    } else {
-      const target = stemInfo[getSaturationTarget()];
-      content.innerHTML = `<div class="fx-empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg><h3>Aucun effet sur cette piste</h3><p>La saturation basse est disponible uniquement sur <span>${target.title.toLowerCase()}</span> pour cette séparation.</p></div>`;
+
+    // EQ and filters are useful for every stem, so they are always available.
+    cards.push(effectCard('Égaliseur 3 bandes', 'Ajustez rapidement la couleur de la piste.', [
+      controlMarkup('eqLow', 'Graves', values.eqLow, -12, 12),
+      controlMarkup('eqMid', 'Médiums', values.eqMid, -12, 12),
+      controlMarkup('eqHigh', 'Aigus', values.eqHigh, -12, 12),
+    ].join('')));
+    cards.push(effectCard('Filtres', 'Retirez les graves ou les aigus rapidement.', [
+      controlMarkup('highPass', 'Passe-haut', values.highPass, 0, 100),
+      controlMarkup('lowPass', 'Passe-bas', values.lowPass, 0, 100),
+    ].join('')));
+
+    if (['vocals', 'bass'].includes(name)) cards.push(effectCard('Compresseur', 'Stabilise les écarts de niveau.', controlMarkup('compressor', 'Compression', values.compressor, 0, 100)));
+    if (name === 'vocals') {
+      cards.push(effectCard('Reverb', 'Ajoute de l’espace à la voix.', controlMarkup('reverb', 'Mix', values.reverb, 0, 100)));
+      cards.push(effectCard('Delay', 'Ajoute un écho rythmique à la voix.', controlMarkup('delay', 'Mix', values.delay, 0, 100)));
     }
+    if (name === getWidthTarget()) cards.push(effectCard('Stéréo width', '100 garde la largeur originale.', controlMarkup('width', 'Largeur', values.width, 0, 200)));
+    if (name !== 'vocals') cards.push(effectCard('Ducking voix', 'Baisse cette piste lorsque la voix chante.', controlMarkup('ducking', 'Ducking', values.ducking, 0, 100)));
+    if (name === getSaturationTarget()) cards.push(`<article class="fx-effect-card fx-saturation-card"><div class="fx-effect-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c2-7 4 7 6 0s4-7 6 0 3 0 4-3"/></svg></div><div class="fx-effect-copy"><p class="eyebrow">EFFET BASSE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans monter le volume.</p></div><div class="fx-saturation-fader" title="Saturation basse"><div class="fx-gauge" style="--level:${values.saturation}%"><i></i><input data-effect-input="saturation" type="range" min="0" max="100" value="${values.saturation}" aria-label="Saturation basse"></div><output data-effect-output="saturation">${values.saturation}</output></div></article>`);
+
+    content.innerHTML = `<div class="fx-effect-grid">${cards.join('')}</div>`;
+    content.querySelectorAll('[data-effect-input]').forEach((input) => {
+      input.oninput = (event) => {
+        const key = event.currentTarget.dataset.effectInput;
+        const value = Number(event.currentTarget.value);
+        setValue(name, key, value);
+        content.querySelectorAll(`[data-effect-output="${key}"]`).forEach(output => { output.textContent = value; });
+        if (key === 'saturation') content.querySelector('.fx-gauge').style.setProperty('--level', `${value}%`);
+      };
+    });
 
     animated.show();
   };

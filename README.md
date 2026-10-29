@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.1.5
+# AudioSplit Studio — v1.1.6
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, d’ajuster ses pistes et de télécharger votre propre mixage stéréo.
 
@@ -62,6 +62,6 @@ L’interface est maintenant découpée pour rester facile à faire évoluer :
 - `app/static/index.html` : structure principale de l’application.
 - `app/static/components/` : fichiers HTML des modals Fx et historique.
 - `app/static/styles/` : styles séparés pour la base, le mixeur et les modals.
-- `app/static/js/effects/` : modules Web Audio dédiés, dont la saturation basse.
+- `app/static/js/effects/` : un module Web Audio par effet : saturation, compresseur, EQ, reverb, delay, filtres, width et ducking.
 - `app/static/js/modal-manager.js` : chargement, ouverture et fermeture des modals.
 - `app/static/app.js` : orchestration du mixeur, de la lecture et de l’export.
