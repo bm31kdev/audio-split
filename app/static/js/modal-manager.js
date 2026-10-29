@@ -59,11 +59,12 @@ export function createFxModal({ stemInfo, getSaturationTarget, getValues, setVal
     const values = getValues(name);
     title.textContent = `Fx — ${info.title}`;
     if (name === getSaturationTarget()) {
-      content.innerHTML = `<article class="fx-effect-card"><div class="fx-effect-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c2-7 4 7 6 0s4-7 6 0 3 0 4-3"/></svg></div><div><p class="eyebrow">EFFET BASSE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans monter le volume.</p></div></article><label class="fx-intensity"><span>Intensité</span><output id="saturationOut">${values.saturation}%</output><input id="saturationInput" type="range" min="0" max="100" value="${values.saturation}" aria-label="Intensité de la saturation basse"></label>`;
-      content.querySelector('#saturationInput').oninput = (event) => {
+      content.innerHTML = `<article class="fx-effect-card fx-saturation-card"><div class="fx-effect-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c2-7 4 7 6 0s4-7 6 0 3 0 4-3"/></svg></div><div class="fx-effect-copy"><p class="eyebrow">EFFET BASSE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans monter le volume.</p></div><div class="fx-saturation-fader" title="Saturation basse"><div class="fx-gauge" style="--level:${values.saturation}%"><i></i><input data-effect-input="saturation" type="range" min="0" max="100" value="${values.saturation}" aria-label="Saturation basse"></div><output data-effect-output="saturation">${values.saturation}</output></div></article>`;
+      content.querySelector('[data-effect-input="saturation"]').oninput = (event) => {
         const value = Number(event.currentTarget.value);
         setValue(name, 'saturation', value);
-        content.querySelector('#saturationOut').textContent = `${value}%`;
+        content.querySelector('[data-effect-output="saturation"]').textContent = value;
+        content.querySelector('.fx-gauge').style.setProperty('--level', `${value}%`);
       };
     } else {
       const target = stemInfo[getSaturationTarget()];
