@@ -39,6 +39,11 @@ def clear_directory_children(directory: Path) -> int:
     return removed
 
 
+def localized(language: str, french: str, english: str) -> str:
+    """Return the API message matching the interface language."""
+    return english if language.lower().startswith("en") else french
+
+
 @app.get("/")
 def home():
     # The application shell loads static modules and component fragments itself.
@@ -46,7 +51,7 @@ def home():
 
 
 @app.delete("/api/cache")
-def clear_cache():
+def clear_cache(lang: str = "fr"):
     # Both folders contain generated local data only: no project source is touched.
     removed_jobs = clear_directory_children(JOBS)
     removed_uploads = clear_directory_children(UPLOADS)
@@ -55,16 +60,16 @@ def clear_cache():
         "cleared": True,
         "removedJobs": removed_jobs,
         "removedUploads": removed_uploads,
-        "message": "Le cache AudioSplit a été vidé.",
+        "message": localized(lang, "Le cache AudioSplit a été vidé.", "AudioSplit cache cleared."),
     }
 
 
 @app.post("/api/separate")
-async def separate(file: UploadFile = File(...), mode: str = Form("simple"), engine: str = Form("fast")):
+async def separate(file: UploadFile = File(...), mode: str = Form("simple"), engine: str = Form("fast"), language: str = Form("fr")):
     # Validate the extension before creating a job folder on disk.
     suffix = Path(file.filename or "audio").suffix.lower()
     if suffix not in ALLOWED:
-        raise HTTPException(415, "Format non pris en charge. Utilisez MP3, WAV, FLAC, M4A ou OGG.")
+        raise HTTPException(415, localized(language, "Format non pris en charge. Utilisez MP3, WAV, FLAC, M4A ou OGG.", "Unsupported format. Use MP3, WAV, FLAC, M4A, or OGG."))
 
     # Hashing the upload gives identical files a reusable Demucs output folder.
     job_id = uuid.uuid4().hex
@@ -82,7 +87,7 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     # htdemucs is the quality model bundled with Demucs. --two-stems avoids
     # producing unused drums/bass/other tracks and returns vocals/no_vocals.
     if mode not in {"simple", "detailed"} or engine not in {"fast", "studio"}:
-        raise HTTPException(400, "Mode de séparation invalide.")
+        raise HTTPException(400, localized(language, "Mode de séparation invalide.", "Invalid separation mode."))
     # `mdx` is the light CPU-friendly, non-quantized model. Its previous
     # `mdx_q` variant needs the optional DiffQ C++ extension, which is not
     # installable out of the box on Windows without Visual C++ Build Tools.
@@ -105,9 +110,9 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=3600)
     except FileNotFoundError as exc:
-        raise HTTPException(500, "Demucs est introuvable. Exécutez pip install -r requirements.txt.") from exc
+        raise HTTPException(500, localized(language, "Demucs est introuvable. Exécutez pip install -r requirements.txt.", "Demucs was not found. Run pip install -r requirements.txt.")) from exc
     except subprocess.TimeoutExpired as exc:
-        raise HTTPException(504, "La séparation a dépassé une heure.") from exc
+        raise HTTPException(504, localized(language, "La séparation a dépassé une heure.", "Separation exceeded one hour.")) from exc
 
     if result.returncode != 0:
         # Demucs writes progress to stdout and warnings/errors to stderr. Keep
@@ -115,11 +120,13 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
         # exception behind a harmless Torchaudio deprecation warning.
         stderr = (result.stderr or "").strip()
         stdout = (result.stdout or "").strip()
-        detail = f"Sortie Demucs :\n{stdout}\n\nErreurs :\n{stderr}".strip()
-        raise HTTPException(500, f"Demucs a échoué : {detail[-6000:]}")
+        output_heading = localized(language, "Sortie Demucs", "Demucs output")
+        errors_heading = localized(language, "Erreurs", "Errors")
+        detail = f"{output_heading} :\n{stdout}\n\n{errors_heading} :\n{stderr}".strip()
+        raise HTTPException(500, f"{localized(language, 'Demucs a échoué', 'Demucs failed')}: {detail[-6000:]}")
 
     if any(not (stem_dir / filename).exists() for filename in filenames.values()):
-        raise HTTPException(500, "Demucs n'a pas produit tous les stems attendus.")
+        raise HTTPException(500, localized(language, "Demucs n'a pas produit tous les stems attendus.", "Demucs did not produce every expected stem."))
     job_stems[job_id] = stem_dir
     return {
         "jobId": job_id,
@@ -129,16 +136,16 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
 
 
 @app.get("/api/jobs/{job_id}/{stem}")
-def stem(job_id: str, stem: str):
+def stem(job_id: str, stem: str, lang: str = "fr"):
     # Never use unchecked URL values as file-system paths.
     if stem not in {"vocals", "accompaniment", "drums", "bass", "other"} or not job_id.isalnum():
         raise HTTPException(404)
     filename = "no_vocals.wav" if stem == "accompaniment" else f"{stem}.wav"
     stem_dir = job_stems.get(job_id)
     if not stem_dir:
-        raise HTTPException(404, "Stem introuvable.")
+        raise HTTPException(404, localized(lang, "Stem introuvable.", "Stem not found."))
     path = stem_dir / filename
     if not path.is_file():
-        raise HTTPException(404, "Stem introuvable.")
+        raise HTTPException(404, localized(lang, "Stem introuvable.", "Stem not found."))
     return FileResponse(path, media_type="audio/wav", filename=f"{stem}.wav")
 

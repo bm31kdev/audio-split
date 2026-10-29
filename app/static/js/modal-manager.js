@@ -1,3 +1,5 @@
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.2';
+
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
 
@@ -12,11 +14,12 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
+    loadComponent('language-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}`;
 }
 
 /**
@@ -45,12 +48,13 @@ function createAnimatedModal(modal, closeSelector, returnFocus) {
 }
 
 // Render a compact control: its accessible name remains available without a visible label.
-function controlMarkup(key, label, value, min, max, step = 1) {
+function controlMarkup(key, labelKey, value, min, max, step = 1) {
+  const label = t(labelKey);
   return `<label class="fx-control" title="${label}"><input data-effect-input="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${label}"><output data-effect-output="${key}">${value}</output></label>`;
 }
 
-function effectCard(title, description, controls) {
-  return `<article class="fx-effect-card"><h3>${title}</h3><p>${description}</p><div class="fx-control-grid">${controls}</div></article>`;
+function effectCard(titleKey, descriptionKey, controls) {
+  return `<article class="fx-effect-card"><h3>${t(titleKey)}</h3><p>${t(descriptionKey)}</p><div class="fx-control-grid">${controls}</div></article>`;
 }
 
 /**
@@ -65,29 +69,30 @@ export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, g
 
   const open = (name) => {
     const info = stemInfo[name];
+    const trackName = t(info.titleKey);
     const values = getValues(name);
     const cards = [];
-    title.textContent = `Fx — ${info.title}`;
+    title.textContent = t('fx.title', { track: trackName });
 
     // EQ and filters are useful for every stem, so they are always available.
-    cards.push(effectCard('Égaliseur 3 bandes', 'Ajustez rapidement la couleur de la piste.', [
-      controlMarkup('eqLow', 'Graves', values.eqLow, -12, 12),
-      controlMarkup('eqMid', 'Médiums', values.eqMid, -12, 12),
-      controlMarkup('eqHigh', 'Aigus', values.eqHigh, -12, 12),
+    cards.push(effectCard('fx.eq.title', 'fx.eq.description', [
+      controlMarkup('eqLow', 'fx.low', values.eqLow, -12, 12),
+      controlMarkup('eqMid', 'fx.mid', values.eqMid, -12, 12),
+      controlMarkup('eqHigh', 'fx.high', values.eqHigh, -12, 12),
     ].join('')));
-    cards.push(effectCard('Filtres', 'Retirez les graves ou les aigus rapidement.', [
-      controlMarkup('highPass', 'Passe-haut', values.highPass, 0, 100),
-      controlMarkup('lowPass', 'Passe-bas', values.lowPass, 0, 100),
+    cards.push(effectCard('fx.filters.title', 'fx.filters.description', [
+      controlMarkup('highPass', 'fx.highPass', values.highPass, 0, 100),
+      controlMarkup('lowPass', 'fx.lowPass', values.lowPass, 0, 100),
     ].join('')));
 
-    if (['vocals', 'bass'].includes(name)) cards.push(effectCard('Compresseur', 'Stabilise les écarts de niveau.', controlMarkup('compressor', 'Compression', values.compressor, 0, 100)));
+    if (['vocals', 'bass'].includes(name)) cards.push(effectCard('fx.compressor.title', 'fx.compressor.description', controlMarkup('compressor', 'fx.compression', values.compressor, 0, 100)));
     if (name === 'vocals') {
-      cards.push(effectCard('Reverb', 'Ajoute de l’espace à la voix.', controlMarkup('reverb', 'Mix', values.reverb, 0, 100)));
-      cards.push(effectCard('Delay', 'Ajoute un écho rythmique à la voix.', controlMarkup('delay', 'Mix', values.delay, 0, 100)));
+      cards.push(effectCard('fx.reverb.title', 'fx.reverb.description', controlMarkup('reverb', 'fx.mix', values.reverb, 0, 100)));
+      cards.push(effectCard('fx.delay.title', 'fx.delay.description', controlMarkup('delay', 'fx.mix', values.delay, 0, 100)));
     }
-    if (name === getWidthTarget()) cards.push(effectCard('Stéréo width', '100 garde la largeur originale.', controlMarkup('width', 'Largeur', values.width, 0, 200)));
-    if (name !== 'vocals') cards.push(effectCard('Ducking voix', 'Baisse cette piste lorsque la voix chante.', controlMarkup('ducking', 'Ducking', values.ducking, 0, 100)));
-    if (name === getSaturationTarget()) cards.push(`<article class="fx-effect-card fx-saturation-card"><p class="eyebrow fx-bass-label">EFFET BASSE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans monter le volume.</p><div class="fx-control-grid">${controlMarkup('saturation', 'Saturation basse', values.saturation, 0, 100)}</div></article>`);
+    if (name === getWidthTarget()) cards.push(effectCard('fx.width.title', 'fx.width.description', controlMarkup('width', 'fx.width', values.width, 0, 200)));
+    if (name !== 'vocals') cards.push(effectCard('fx.duck.title', 'fx.duck.description', controlMarkup('ducking', 'fx.duck', values.ducking, 0, 100)));
+    if (name === getSaturationTarget()) cards.push(`<article class="fx-effect-card fx-saturation-card"><p class="eyebrow fx-bass-label">${t('fx.bass.label')}</p><h3>${t('fx.bass.title')}</h3><p>${t('fx.bass.description')}</p><div class="fx-control-grid">${controlMarkup('saturation', 'fx.bass.title', values.saturation, 0, 100)}</div></article>`);
 
     content.innerHTML = `<div class="fx-effect-grid">${cards.join('')}</div>`;
     content.querySelectorAll('[data-effect-input]').forEach((input) => {
@@ -110,5 +115,19 @@ export function createChangelogModal(trigger) {
   const modal = document.querySelector('#changelogModal');
   const animated = createAnimatedModal(modal, '.changelog-close', trigger);
   trigger.onclick = animated.show;
+  return { close: animated.close };
+}
+
+/** Create the compact language picker controlled by the globe button. */
+export function createLanguageModal(trigger) {
+  const modal = document.querySelector('#languageModal');
+  const animated = createAnimatedModal(modal, '.language-close', trigger);
+  const refresh = () => modal.querySelectorAll('[data-language-choice]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.languageChoice === getLanguage());
+  });
+  trigger.onclick = () => { refresh(); animated.show(); };
+  modal.querySelectorAll('[data-language-choice]').forEach((button) => {
+    button.onclick = () => { setLanguage(button.dataset.languageChoice); refresh(); animated.close(); };
+  });
   return { close: animated.close };
 }

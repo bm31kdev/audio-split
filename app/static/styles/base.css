@@ -23,7 +23,10 @@ header { display: flex; align-items: center; gap: 11px; border-bottom: 1px solid
 h1 { font-size: 18px; line-height: 1.1; }
 h1 span, .eyebrow, .local { color: var(--lime); }
 header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
-.local { margin-left: auto; font: 12px 'DM Mono', monospace; }
+.language-button { width: 42px; height: 34px; margin-left: auto; padding: 0; color: #cfd5df; background: #171a21; border-color: #3e4654; font: 500 10px 'DM Mono', monospace; }
+.language-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.language-button:hover:not(:disabled) { color: var(--lime); border-color: var(--lime); }
+.local { margin-left: 0; font: 12px 'DM Mono', monospace; }
 .hero { padding: 68px 0 42px; }
 .eyebrow { margin-bottom: 12px; font: 500 11px 'DM Mono', monospace; letter-spacing: 1.5px; }
 .hero h2, .mixer h2 { font-size: clamp(35px, 6vw, 62px); line-height: 1.02; letter-spacing: -2.5px; }

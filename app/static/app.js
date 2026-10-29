@@ -4,9 +4,10 @@ import { createThreeBandEq, updateThreeBandEq } from './js/effects/three-band-eq
 import { createReverb, updateReverb } from './js/effects/reverb.js';
 import { createDelay, updateDelay } from './js/effects/delay.js';
 import { createFilters, updateFilters } from './js/effects/filters.js';
-import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.1.7.1';
+import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.2';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, mountModalComponents } from './js/modal-manager.js?v=1.1.7.3';
+import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.2';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.2';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
@@ -15,7 +16,7 @@ const automationByTrack = {};
 const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHigh: 0, reverb: 0, delay: 0, highPass: 0, lowPass: 0, width: 100, ducking: 0 };
 const effectsByTrack = {};
 let audioCtx, liveNodes = new Map(), playing = false, paused = false, playStartedAt = 0, automationDragging = false, playheadFrame, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
-let fxModal, changelogModal;
+let fxModal, changelogModal, languageModal;
 
 function status(message, error = false) {
   // The import card is the single place where asynchronous work reports status.
@@ -113,11 +114,11 @@ function drawWaveform(name, buffer) {
   const automation = automationByTrack[name]; if (automation?.points.length) { const points = automation.points.map(point => ({ x: (point.time / buffer.duration) * width, y: graphHeight * (1 - (point.pan + 100) / 200) })); ctx.globalAlpha = 1; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); for (let i = 0; i < points.length - 1; i++) { const p0 = points[i - 1] || points[i], p1 = points[i], p2 = points[i + 1], p3 = points[i + 2] || p2; ctx.bezierCurveTo(p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6, p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6, p2.x, p2.y); } ctx.stroke(); points.forEach((point, index) => { ctx.fillStyle = index === automation.selected ? '#d7ff54' : '#a78bfa'; ctx.beginPath(); ctx.arc(point.x, point.y, index === automation.selected ? 5 : 4, 0, Math.PI * 2); ctx.fill(); }); }
 }
 const stemInfo = {
-  vocals: { title: 'Voix', detail: 'Stem vocal extrait', icon: 'mic' },
-  accompaniment: { title: 'Accompagnement', detail: 'Musique sans voix', icon: 'wave' },
-  drums: { title: 'Batterie & kicks', detail: 'Batterie, percussions et kicks', icon: 'drum' },
-  bass: { title: 'Basse', detail: 'Bassline extraite', icon: 'bass' },
-  other: { title: 'Instruments', detail: 'Autres instruments et nappes', icon: 'spark' },
+  vocals: { titleKey: 'stem.vocals', detailKey: 'stem.vocalsDetail', icon: 'mic' },
+  accompaniment: { titleKey: 'stem.accompaniment', detailKey: 'stem.accompanimentDetail', icon: 'wave' },
+  drums: { titleKey: 'stem.drums', detailKey: 'stem.drumsDetail', icon: 'drum' },
+  bass: { titleKey: 'stem.bass', detailKey: 'stem.bassDetail', icon: 'bass' },
+  other: { titleKey: 'stem.other', detailKey: 'stem.otherDetail', icon: 'spark' },
 };
 function icon(name) {
   const paths = { mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0012 0M12 17v4M9 21h6"/>', wave: '<path d="M3 12h3l2-6 4 12 3-8 2 2h4"/>', drum: '<ellipse cx="12" cy="16" rx="7" ry="4"/><path d="M5 10v6M19 10v6M5 10c0-2 14-2 14 0M8 6l2 4m4-4-2 4"/>', bass: '<path d="M7 3v18M7 5h6l4 4-4 4H7M7 13h6l4 4-4 4H7"/>', spark: '<path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3z"/>' };
@@ -132,8 +133,9 @@ function setTransportState(state = 'stopped') {
   const hasTracks = Object.keys(tracks).length > 0;
   playButton.disabled = !hasTracks;
   playButton.innerHTML = isPlaying ? pauseIcon() : playIcon();
-  playButton.setAttribute('aria-label', isPlaying ? 'Mettre la lecture en pause' : isPaused ? 'Reprendre la lecture' : 'Écouter le mix');
-  playButton.title = isPlaying ? 'Mettre la lecture en pause' : isPaused ? 'Reprendre la lecture' : 'Écouter le mix';
+  const playLabel = isPlaying ? t('pause.title') : isPaused ? t('resume.title') : t('play.title');
+  playButton.setAttribute('aria-label', playLabel);
+  playButton.title = playLabel;
   stopButton.disabled = !isPlaying && !isPaused;
 }
 function ensureAutomation(name, duration) { automationByTrack[name] = { points: [{ time: 0, pan: 0 }, { time: duration, pan: 0 }], selected: 0 }; }
@@ -193,12 +195,25 @@ function animatePlayheads() {
   updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt));
   playheadFrame = requestAnimationFrame(animatePlayheads);
 }
-function renderTracks(names) {
+function snapshotTrackControls(names) {
+  return Object.fromEntries(names.map((name) => {
+    const volume = document.querySelector(`[data-control="${name}"][data-param="volume"]`);
+    const pan = document.querySelector(`[data-control="${name}"][data-param="pan"]`);
+    const mute = document.querySelector(`[data-mute="${name}"]`);
+    return [name, volume && pan && mute ? { volume: volume.value, pan: pan.value, muted: mute.getAttribute('aria-pressed') === 'true' } : {}];
+  }));
+}
+function renderTracks(names, savedControls = {}) {
   // Detailed splits expose a bass stem; simple splits use accompaniment as the bass source.
   saturationTarget = names.includes('bass') ? 'bass' : 'accompaniment';
   widthTarget = names.includes('other') ? 'other' : 'accompaniment';
   names.forEach(name => { effectsByTrack[name] ??= { ...effectDefaults }; });
-  $('#tracks').innerHTML = names.map(name => { const info = stemInfo[name], automation = `<div class="automation-tools"><span>Pan ${info.title.toLowerCase()}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">Gauche</button><button type="button" data-automation-pan="${name}" data-pan="0">Centre</button><button type="button" data-automation-pan="${name}" data-pan="100">Droite</button><button type="button" class="remove-point" data-automation-remove="${name}" title="Supprimer le point sélectionné">×</button></div>`; return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${info.title}</h3><p>${info.detail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="Ouvrir les effets de ${info.title}">Fx</button><div class="pan-fader" title="Panoramique"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="Panoramique : ${info.title}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="0"></div><output id="${name}PanOut">0</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="Forme d'onde : ${info.title}"></canvas><span class="playhead" data-playhead="${name}" aria-hidden="true"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="false" title="Couper ${info.title}">${speakerIcon()}</button><div class="volume-fader" title="Volume"><div class="gauge volume-gauge"><i></i><input aria-label="Volume : ${info.title}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="100"></div><output id="${name}VolumeOut">100</output></div></div></article>`; }).join('');
+  $('#tracks').innerHTML = names.map((name) => {
+    const info = stemInfo[name], trackTitle = t(info.titleKey), trackDetail = t(info.detailKey), saved = savedControls[name] || {};
+    const volume = saved.volume ?? 100, pan = saved.pan ?? 0, muted = saved.muted ?? false;
+    const automation = `<div class="automation-tools"><span>${t('automation.pan', { track: trackTitle.toLowerCase() })}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">${t('automation.left')}</button><button type="button" data-automation-pan="${name}" data-pan="0">${t('automation.center')}</button><button type="button" data-automation-pan="${name}" data-pan="100">${t('automation.right')}</button><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}">×</button></div>`;
+    return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${trackTitle}</h3><p>${trackDetail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="${t('fx.open', { track: trackTitle })}">Fx</button><div class="pan-fader" title="${t('control.panTitle')}"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="${t('control.pan', { track: trackTitle })}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="${pan}"></div><output id="${name}PanOut">${pan}</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="${trackTitle}"></canvas><span class="playhead" data-playhead="${name}" aria-hidden="true"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="${muted}" title="${t('control.mute', { track: trackTitle })}">${speakerIcon(muted)}</button><div class="volume-fader" title="${t('control.volumeTitle')}"><div class="gauge volume-gauge"><i></i><input aria-label="${t('control.volume', { track: trackTitle })}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="${volume}"></div><output id="${name}VolumeOut">${volume}</output></div></div></article>`;
+  }).join('');
   document.querySelectorAll('[data-control]').forEach(el => el.oninput = updateOutputs);
   document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.innerHTML = speakerIcon(!muted); updateLiveMix(); });
   bindAutomation();
@@ -236,7 +251,7 @@ async function playMix() {
         updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt));
       }
     } catch (error) {
-      status(`Impossible de modifier la lecture : ${error.message}`, true);
+      status(t('status.playbackChange', { error: error.message }), true);
     }
     return;
   }
@@ -275,7 +290,7 @@ async function playMix() {
   } catch (error) {
     stop();
     console.error('Audio playback could not start.', error);
-    status(`La lecture n’a pas pu démarrer : ${error.message}`, true);
+    status(t('status.playbackStart', { error: error.message }), true);
   }
 }
 function wavBlob(buffer) {
@@ -292,7 +307,7 @@ async function exportMix() {
   for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,offline.destination); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0);source.start();offlineNodes.set(name,nodes); }
   // Offline rendering has no animation frame, so schedule the vocal envelope in advance.
   if (tracks.vocals) for (const [name, nodes] of offlineNodes) if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline);
-  status('Rendu stéréo en cours…'); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();URL.revokeObjectURL(url);status('Mixage WAV stéréo exporté.');
+  status(t('status.rendering')); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();URL.revokeObjectURL(url);status(t('status.exported'));
 }
 $('#chooseButton').onclick = () => $('#fileInput').click();
 $('#fileInput').onchange = (event) => {
@@ -311,24 +326,25 @@ async function separateAudio() {
   const engine = document.querySelector('input[name="engine"]:checked').value;
   button.disabled = true;
   cacheButton.disabled = true;
-  status(engine === 'fast' ? 'Séparation rapide en cours…' : 'Séparation studio en cours — comptez quelques minutes…');
+  status(engine === 'fast' ? t('status.fast') : t('status.studio'));
   const form = new FormData();
   form.append('file', file);
   form.append('mode', mode);
   form.append('engine', engine);
+  form.append('language', getLanguage());
 
   try {
     const response = await fetch('/api/separate', { method: 'POST', body: form });
     const data = await response.json();
-    if (!response.ok) throw Error(data.detail || 'Erreur de séparation');
+    if (!response.ok) throw Error(data.detail || t('status.separationError'));
 
     // Decoding completes before the mixer is rendered, preventing a half-ready UI.
     if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
     const names = Object.keys(data.stems);
     const decoded = await Promise.all(names.map(async (name) => [
       name,
-      await fetch(data.stems[name]).then(async (stemResponse) => {
-        if (!stemResponse.ok) throw Error(`La piste ${name} est introuvable.`);
+      await fetch(`${data.stems[name]}?lang=${getLanguage()}`).then(async (stemResponse) => {
+        if (!stemResponse.ok) throw Error(t('status.trackMissing', { track: t(stemInfo[name].titleKey) }));
         return audioCtx.decodeAudioData(await stemResponse.arrayBuffer());
       }),
     ]));
@@ -348,7 +364,7 @@ async function separateAudio() {
       names.forEach(refreshAutomation);
     });
     $('#exportButton').disabled = false;
-    status(data.cacheHit ? 'Résultat chargé instantanément depuis le cache local.' : 'Séparation terminée. Glissez les points de n’importe quelle courbe pour automatiser son panoramique.');
+    status(data.cacheHit ? t('status.cached') : t('status.finished'));
   } catch (error) {
     console.error('Audio separation failed.', error);
     status(error.message, true);
@@ -362,11 +378,11 @@ async function clearAudioSplitCache() {
   const button = $('#clearCacheButton');
   button.disabled = true;
   try {
-    const response = await fetch('/api/cache', { method: 'DELETE' });
+    const response = await fetch(`/api/cache?lang=${getLanguage()}`, { method: 'DELETE' });
     const data = await response.json();
-    if (!response.ok) throw Error(data.detail || 'Impossible de vider le cache.');
+    if (!response.ok) throw Error(data.detail || t('status.cacheError'));
     const total = data.removedJobs + data.removedUploads;
-    status(`${data.message} ${total} élément${total > 1 ? 's' : ''} supprimé${total > 1 ? 's' : ''}.`);
+    status(t('status.cacheCleared', { count: total, plural: total > 1 ? 's' : '' }));
   } catch (error) {
     console.error('AudioSplit cache could not be cleared.', error);
     status(error.message, true);
@@ -380,11 +396,13 @@ $('#clearCacheButton').onclick = () => { void clearAudioSplitCache(); };
 $('#playButton').onclick = () => { void playMix(); };
 $('#stopButton').onclick = stop;
 $('#exportButton').onclick = exportMix;
+applyTranslations();
 setTransportState();
 // Modal HTML is loaded separately so individual dialogs can evolve independently.
 async function initializeModalComponents() {
   try {
     await mountModalComponents($('#modalRoot'));
+    applyTranslations();
     fxModal = createFxModal({
       stemInfo,
       getSaturationTarget: () => saturationTarget,
@@ -393,6 +411,7 @@ async function initializeModalComponents() {
       setValue: (name, key, value) => { effectsByTrack[name][key] = value; updateLiveMix(); },
     });
     changelogModal = createChangelogModal($('#versionButton'));
+    languageModal = createLanguageModal($('#languageButton'));
     bindFxButtons();
   } catch (error) {
     // A missing component should not block audio separation or mixing.
@@ -400,6 +419,20 @@ async function initializeModalComponents() {
     $('#versionButton').disabled = true;
   }
 }
+onLanguageChange(() => {
+  const names = Object.keys(tracks);
+  if (names.length) {
+    const savedControls = snapshotTrackControls(names);
+    fxModal?.close();
+    renderTracks(names, savedControls);
+    requestAnimationFrame(() => {
+      names.forEach((name) => { if (tracks[name]) drawWaveform(name, tracks[name]); });
+      names.forEach(refreshAutomation);
+      updatePlayheads(Math.max(0, audioCtx ? audioCtx.currentTime - playStartedAt : 0));
+    });
+  }
+  setTransportState(playing ? (paused ? 'paused' : 'playing') : 'stopped');
+});
 initializeModalComponents();
-document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); } });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); } });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));

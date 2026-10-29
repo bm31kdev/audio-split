@@ -23,6 +23,24 @@
 .fx-empty-state span { color: #d8ccff; }
 .fx-done { display: flex; margin-left: auto; color: #101407; background: var(--lime); border-color: var(--lime); }
 
+/* The language picker mirrors the existing modal motion at a compact size. */
+.language-modal { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
+.language-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
+.language-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609b8; backdrop-filter: blur(2px); transition: opacity 0.22s ease; }
+.language-dialog { position: relative; width: min(390px, 100%); padding: 22px; opacity: 0; background: linear-gradient(145deg, #1c1a25, #111217 70%); border: 1px solid #3b344c; border-radius: 18px; box-shadow: 0 26px 80px #000a; transform: translateY(18px) scale(0.96); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.language-modal.is-open .language-backdrop { opacity: 1; }
+.language-modal.is-open .language-dialog { opacity: 1; transform: translateY(0) scale(1); }
+.language-dialog-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.language-dialog-top .eyebrow { margin-bottom: 7px; color: #c6b9ff; }
+.language-dialog h2 { font-size: 24px; letter-spacing: -1px; }
+.language-dialog p:last-child { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.language-close { width: 34px; height: 34px; padding: 0; border-radius: 8px; }
+.language-close svg { width: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.language-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 22px; }
+.language-options button { display: flex; min-height: 76px; flex-direction: column; gap: 8px; background: #17191e; border-color: #363c2e; }
+.language-options button:hover:not(:disabled), .language-options button.active { color: #f5ffe0; background: #202816; border-color: #667a3f; }
+.language-code { color: var(--lime); font: 500 17px 'DM Mono', monospace; }
+
 /* Saturation controls are only injected for the selected bass-oriented stem. */
 .fx-effect-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .fx-effect-card { padding: 14px; background: #17191e; border: 1px solid #363c2e; border-radius: 12px; }
@@ -64,7 +82,7 @@
 
 @media (max-width: 540px) {
   .version-button { bottom: 12px; left: 12px; }
-  .fx-modal, .changelog-modal { padding: 12px; }
+  .fx-modal, .changelog-modal, .language-modal { padding: 12px; }
   .fx-dialog { padding: 19px; }
   .fx-empty-state, .fx-effect-card { padding: 14px; }
   .fx-effect-grid { grid-template-columns: 1fr; }
