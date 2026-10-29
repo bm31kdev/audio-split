@@ -41,6 +41,9 @@ button:hover:not(:disabled) { background: #303644; transform: translateY(-1px); 
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 .import-card strong { display: block; margin: 15px 0; color: #cbd0da; font-size: 12px; }
 .primary, .export { display: block; margin: 15px auto 0; color: #101407; background: var(--lime); border-color: var(--lime); }
+.cache-button { margin-top: 10px; color: #c5cad5; background: transparent; border-color: #3b414e; }
+.cache-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cache-button:hover:not(:disabled) { color: #ffe0d7; background: #302225; border-color: var(--orange); }
 .status { min-height: 16px; }
 
 /* Fieldsets provide the simple and detailed separation choices. */

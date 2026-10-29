@@ -20,10 +20,15 @@ export function createStereoWidth(context, input, amount) {
   input.connect(splitter);
   splitter.connect(leftToMid, 0); splitter.connect(rightToMid, 1);
   splitter.connect(leftToSide, 0); splitter.connect(rightToSide, 1);
-  leftToMid.connect(midToLeft).connect(merger, 0); rightToMid.connect(midToLeft);
-  leftToMid.connect(midToRight).connect(merger, 1); rightToMid.connect(midToRight);
-  leftToSide.connect(sideToLeft).connect(merger, 0); rightToSide.connect(sideToLeft);
-  leftToSide.connect(sideToRight).connect(merger, 1); rightToSide.connect(sideToRight);
+  leftToMid.connect(midToLeft); rightToMid.connect(midToLeft);
+  leftToMid.connect(midToRight); rightToMid.connect(midToRight);
+  leftToSide.connect(sideToLeft); rightToSide.connect(sideToLeft);
+  leftToSide.connect(sideToRight); rightToSide.connect(sideToRight);
+  // connect(destination, output, input): the merger has one output but two inputs.
+  midToLeft.connect(merger, 0, 0);
+  sideToLeft.connect(merger, 0, 0);
+  midToRight.connect(merger, 0, 1);
+  sideToRight.connect(merger, 0, 1);
   const effect = { sideToLeft, sideToRight, output: merger };
   updateStereoWidth(effect, amount, context);
   return effect;

@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.1.6
+# AudioSplit Studio — v1.1.7
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, d’ajuster ses pistes et de télécharger votre propre mixage stéréo.
 
@@ -42,6 +42,7 @@ Pendant la lecture, les changements de volume, panoramique G/D ou sourdine sont 
 - La première séparation télécharge le modèle Demucs (environ 300 Mo) et peut prendre quelques minutes. Les suivantes sont plus rapides.
 - Sur un PC sans carte graphique compatible, la séparation est effectuée par le processeur ; c’est normal si elle prend du temps.
 - L’export est un fichier WAV PCM 16 bits stéréo.
+- Le bouton **Vider le cache AudioSplit** supprime les séparations et fichiers audio temporaires déjà calculés sur votre PC. Votre morceau ouvert dans le mixeur reste disponible jusqu’au rechargement de la page.
 
 ## Si quelque chose bloque
 

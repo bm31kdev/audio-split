@@ -44,9 +44,9 @@ function createAnimatedModal(modal, closeSelector, returnFocus) {
   return { close, show };
 }
 
-// Render a conventional horizontal control for effects that do not need a fader.
+// Render a compact control: its accessible name remains available without a visible label.
 function controlMarkup(key, label, value, min, max, step = 1) {
-  return `<label class="fx-control"><span>${label}</span><output data-effect-output="${key}">${value}</output><input data-effect-input="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${label}"></label>`;
+  return `<label class="fx-control" title="${label}"><input data-effect-input="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${label}"><output data-effect-output="${key}">${value}</output></label>`;
 }
 
 function effectCard(title, description, controls) {
@@ -87,7 +87,7 @@ export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, g
     }
     if (name === getWidthTarget()) cards.push(effectCard('Stéréo width', '100 garde la largeur originale.', controlMarkup('width', 'Largeur', values.width, 0, 200)));
     if (name !== 'vocals') cards.push(effectCard('Ducking voix', 'Baisse cette piste lorsque la voix chante.', controlMarkup('ducking', 'Ducking', values.ducking, 0, 100)));
-    if (name === getSaturationTarget()) cards.push(`<article class="fx-effect-card fx-saturation-card"><div class="fx-effect-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c2-7 4 7 6 0s4-7 6 0 3 0 4-3"/></svg></div><div class="fx-effect-copy"><p class="eyebrow">EFFET BASSE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans monter le volume.</p></div><div class="fx-saturation-fader" title="Saturation basse"><div class="fx-gauge" style="--level:${values.saturation}%"><i></i><input data-effect-input="saturation" type="range" min="0" max="100" value="${values.saturation}" aria-label="Saturation basse"></div><output data-effect-output="saturation">${values.saturation}</output></div></article>`);
+    if (name === getSaturationTarget()) cards.push(`<article class="fx-effect-card fx-saturation-card"><p class="eyebrow fx-bass-label">EFFET BASSE</p><h3>Saturation basse</h3><p>Ajoute du grain aux graves sans monter le volume.</p><div class="fx-control-grid">${controlMarkup('saturation', 'Saturation basse', values.saturation, 0, 100)}</div></article>`);
 
     content.innerHTML = `<div class="fx-effect-grid">${cards.join('')}</div>`;
     content.querySelectorAll('[data-effect-input]').forEach((input) => {
@@ -96,7 +96,6 @@ export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, g
         const value = Number(event.currentTarget.value);
         setValue(name, key, value);
         content.querySelectorAll(`[data-effect-output="${key}"]`).forEach(output => { output.textContent = value; });
-        if (key === 'saturation') content.querySelector('.fx-gauge').style.setProperty('--level', `${value}%`);
       };
     });
 

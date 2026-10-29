@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
 import subprocess
 import sys
 import uuid
@@ -26,10 +27,36 @@ app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="stati
 app.mount("/logo", StaticFiles(directory=ROOT / "logo"), name="logo")
 
 
+def clear_directory_children(directory: Path) -> int:
+    """Remove only known cache children while preserving the cache directory."""
+    removed = 0
+    for child in directory.iterdir():
+        if child.is_dir():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+        removed += 1
+    return removed
+
+
 @app.get("/")
 def home():
     # The application shell loads static modules and component fragments itself.
     return FileResponse(ROOT / "app" / "static" / "index.html")
+
+
+@app.delete("/api/cache")
+def clear_cache():
+    # Both folders contain generated local data only: no project source is touched.
+    removed_jobs = clear_directory_children(JOBS)
+    removed_uploads = clear_directory_children(UPLOADS)
+    job_stems.clear()
+    return {
+        "cleared": True,
+        "removedJobs": removed_jobs,
+        "removedUploads": removed_uploads,
+        "message": "Le cache AudioSplit a été vidé.",
+    }
 
 
 @app.post("/api/separate")

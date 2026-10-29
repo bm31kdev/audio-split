@@ -4,9 +4,9 @@ import { createThreeBandEq, updateThreeBandEq } from './js/effects/three-band-eq
 import { createReverb, updateReverb } from './js/effects/reverb.js';
 import { createDelay, updateDelay } from './js/effects/delay.js';
 import { createFilters, updateFilters } from './js/effects/filters.js';
-import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js';
+import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.1.7.1';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, mountModalComponents } from './js/modal-manager.js';
+import { createChangelogModal, createFxModal, mountModalComponents } from './js/modal-manager.js?v=1.1.7.3';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
@@ -14,7 +14,7 @@ const tracks = {};
 const automationByTrack = {};
 const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHigh: 0, reverb: 0, delay: 0, highPass: 0, lowPass: 0, width: 100, ducking: 0 };
 const effectsByTrack = {};
-let audioCtx, liveNodes = new Map(), playing = false, playStartedAt = 0, automationDragging = false, playheadFrame, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
+let audioCtx, liveNodes = new Map(), playing = false, paused = false, playStartedAt = 0, automationDragging = false, playheadFrame, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
 let fxModal, changelogModal;
 
 function status(message, error = false) {
@@ -124,6 +124,18 @@ function icon(name) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
 }
 function speakerIcon(muted = false) { return muted ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5zM17 10l4 4m0-4-4 4"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5zM17 9a4 4 0 010 6"/></svg>'; }
+function playIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>'; }
+function pauseIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'; }
+function setTransportState(state = 'stopped') {
+  const playButton = $('#playButton'), stopButton = $('#stopButton');
+  const isPlaying = state === 'playing', isPaused = state === 'paused';
+  const hasTracks = Object.keys(tracks).length > 0;
+  playButton.disabled = !hasTracks;
+  playButton.innerHTML = isPlaying ? pauseIcon() : playIcon();
+  playButton.setAttribute('aria-label', isPlaying ? 'Mettre la lecture en pause' : isPaused ? 'Reprendre la lecture' : 'Écouter le mix');
+  playButton.title = isPlaying ? 'Mettre la lecture en pause' : isPaused ? 'Reprendre la lecture' : 'Écouter le mix';
+  stopButton.disabled = !isPlaying && !isPaused;
+}
 function ensureAutomation(name, duration) { automationByTrack[name] = { points: [{ time: 0, pan: 0 }, { time: duration, pan: 0 }], selected: 0 }; }
 function automationCoordinates(event, canvas) {
   const buffer = tracks[canvas.dataset.waveform], rect = canvas.getBoundingClientRect(), graphHeight = rect.height - 20;
@@ -172,6 +184,7 @@ function updatePlayheads(offset = 0) {
 }
 function animatePlayheads() {
   if (!playing || !audioCtx) { playheadFrame = undefined; updatePlayheads(); return; }
+  if (paused) { playheadFrame = undefined; updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt)); return; }
   // Ducking shares the animation clock with the playhead to avoid another loop.
   const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
   for (const [name, nodes] of liveNodes) {
@@ -193,18 +206,77 @@ function renderTracks(names) {
   updateOutputs();
 }
 // Stop all live nodes together because every stem starts at the same audio clock time.
-function stop() { if (playheadFrame) cancelAnimationFrame(playheadFrame); playheadFrame = undefined; voiceMeter = undefined; liveNodes.forEach(({ source }) => { try { source.stop(); } catch {} }); liveNodes = new Map(); playing = false; updatePlayheads(); $('#playButton').disabled = false; $('#stopButton').disabled = true; }
-function playMix() {
-  // Live sources use the same effect graph as the offline export below.
-  stop(); audioCtx ??= new AudioContext(); playStartedAt = audioCtx.currentTime;
-  for (const [name, buffer] of Object.entries(tracks)) {
-    const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, audioCtx.destination);
-    source.buffer = buffer; schedulePan(nodes.panner, name, cfg, playStartedAt);
-    source.onended = () => { if (playing) stop(); }; source.start(); liveNodes.set(name, { source, ...nodes });
+function stop() {
+  playbackToken += 1;
+  if (playheadFrame) cancelAnimationFrame(playheadFrame);
+  playheadFrame = undefined;
+  voiceMeter = undefined;
+  liveNodes.forEach(({ source }) => {
+    source.onended = null;
+    try { source.stop(); } catch {}
+  });
+  liveNodes = new Map();
+  playing = false;
+  paused = false;
+  updatePlayheads();
+  setTransportState();
+}
+async function playMix() {
+  if (playing && audioCtx) {
+    try {
+      if (paused) {
+        await audioCtx.resume();
+        paused = false;
+        setTransportState('playing');
+        playheadFrame ??= requestAnimationFrame(animatePlayheads);
+      } else {
+        await audioCtx.suspend();
+        paused = true;
+        setTransportState('paused');
+        updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt));
+      }
+    } catch (error) {
+      status(`Impossible de modifier la lecture : ${error.message}`, true);
+    }
+    return;
   }
-  // The vocal meter drives every instrumental ducking node during playback.
-  if (liveNodes.has('vocals')) voiceMeter = createVoiceMeter(audioCtx, liveNodes.get('vocals').gain);
-  playing = true; updatePlayheads(); playheadFrame = requestAnimationFrame(animatePlayheads); $('#playButton').disabled = true; $('#stopButton').disabled = false;
+
+  if (!Object.keys(tracks).length) return;
+  stop();
+  if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
+  try {
+    // A context created after a long Demucs task is commonly suspended by Chrome.
+    await audioCtx.resume();
+    playStartedAt = audioCtx.currentTime;
+    const token = ++playbackToken;
+    const totalSources = Object.keys(tracks).length;
+    let completedSources = 0;
+    playing = true;
+    paused = false;
+    setTransportState('playing');
+
+    for (const [name, buffer] of Object.entries(tracks)) {
+      const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, audioCtx.destination);
+      source.buffer = buffer;
+      schedulePan(nodes.panner, name, cfg, playStartedAt);
+      source.onended = () => {
+        if (token !== playbackToken) return;
+        completedSources += 1;
+        if (completedSources === totalSources) stop();
+      };
+      source.start();
+      liveNodes.set(name, { source, ...nodes });
+    }
+
+    // The vocal meter drives every instrumental ducking node during playback.
+    if (liveNodes.has('vocals')) voiceMeter = createVoiceMeter(audioCtx, liveNodes.get('vocals').gain);
+    updatePlayheads();
+    playheadFrame = requestAnimationFrame(animatePlayheads);
+  } catch (error) {
+    stop();
+    console.error('Audio playback could not start.', error);
+    status(`La lecture n’a pas pu démarrer : ${error.message}`, true);
+  }
 }
 function wavBlob(buffer) {
   const channels = buffer.numberOfChannels, length = buffer.length * channels * 2, out = new ArrayBuffer(44 + length), view = new DataView(out);
@@ -222,10 +294,93 @@ async function exportMix() {
   if (tracks.vocals) for (const [name, nodes] of offlineNodes) if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline);
   status('Rendu stéréo en cours…'); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();URL.revokeObjectURL(url);status('Mixage WAV stéréo exporté.');
 }
-$('#chooseButton').onclick=()=>$('#fileInput').click();
-$('#fileInput').onchange=(e)=>{const f=e.target.files[0];$('#fileName').textContent=f?f.name:'';$('#separateButton').disabled=!f;status('');};
-$('#separateButton').onclick=async()=>{const file=$('#fileInput').files[0],button=$('#separateButton'),mode=document.querySelector('input[name="splitMode"]:checked').value,engine=document.querySelector('input[name="engine"]:checked').value;button.disabled=true;status(engine==='fast'?'Séparation rapide en cours…':'Séparation studio en cours — comptez quelques minutes…');const form=new FormData();form.append('file',file);form.append('mode',mode);form.append('engine',engine);try{const res=await fetch('/api/separate',{method:'POST',body:form}),data=await res.json();if(!res.ok)throw Error(data.detail||'Erreur de séparation');audioCtx ??= new AudioContext();const names=Object.keys(data.stems);renderTracks(names);const decoded=await Promise.all(names.map(async name=>[name,await fetch(data.stems[name]).then(r=>r.arrayBuffer()).then(b=>audioCtx.decodeAudioData(b))]));Object.keys(tracks).forEach(name=>delete tracks[name]);decoded.forEach(([name,buffer])=>{tracks[name]=buffer;ensureAutomation(name,buffer.duration);});$('#mixer').classList.remove('hidden');requestAnimationFrame(()=>{decoded.forEach(([name,buffer])=>drawWaveform(name,buffer));names.forEach(refreshAutomation);});$('#playButton').disabled=false;$('#exportButton').disabled=false;status(data.cacheHit?'Résultat chargé instantanément depuis le cache local.':'Séparation terminée. Glissez les points de n’importe quelle courbe pour automatiser son panoramique.');}catch(err){status(err.message,true);button.disabled=false;}};
-$('#playButton').onclick=playMix;$('#stopButton').onclick=stop;$('#exportButton').onclick=exportMix;
+$('#chooseButton').onclick = () => $('#fileInput').click();
+$('#fileInput').onchange = (event) => {
+  const file = event.target.files[0];
+  $('#fileName').textContent = file ? file.name : '';
+  $('#separateButton').disabled = !file;
+  status('');
+};
+
+async function separateAudio() {
+  const file = $('#fileInput').files[0];
+  if (!file) return;
+  const button = $('#separateButton');
+  const cacheButton = $('#clearCacheButton');
+  const mode = document.querySelector('input[name="splitMode"]:checked').value;
+  const engine = document.querySelector('input[name="engine"]:checked').value;
+  button.disabled = true;
+  cacheButton.disabled = true;
+  status(engine === 'fast' ? 'Séparation rapide en cours…' : 'Séparation studio en cours — comptez quelques minutes…');
+  const form = new FormData();
+  form.append('file', file);
+  form.append('mode', mode);
+  form.append('engine', engine);
+
+  try {
+    const response = await fetch('/api/separate', { method: 'POST', body: form });
+    const data = await response.json();
+    if (!response.ok) throw Error(data.detail || 'Erreur de séparation');
+
+    // Decoding completes before the mixer is rendered, preventing a half-ready UI.
+    if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
+    const names = Object.keys(data.stems);
+    const decoded = await Promise.all(names.map(async (name) => [
+      name,
+      await fetch(data.stems[name]).then(async (stemResponse) => {
+        if (!stemResponse.ok) throw Error(`La piste ${name} est introuvable.`);
+        return audioCtx.decodeAudioData(await stemResponse.arrayBuffer());
+      }),
+    ]));
+
+    stop();
+    Object.keys(tracks).forEach((name) => delete tracks[name]);
+    Object.keys(effectsByTrack).forEach((name) => delete effectsByTrack[name]);
+    decoded.forEach(([name, buffer]) => {
+      tracks[name] = buffer;
+      ensureAutomation(name, buffer.duration);
+    });
+    renderTracks(names);
+    setTransportState();
+    $('#mixer').classList.remove('hidden');
+    requestAnimationFrame(() => {
+      decoded.forEach(([name, buffer]) => drawWaveform(name, buffer));
+      names.forEach(refreshAutomation);
+    });
+    $('#exportButton').disabled = false;
+    status(data.cacheHit ? 'Résultat chargé instantanément depuis le cache local.' : 'Séparation terminée. Glissez les points de n’importe quelle courbe pour automatiser son panoramique.');
+  } catch (error) {
+    console.error('Audio separation failed.', error);
+    status(error.message, true);
+  } finally {
+    button.disabled = !$('#fileInput').files[0];
+    cacheButton.disabled = false;
+  }
+}
+
+async function clearAudioSplitCache() {
+  const button = $('#clearCacheButton');
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/cache', { method: 'DELETE' });
+    const data = await response.json();
+    if (!response.ok) throw Error(data.detail || 'Impossible de vider le cache.');
+    const total = data.removedJobs + data.removedUploads;
+    status(`${data.message} ${total} élément${total > 1 ? 's' : ''} supprimé${total > 1 ? 's' : ''}.`);
+  } catch (error) {
+    console.error('AudioSplit cache could not be cleared.', error);
+    status(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+$('#separateButton').onclick = () => { void separateAudio(); };
+$('#clearCacheButton').onclick = () => { void clearAudioSplitCache(); };
+$('#playButton').onclick = () => { void playMix(); };
+$('#stopButton').onclick = stop;
+$('#exportButton').onclick = exportMix;
+setTransportState();
 // Modal HTML is loaded separately so individual dialogs can evolve independently.
 async function initializeModalComponents() {
   try {

@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.1.6">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.1.6">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.1.7">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.1.7">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.1.6">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.1.6">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.1.6">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.1.7">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.1.7">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.1.7">
 </head>
 <body>
   <main>
@@ -31,6 +31,7 @@
       <fieldset class="split-mode engine-mode"><legend>Vitesse de séparation</legend><label><input type="radio" name="engine" value="fast" checked> Rapide — recommandé sur CPU</label><label><input type="radio" name="engine" value="studio"> Studio — meilleure précision, plus lent</label></fieldset>
       <button id="chooseButton">Choisir un fichier</button><strong id="fileName"></strong>
       <button id="separateButton" class="primary" disabled>Séparer la voix et l'accompagnement</button>
+      <button id="clearCacheButton" class="cache-button" type="button" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M9 7l1-3h4l1 3M6 7l1 13h10l1-13"/></svg>Vider le cache AudioSplit</button>
       <p id="status" class="status" aria-live="polite"></p>
     </section>
 
@@ -38,15 +39,15 @@
     <section id="mixer" class="mixer hidden">
       <div class="mixer-top"><div><p class="eyebrow">MIXAGE</p><h2>Vos pistes</h2></div><div class="transport"><button id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button><button id="stopButton" aria-label="Arrêter" title="Arrêter" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z"/></svg></button></div></div>
       <div id="tracks" class="tracks"></div>
-      <button id="exportButton" class="export">↓ Exporter le mixage WAV stéréo</button>
+      <button id="exportButton" class="export" disabled>↓ Exporter le mixage WAV stéréo</button>
     </section>
   </main>
 
   <!-- The badge is always available; its dialog is loaded from a component file. -->
-  <button id="versionButton" class="version-button" type="button" title="Voir l’historique des versions">AudioSplit <strong>v1.1.6</strong></button>
+  <button id="versionButton" class="version-button" type="button" title="Voir l’historique des versions">AudioSplit <strong>v1.1.7</strong></button>
   <div id="modalRoot"></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.1.6"></script>
+  <script type="module" src="/static/app.js?v=1.1.7"></script>
 </body>
 </html>
