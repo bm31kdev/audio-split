@@ -1,81 +1,83 @@
-# AudioSplit Studio — v1.2
+# AudioSplit Studio — v1.2.1
 
-AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
+AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
-## Start the application
+> [Read this guide in English →](README.en.md)
 
-Download or clone this repository, open PowerShell inside the project folder, then run this single command:
+## Démarrer l’application
+
+Téléchargez ou clonez le projet, ouvrez PowerShell dans son dossier, puis lancez cette seule commande :
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 ```
 
-On the first run, the launcher does everything automatically:
+Au premier lancement, le script fait tout automatiquement :
 
-1. Installs Python 3.11 and FFmpeg if they are missing.
-2. Installs AudioSplit Studio dependencies.
-3. Opens the app at <http://127.0.0.1:8000>.
+1. Installe Python 3.11 et FFmpeg s’ils sont absents.
+2. Installe les dépendances d’AudioSplit Studio.
+3. Ouvre l’application à l’adresse <http://127.0.0.1:8000>.
 
-When `Installation complete: OK` appears, the app is ready. Keep the PowerShell window open while using AudioSplit Studio. Press `Ctrl+C` in that window to stop the server.
+Lorsque `Installation complete: OK` s’affiche, l’application est prête. Gardez la fenêtre PowerShell ouverte pendant son utilisation. Pour arrêter le serveur, faites `Ctrl+C` dans cette fenêtre.
 
-> Already ran the command once? Run the exact same command again. It checks the existing setup and does not reinstall packages unnecessarily.
+> Vous avez déjà utilisé cette commande ? Relancez exactement la même. Elle vérifie l’installation existante et ne réinstalle pas inutilement les paquets.
 
-## Use AudioSplit Studio
+## Utiliser AudioSplit Studio
 
-1. Pick a separation mode at the top of the page.
-2. Import an `MP3`, `WAV`, `FLAC`, `M4A`, or `OGG` file.
-3. Start separation and wait for the local process to finish.
-4. Play the result, adjust tracks and effects, then export a stereo WAV mix.
+1. Choisissez un type de séparation en haut de la page.
+2. Importez un fichier `MP3`, `WAV`, `FLAC`, `M4A` ou `OGG`.
+3. Lancez la séparation locale et attendez sa fin.
+4. Écoutez le résultat, réglez les pistes et les effets, puis exportez un WAV stéréo.
 
-### Pick the right separation mode
+### Choisir le bon type de séparation
 
-| Goal | Mode | Result |
+| Votre objectif | Mode | Résultat |
 | --- | --- | --- |
-| Make karaoke or isolate singing | **Vocals + accompaniment** | Vocal stem and music-without-vocals stem |
-| Edit a song precisely | **Detailed** | Vocals, drums/kicks, bass, and other instruments as separate tracks |
+| Faire un karaoké ou isoler le chant | **Voix + accompagnement** | Une piste voix et une piste musique sans voix |
+| Retoucher précisément un morceau | **Détaillée** | Voix, batterie/kicks, basse et autres instruments séparés |
 
-During playback, volume, left/right pan, mute, automation, and effect changes are applied immediately. Every track includes a waveform with time markers and pan automation points.
+Pendant la lecture, les réglages de volume, panoramique, sourdine, automatisation et effets sont appliqués immédiatement. Chaque piste possède une forme d’onde avec repères temporels et points d’automatisation du panoramique.
 
-## Language
+## Changer la langue
 
-Use the small globe button in the top-right corner of the application to choose **Français** or **English**. The selection is saved in your browser.
+Utilisez le petit bouton globe en haut à droite de l’application pour choisir **Français** ou **English**. Le choix est enregistré dans votre navigateur et s’applique aussi aux messages de l’application.
 
-## Effects
+## Effets
 
-The Fx button beside each track gives access to context-appropriate effects:
+Le bouton **Fx** à côté de chaque piste affiche les effets pertinents :
 
-- 3-band EQ and high/low-pass filters on every track.
-- Compressor on vocals and bass.
-- Reverb and delay on vocals.
-- Stereo width on accompaniment or instruments.
-- Vocal ducking on non-vocal tracks.
-- Bass saturation on bass, or on accompaniment in simple mode.
+- Égaliseur 3 bandes et filtres passe-haut/passe-bas sur toutes les pistes.
+- Compresseur sur la voix et la basse.
+- Reverb et delay sur la voix.
+- Largeur stéréo sur l’accompagnement ou les instruments.
+- Ducking voix sur les pistes non vocales.
+- Saturation basse sur la basse, ou sur l’accompagnement en mode simple.
 
-## Notes
+## À savoir
 
-- Processing happens entirely on your PC. Music files are never sent to an online service.
-- The first run downloads the selected Demucs model and can take a few minutes. Later separations can be loaded from the local cache.
-- On a PC without a compatible GPU, Demucs uses the CPU.
-- The export is a 16-bit PCM stereo WAV file.
-- **Clear AudioSplit cache** removes cached separations and temporary uploaded audio files from your PC. Your currently open mixer remains available until the page is reloaded.
+- Le traitement se fait entièrement sur votre PC : les musiques ne sont jamais envoyées à un service en ligne.
+- La première utilisation d’un modèle Demucs peut prendre quelques minutes ; les résultats suivants peuvent venir du cache local.
+- Sans carte graphique compatible, Demucs utilise le processeur.
+- L’export est un WAV PCM stéréo 16 bits.
+- **Vider le cache AudioSplit** supprime les séparations enregistrées et les fichiers audio temporaires de votre PC. Le mixeur actuellement ouvert reste utilisable jusqu’au rechargement de la page.
 
-## Troubleshooting
+## En cas de problème
 
-First, close PowerShell and the browser, then run the same startup command again:
+Commencez par fermer PowerShell et le navigateur, puis relancez la commande de démarrage :
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 ```
 
-If `winget` is unavailable, install **App Installer** from the Microsoft Store and try again. The automatic launcher currently supports Windows only.
+Si `winget` est introuvable, installez **App Installer** depuis le Microsoft Store, puis relancez la commande. Le lanceur automatique prend actuellement en charge Windows uniquement.
 
-## Project structure
+## Structure du projet
 
-The project intentionally stays simple: FastAPI runs Demucs locally in `app/main.py`, while the Web Audio mixer lives in `app/static/`. Temporary separation data is stored locally in `data/` and is not versioned.
+Le projet reste volontairement simple : FastAPI exécute Demucs localement dans `app/main.py`, tandis que le mixeur Web Audio se trouve dans `app/static/`. Les données temporaires sont enregistrées localement dans `data/` et ne sont pas versionnées.
 
-- `app/static/index.html`: application shell.
-- `app/static/components/`: Fx, language, and version-history modal HTML.
-- `app/static/js/i18n.js`: French/English UI dictionary and language persistence.
-- `app/static/js/effects/`: one Web Audio module per effect.
-- `app/static/js/modal-manager.js`: loading and lifecycle for modal components.
-- `app/static/app.js`: mixer orchestration, playback, export, and language-aware UI.
+- `app/static/index.html` : structure principale de l’application.
+- `app/static/components/` : HTML des modals Fx, langue et historique des versions.
+- `app/static/js/i18n.js` : dictionnaires français/anglais et sauvegarde du choix de langue.
+- `app/static/js/effects/` : un module Web Audio par effet.
+- `app/static/js/modal-manager.js` : chargement et cycle de vie des modals.
+- `app/static/app.js` : orchestration du mixeur, de la lecture, de l’export et de l’interface multilingue.

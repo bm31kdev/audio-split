@@ -6,8 +6,8 @@ import { createDelay, updateDelay } from './js/effects/delay.js';
 import { createFilters, updateFilters } from './js/effects/filters.js';
 import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.2';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.2';
-import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.2';
+import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.2.1';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.2.1';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
