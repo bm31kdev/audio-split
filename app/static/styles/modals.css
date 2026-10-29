@@ -1,0 +1,88 @@
+/* Fixed version badge opens the changelog component from components/. */
+.version-button { position: fixed; z-index: 10; bottom: 18px; left: 18px; padding: 8px 11px; color: #cbd1dc; font: 500 10px 'DM Mono', monospace; background: #171a21e8; border-color: #3e4654; border-radius: 999px; box-shadow: 0 8px 24px #0007; backdrop-filter: blur(10px); }
+.version-button strong { color: var(--lime); font-weight: 500; }
+.version-button:hover:not(:disabled) { color: #fff; background: #20252d; border-color: var(--lime); transform: translateY(-2px); }
+
+/* Fx modal uses a short opacity/scale transition controlled by modal-manager.js. */
+.fx-modal { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
+.fx-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
+.fx-modal-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609b8; backdrop-filter: blur(2px); transition: opacity 0.22s ease; }
+.fx-dialog { position: relative; width: min(680px, 100%); padding: 23px; opacity: 0; background: linear-gradient(145deg, #1c1a25, #111217 70%); border: 1px solid #3b344c; border-radius: 18px; box-shadow: 0 26px 80px #000a; transform: translateY(18px) scale(0.96); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.fx-modal.is-open .fx-modal-backdrop { opacity: 1; }
+.fx-modal.is-open .fx-dialog { opacity: 1; transform: translateY(0) scale(1); }
+.fx-dialog-top { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+.fx-dialog-top .eyebrow { margin-bottom: 7px; color: #c6b9ff; }
+.fx-dialog h2 { font-size: 25px; letter-spacing: -1px; }
+.fx-close { width: 34px; height: 34px; padding: 0; border-radius: 8px; }
+.fx-close svg { width: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.fx-modal-content { margin: 24px 0 20px; }
+.fx-empty-state { display: grid; justify-items: center; padding: 26px 18px; text-align: center; background: #15171d; border: 1px dashed #3c3e49; border-radius: 12px; }
+.fx-empty-state > svg { width: 28px; height: 28px; margin-bottom: 12px; fill: none; stroke: var(--lime); stroke-width: 1.5; stroke-linecap: round; }
+.fx-empty-state h3 { font-size: 15px; }
+.fx-empty-state p { max-width: 285px; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.fx-empty-state span { color: #d8ccff; }
+.fx-done { display: flex; margin-left: auto; color: #101407; background: var(--lime); border-color: var(--lime); }
+
+/* Saturation controls are only injected for the selected bass-oriented stem. */
+.fx-effect-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.fx-effect-card { padding: 14px; background: #17191e; border: 1px solid #363c2e; border-radius: 12px; }
+.fx-effect-icon { display: grid; flex: 0 0 auto; width: 36px; height: 36px; place-items: center; color: var(--lime); border: 1px solid #667a3f; border-radius: 9px; }
+.fx-effect-icon svg { width: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fx-effect-copy { min-width: 0; }
+.fx-effect-card .eyebrow { margin-bottom: 5px; color: #c7dc8a; font-size: 9px; }
+.fx-effect-card h3 { font-size: 16px; }
+.fx-effect-card p { margin-top: 5px; color: #b5bdac; font-size: 12px; line-height: 1.45; }
+.fx-intensity { display: grid; grid-template-columns: 1fr auto; gap: 9px; margin-top: 14px; color: #e6e9e0; font: 500 11px 'DM Mono', monospace; }
+.fx-intensity output { color: var(--lime); }
+.fx-intensity input { grid-column: 1 / -1; width: 100%; accent-color: var(--lime); }
+.fx-control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; margin-top: 12px; }
+.fx-control { display: grid; grid-template-columns: 1fr auto; gap: 5px; color: #cfd5c4; font: 10px 'DM Mono', monospace; }
+.fx-control output { color: var(--lime); }
+.fx-control input { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--lime); }
+.fx-saturation-card { display: flex; align-items: center; gap: 13px; background: linear-gradient(120deg, #202816, #17191e); border-color: #4a5137; }
+/* This compact vertical gauge mirrors the mixer volume control without a text label. */
+.fx-saturation-fader { display: grid; grid-template-rows: 1fr 12px; align-items: center; flex: 0 0 auto; width: 48px; height: 66px; padding: 4px; color: var(--lime); background: #242934; border: 1px solid #3b414e; border-radius: 7px; }
+.fx-gauge { position: relative; grid-row: 1; width: 16px; height: 46px; justify-self: center; overflow: hidden; background: #181b22; border: 1px solid color-mix(in srgb, currentColor 38%, #242934); border-radius: 3px; }
+.fx-gauge i { position: absolute; right: 0; bottom: 0; left: 0; height: var(--level, 0%); pointer-events: none; background: currentColor; opacity: 0.9; transition: height 0.08s linear; }
+.fx-gauge input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; cursor: ns-resize; opacity: 0; writing-mode: vertical-lr; direction: rtl; }
+.fx-saturation-fader output { grid-row: 2; align-self: center; padding: 0; font: 500 10px 'DM Mono', monospace; text-align: center; }
+
+/* Changelog is a compact two-column dialog with no internal scroll container. */
+.changelog-modal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
+.changelog-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
+.changelog-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609c4; backdrop-filter: blur(3px); transition: opacity 0.22s ease; }
+.changelog-dialog { position: relative; display: flex; flex-direction: column; width: min(650px, 100%); opacity: 0; overflow: hidden; background: linear-gradient(145deg, #1b1e25, #111217 68%); border: 1px solid #3b404b; border-radius: 18px; box-shadow: 0 28px 90px #000b; transform: translateY(20px) scale(0.97); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.changelog-modal.is-open .changelog-backdrop { opacity: 1; }
+.changelog-modal.is-open .changelog-dialog { opacity: 1; transform: translateY(0) scale(1); }
+.changelog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 24px 18px; border-bottom: 1px solid var(--line); }
+.changelog-header .eyebrow { margin-bottom: 7px; }
+.changelog-header h2 { font-size: 26px; letter-spacing: -1px; }
+.changelog-header p:last-child { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.changelog-close { width: 34px; height: 34px; padding: 0; border-radius: 8px; }
+.changelog-close svg { width: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.release-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 0; padding: 18px 24px 24px; list-style: none; }
+.release { position: relative; padding: 10px 11px 10px 14px; background: #16191f; border: 1px solid #313641; border-radius: 11px; }
+.release::before { position: absolute; top: 11px; bottom: 11px; left: 0; width: 3px; content: ''; background: #657080; border-radius: 0 3px 3px 0; }
+.release.current { background: linear-gradient(100deg, #202816, #16191f); border-color: #657e37; }
+.release.current::before { background: var(--lime); }
+.release-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.release h3 { font: 500 12px 'DM Mono', monospace; }
+.release.current h3 { color: var(--lime); }
+.release-tag { padding: 3px 6px; color: #d7ff54; font: 9px 'DM Mono', monospace; text-transform: uppercase; border: 1px solid #465035; border-radius: 999px; }
+.release p { margin-top: 4px; color: #b1b7c2; font-size: 11px; line-height: 1.35; }
+
+@media (max-width: 540px) {
+  .version-button { bottom: 12px; left: 12px; }
+  .fx-modal, .changelog-modal { padding: 12px; }
+  .fx-dialog { padding: 19px; }
+  .fx-empty-state, .fx-effect-card { padding: 14px; }
+  .fx-saturation-fader { width: 48px; }
+  .fx-effect-grid { grid-template-columns: 1fr; }
+  .changelog-header { padding: 19px 18px 15px; }
+  .changelog-header h2 { font-size: 23px; }
+  .release-list { gap: 5px; padding: 12px; }
+  .release { padding: 8px 9px 8px 12px; }
+  .release h3 { font-size: 11px; }
+  .release p { font-size: 10px; }
+  .release-tag { display: none; }
+}

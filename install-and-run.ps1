@@ -1,5 +1,5 @@
 <#
-  AudioSplit Studio v1.1.3 - installation et lancement Windows en une commande.
+  AudioSplit Studio v1.1.4 - installation et lancement Windows en une commande.
   Execution: powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 #>
 [CmdletBinding()]

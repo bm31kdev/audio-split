@@ -10,6 +10,8 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+# Keep every runtime path relative to the repository so the launcher can run
+# from any Windows PowerShell location.
 ROOT = Path(__file__).resolve().parent.parent
 JOBS = ROOT / "data" / "jobs"
 UPLOADS = ROOT / "data" / "uploads"
@@ -17,6 +19,7 @@ ALLOWED = {".mp3", ".wav", ".flac", ".m4a", ".ogg"}
 JOBS.mkdir(parents=True, exist_ok=True)
 UPLOADS.mkdir(parents=True, exist_ok=True)
 
+# The in-memory map only exposes stems produced during the current server run.
 app = FastAPI(title="AudioSplit Studio")
 job_stems: dict[str, Path] = {}
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
@@ -25,15 +28,18 @@ app.mount("/logo", StaticFiles(directory=ROOT / "logo"), name="logo")
 
 @app.get("/")
 def home():
+    # The application shell loads static modules and component fragments itself.
     return FileResponse(ROOT / "app" / "static" / "index.html")
 
 
 @app.post("/api/separate")
 async def separate(file: UploadFile = File(...), mode: str = Form("simple"), engine: str = Form("fast")):
+    # Validate the extension before creating a job folder on disk.
     suffix = Path(file.filename or "audio").suffix.lower()
     if suffix not in ALLOWED:
         raise HTTPException(415, "Format non pris en charge. Utilisez MP3, WAV, FLAC, M4A ou OGG.")
 
+    # Hashing the upload gives identical files a reusable Demucs output folder.
     job_id = uuid.uuid4().hex
     source_dir = UPLOADS / job_id
     source_dir.mkdir()
@@ -58,11 +64,13 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     filenames = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav"} if mode == "simple" else {
         "vocals": "vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav",
     }
+    # The model name is part of the cache key because quality modes differ.
     stem_dir = JOBS / model_name / source.stem
     if all((stem_dir / filename).is_file() for filename in filenames.values()):
         job_stems[job_id] = stem_dir
         return {"jobId": job_id, "cacheHit": True, "stems": {name: f"/api/jobs/{job_id}/{name}" for name in filenames}}
 
+    # Use the current virtual-environment Python to avoid calling a global Demucs.
     command = [sys.executable, "-m", "demucs", "--name", model_name, "--out", str(JOBS)]
     if mode == "simple":
         command.extend(["--two-stems", "vocals"])
@@ -95,6 +103,7 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
 
 @app.get("/api/jobs/{job_id}/{stem}")
 def stem(job_id: str, stem: str):
+    # Never use unchecked URL values as file-system paths.
     if stem not in {"vocals", "accompaniment", "drums", "bass", "other"} or not job_id.isalnum():
         raise HTTPException(404)
     filename = "no_vocals.wav" if stem == "accompaniment" else f"{stem}.wav"

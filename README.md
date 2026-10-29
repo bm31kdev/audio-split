@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.1.3
+# AudioSplit Studio — v1.1.4
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, d’ajuster ses pistes et de télécharger votre propre mixage stéréo.
 
@@ -56,3 +56,12 @@ Si le message indique que `winget` est introuvable, installez **App Installer** 
 ## Pour les développeurs
 
 Le projet est volontairement simple : FastAPI lance Demucs localement dans `app/main.py`, et l’interface de mixage Web Audio se trouve dans `app/static/`. Les fichiers temporaires générés par les séparations sont conservés localement dans `data/` et ne sont jamais versionnés.
+
+L’interface est maintenant découpée pour rester facile à faire évoluer :
+
+- `app/static/index.html` : structure principale de l’application.
+- `app/static/components/` : fichiers HTML des modals Fx et historique.
+- `app/static/styles/` : styles séparés pour la base, le mixeur et les modals.
+- `app/static/js/effects/` : modules Web Audio dédiés, dont la saturation basse.
+- `app/static/js/modal-manager.js` : chargement, ouverture et fermeture des modals.
+- `app/static/app.js` : orchestration du mixeur, de la lecture et de l’export.
