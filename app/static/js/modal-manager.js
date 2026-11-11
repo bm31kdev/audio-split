@@ -1,9 +1,15 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.2.1';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.2.2-uniform';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
 
-const componentPath = (name) => new URL(`../components/${name}`, import.meta.url);
+// Modal fragments must share the module cache version, otherwise a browser can
+// keep an older changelog even after index.html and app.js have been updated.
+const componentPath = (name) => {
+  const url = new URL(`../components/${name}`, import.meta.url);
+  url.search = new URL(import.meta.url).search;
+  return url;
+};
 
 /** Load a static HTML component and fail early if a resource is missing. */
 async function loadComponent(name) {
@@ -114,6 +120,21 @@ export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, g
 export function createChangelogModal(trigger) {
   const modal = document.querySelector('#changelogModal');
   const animated = createAnimatedModal(modal, '.changelog-close', trigger);
+  const list = modal.querySelector('.release-list');
+  const releases = [...list.querySelectorAll('.release')];
+  const groups = new Map([['1.2', []], ['1.1', []], ['1.0', []]]);
+  releases.forEach((release) => {
+    const version = release.querySelector('h3')?.textContent.match(/\d+\.\d+/)?.[0];
+    if (groups.has(version)) groups.get(version).push(release);
+  });
+  list.replaceChildren();
+  groups.forEach((items, version) => {
+    if (!items.length) return;
+    const heading = document.createElement('li');
+    heading.className = 'release-group';
+    heading.textContent = `Versions ${version}`;
+    list.append(heading, ...items);
+  });
   trigger.onclick = animated.show;
   return { close: animated.close };
 }

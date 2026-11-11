@@ -6,8 +6,8 @@ import { createDelay, updateDelay } from './js/effects/delay.js';
 import { createFilters, updateFilters } from './js/effects/filters.js';
 import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.2';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.2.1';
-import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.2.1';
+import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.2.2-uniform';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.2.2-uniform';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
@@ -301,13 +301,19 @@ function wavBlob(buffer) {
 }
 async function exportMix() {
   // OfflineAudioContext renders the current mix without recording speaker output.
-  stop(); const duration = Math.max(...Object.values(tracks).map(b => b.duration)), rate = tracks.vocals.sampleRate;
-  const offline = new OfflineAudioContext(2, Math.ceil(duration * rate), rate);
-  const offlineNodes = new Map();
-  for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,offline.destination); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0);source.start();offlineNodes.set(name,nodes); }
-  // Offline rendering has no animation frame, so schedule the vocal envelope in advance.
-  if (tracks.vocals) for (const [name, nodes] of offlineNodes) if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline);
-  status(t('status.rendering')); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();URL.revokeObjectURL(url);status(t('status.exported'));
+  if (!Object.keys(tracks).length) return;
+  try {
+    stop(); const duration = Math.max(...Object.values(tracks).map(b => b.duration)), rate = tracks.vocals.sampleRate;
+    const offline = new OfflineAudioContext(2, Math.ceil(duration * rate), rate);
+    const offlineNodes = new Map();
+    for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,offline.destination); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0);source.start();offlineNodes.set(name,nodes); }
+    // Offline rendering has no animation frame, so schedule the vocal envelope in advance.
+    if (tracks.vocals) for (const [name, nodes] of offlineNodes) if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline);
+    status(t('status.rendering')); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();setTimeout(() => URL.revokeObjectURL(url), 0);status(t('status.exported'));
+  } catch (error) {
+    console.error('Audio export failed.', error);
+    status(t('status.exportError', { error: error.message || error }), true);
+  }
 }
 $('#chooseButton').onclick = () => $('#fileInput').click();
 $('#fileInput').onchange = (event) => {
@@ -352,6 +358,7 @@ async function separateAudio() {
     stop();
     Object.keys(tracks).forEach((name) => delete tracks[name]);
     Object.keys(effectsByTrack).forEach((name) => delete effectsByTrack[name]);
+    Object.keys(automationByTrack).forEach((name) => delete automationByTrack[name]);
     decoded.forEach(([name, buffer]) => {
       tracks[name] = buffer;
       ensureAutomation(name, buffer.duration);

@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.2.1
+# AudioSplit Studio — v1.2.2
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 

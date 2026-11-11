@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import subprocess
 import sys
@@ -29,6 +30,9 @@ app.mount("/logo", StaticFiles(directory=ROOT / "logo"), name="logo")
 
 def clear_directory_children(directory: Path) -> int:
     """Remove only known cache children while preserving the cache directory."""
+    if not directory.exists():
+        directory.mkdir(parents=True, exist_ok=True)
+        return 0
     removed = 0
     for child in directory.iterdir():
         if child.is_dir():
@@ -52,7 +56,7 @@ def home():
 
 @app.delete("/api/cache")
 def clear_cache(lang: str = "fr"):
-    # Both folders contain generated local data only: no project source is touched.
+    # Both folders contain generated local data only: no user source is touched.
     removed_jobs = clear_directory_children(JOBS)
     removed_uploads = clear_directory_children(UPLOADS)
     job_stems.clear()
@@ -70,6 +74,8 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     suffix = Path(file.filename or "audio").suffix.lower()
     if suffix not in ALLOWED:
         raise HTTPException(415, localized(language, "Format non pris en charge. Utilisez MP3, WAV, FLAC, M4A ou OGG.", "Unsupported format. Use MP3, WAV, FLAC, M4A, or OGG."))
+    if mode not in {"simple", "detailed"} or engine not in {"fast", "studio"}:
+        raise HTTPException(400, localized(language, "Mode de séparation invalide.", "Invalid separation mode."))
 
     # Hashing the upload gives identical files a reusable Demucs output folder.
     job_id = uuid.uuid4().hex
@@ -86,13 +92,15 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
 
     # htdemucs is the quality model bundled with Demucs. --two-stems avoids
     # producing unused drums/bass/other tracks and returns vocals/no_vocals.
-    if mode not in {"simple", "detailed"} or engine not in {"fast", "studio"}:
-        raise HTTPException(400, localized(language, "Mode de séparation invalide.", "Invalid separation mode."))
     # `mdx` is the light CPU-friendly, non-quantized model. Its previous
     # `mdx_q` variant needs the optional DiffQ C++ extension, which is not
     # installable out of the box on Windows without Visual C++ Build Tools.
     # htdemucs remains available when precision matters more than speed.
+    # Smaller CPU chunks prevent a large song from requesting several gigabytes
+    # of RAM in one Demucs pass. Disabling random shifts keeps Fast responsive.
     model_name = "mdx" if engine == "fast" else "htdemucs"
+    segment = "4" if engine == "fast" else "6"
+    overlap = "0.1" if engine == "fast" else "0.15"
     filenames = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav"} if mode == "simple" else {
         "vocals": "vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav",
     }
@@ -103,12 +111,17 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
         return {"jobId": job_id, "cacheHit": True, "stems": {name: f"/api/jobs/{job_id}/{name}" for name in filenames}}
 
     # Use the current virtual-environment Python to avoid calling a global Demucs.
-    command = [sys.executable, "-m", "demucs", "--name", model_name, "--out", str(JOBS)]
+    command = [
+        sys.executable, "-m", "demucs", "--name", model_name, "--device", "cpu",
+        "--segment", segment, "--overlap", overlap, "--shifts", "0", "--jobs", "1", "--out", str(JOBS),
+    ]
     if mode == "simple":
         command.extend(["--two-stems", "vocals"])
     command.append(str(source))
     try:
-        result = subprocess.run(command, capture_output=True, text=True, timeout=3600)
+        thread_count = str(max(1, min(4, os.cpu_count() or 1)))
+        runtime_env = {**os.environ, "OMP_NUM_THREADS": thread_count, "MKL_NUM_THREADS": thread_count}
+        result = subprocess.run(command, capture_output=True, text=True, timeout=3600, env=runtime_env)
     except FileNotFoundError as exc:
         raise HTTPException(500, localized(language, "Demucs est introuvable. Exécutez pip install -r requirements.txt.", "Demucs was not found. Run pip install -r requirements.txt.")) from exc
     except subprocess.TimeoutExpired as exc:
@@ -123,6 +136,13 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
         output_heading = localized(language, "Sortie Demucs", "Demucs output")
         errors_heading = localized(language, "Erreurs", "Errors")
         detail = f"{output_heading} :\n{stdout}\n\n{errors_heading} :\n{stderr}".strip()
+        if "not enough memory" in detail.lower() or "defaultcpuallocator" in detail.lower():
+            message = localized(
+                language,
+                "Demucs manque de mémoire vive. Fermez les applications lourdes, puis réessayez en mode Rapide.",
+                "Demucs ran out of RAM. Close memory-heavy applications, then retry in Fast mode.",
+            )
+            raise HTTPException(507, message)
         raise HTTPException(500, f"{localized(language, 'Demucs a échoué', 'Demucs failed')}: {detail[-6000:]}")
 
     if any(not (stem_dir / filename).exists() for filename in filenames.values()):
