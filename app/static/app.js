@@ -5,15 +5,25 @@ import { createReverb, updateReverb } from './js/effects/reverb.js';
 import { createDelay, updateDelay } from './js/effects/delay.js';
 import { createFilters, updateFilters } from './js/effects/filters.js';
 import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.2';
+import { createChorus, updateChorus } from './js/effects/chorus.js';
+import { createFlanger, updateFlanger } from './js/effects/flanger.js';
+import { createPhaser, updatePhaser } from './js/effects/phaser.js';
+import { createTremolo, updateTremolo } from './js/effects/tremolo.js';
+import { createBitcrusher, updateBitcrusher } from './js/effects/bitcrusher.js';
+import { createNoiseGate, updateNoiseGate } from './js/effects/noise-gate.js';
+import { createDeEsser, updateDeEsser } from './js/effects/de-esser.js';
+import { createLimiter, updateLimiter } from './js/effects/limiter.js';
+import { createExciter, updateExciter } from './js/effects/exciter.js';
+import { effectCatalog, effectIsAvailable } from './js/effects/catalog.js';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3';
-import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3';
+import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.1';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3.1';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
 const tracks = {};
 const automationByTrack = {};
-const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHigh: 0, reverb: 0, delay: 0, highPass: 0, lowPass: 0, width: 100, ducking: 0 };
+const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHigh: 0, reverb: 0, delay: 0, highPass: 0, lowPass: 0, width: 100, ducking: 0, chorus: 0, flanger: 0, phaser: 0, tremolo: 0, bitcrusher: 0, gate: 0, deEsser: 0, limiter: 0, exciter: 0 };
 const effectsByTrack = {};
 let audioCtx, liveNodes = new Map(), playing = false, paused = false, playStartedAt = 0, playheadOffset = 0, playheadDragging = false, playheadWasPlaying = false, automationDragging = false, playheadFrame, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
 let fxModal, changelogModal, languageModal;
@@ -84,6 +94,10 @@ function getAutomationPan(name, time) {
   return points.at(-1).pan;
 }
 function combinedPan(pointPan, cfg) { return Math.max(-1, Math.min(1, pointPan / 100 + cfg.pan)); }
+function trackHasEffect(key, name) { return effectIsAvailable(effectCatalog.find(effect => effect.key === key), name, { saturation: saturationTarget, width: widthTarget }); }
+function disposeTrackNodes(nodes) {
+  Object.values(nodes?.effects || {}).forEach(effect => effect?.oscillators?.forEach(oscillator => { try { oscillator.stop(); } catch {} }));
+}
 // Each track keeps a dry signal. Only the selected bass source gets an extra
 // low-frequency saturated branch, so other stems remain untouched.
 function createTrackNodes(context, source, name, cfg, destination) {
@@ -95,19 +109,26 @@ function createTrackNodes(context, source, name, cfg, destination) {
   // Serial processors shape the main signal before panning it in the mix.
   const eq = createThreeBandEq(context, gain, cfg.effects);
   const filters = createFilters(context, eq.output, cfg.effects);
-  const compressor = ['vocals', 'bass'].includes(name) ? createCompressor(context, filters.output, cfg.effects.compressor) : null;
-  const width = name === widthTarget ? createStereoWidth(context, compressor?.output || filters.output, cfg.effects.width) : null;
-  const mainOutput = width?.output || compressor?.output || filters.output;
+  const compressor = trackHasEffect('compressor', name) ? createCompressor(context, filters.output, cfg.effects.compressor) : null;
+  let processedOutput = compressor?.output || filters.output;
+  const modulationEffects = {};
+  for (const [key, create] of [['chorus', createChorus], ['flanger', createFlanger], ['phaser', createPhaser], ['tremolo', createTremolo], ['bitcrusher', createBitcrusher], ['gate', createNoiseGate], ['deEsser', createDeEsser], ['limiter', createLimiter], ['exciter', createExciter]]) {
+    const effect = trackHasEffect(key, name) ? create(context, processedOutput, cfg.effects[key]) : null;
+    if (effect) processedOutput = effect.output;
+    modulationEffects[key] = effect;
+  }
+  const width = trackHasEffect('width', name) ? createStereoWidth(context, processedOutput, cfg.effects.width) : null;
+  const mainOutput = width?.output || processedOutput;
   mainOutput.connect(panner);
 
   // Parallel processors add ambience or grit without replacing the dry track.
-  const saturation = name === saturationTarget ? createBassSaturation(context, mainOutput, panner, cfg.effects.saturation) : null;
-  const reverb = name === 'vocals' ? createReverb(context, mainOutput, panner, cfg.effects.reverb) : null;
-  const delay = name === 'vocals' ? createDelay(context, mainOutput, panner, cfg.effects.delay) : null;
+  const saturation = trackHasEffect('saturation', name) ? createBassSaturation(context, mainOutput, panner, cfg.effects.saturation) : null;
+  const reverb = trackHasEffect('reverb', name) ? createReverb(context, mainOutput, panner, cfg.effects.reverb) : null;
+  const delay = trackHasEffect('delay', name) ? createDelay(context, mainOutput, panner, cfg.effects.delay) : null;
   const ducking = name !== 'vocals' ? createVoiceDucker(context, panner) : null;
   (ducking?.gain || panner).connect(destination);
 
-  return { gain, panner, effects: { eq, filters, compressor, width, saturation, reverb, delay, ducking } };
+  return { gain, panner, effects: { eq, filters, compressor, width, saturation, reverb, delay, ducking, ...modulationEffects } };
 }
 function updateTrackEffects(nodes, values, context, voiceLevel = 0) {
   updateThreeBandEq(nodes.effects.eq, values, context, true);
@@ -118,6 +139,15 @@ function updateTrackEffects(nodes, values, context, voiceLevel = 0) {
   if (nodes.effects.reverb) updateReverb(nodes.effects.reverb, values.reverb, context, true);
   if (nodes.effects.delay) updateDelay(nodes.effects.delay, values.delay, context, true);
   if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, values.ducking, context, true);
+  if (nodes.effects.chorus) updateChorus(nodes.effects.chorus, values.chorus, context, true);
+  if (nodes.effects.flanger) updateFlanger(nodes.effects.flanger, values.flanger, context, true);
+  if (nodes.effects.phaser) updatePhaser(nodes.effects.phaser, values.phaser, context, true);
+  if (nodes.effects.tremolo) updateTremolo(nodes.effects.tremolo, values.tremolo, context, true);
+  if (nodes.effects.bitcrusher) updateBitcrusher(nodes.effects.bitcrusher, values.bitcrusher);
+  if (nodes.effects.gate) updateNoiseGate(nodes.effects.gate, values.gate, context, true);
+  if (nodes.effects.deEsser) updateDeEsser(nodes.effects.deEsser, values.deEsser, context, true);
+  if (nodes.effects.limiter) updateLimiter(nodes.effects.limiter, values.limiter, context, true);
+  if (nodes.effects.exciter) updateExciter(nodes.effects.exciter, values.exciter, context, true);
 }
 function schedulePan(panner, name, cfg, startAt, offset = 0) {
   panner.pan.cancelScheduledValues(startAt);
@@ -230,9 +260,10 @@ function seekMix(offset, restartPlayback = true) {
   if (playheadFrame) cancelAnimationFrame(playheadFrame);
   playheadFrame = undefined;
   voiceMeter = undefined;
-  liveNodes.forEach(({ source }) => {
+  liveNodes.forEach(({ source, effects }) => {
     source.onended = null;
     try { source.stop(); } catch {}
+    disposeTrackNodes({ effects });
   });
   liveNodes = new Map();
   playStartedAt = audioCtx.currentTime - playheadOffset;
@@ -456,9 +487,10 @@ function stop() {
   if (playheadFrame) cancelAnimationFrame(playheadFrame);
   playheadFrame = undefined;
   voiceMeter = undefined;
-  liveNodes.forEach(({ source }) => {
+  liveNodes.forEach(({ source, effects }) => {
     source.onended = null;
     try { source.stop(); } catch {}
+    disposeTrackNodes({ effects });
   });
   liveNodes = new Map();
   playing = false;

@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3
+# AudioSplit Studio — v1.3.1
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -56,6 +56,12 @@ Le bouton **Fx** à côté de chaque piste affiche les effets pertinents :
 - Largeur stéréo sur l’accompagnement ou les instruments.
 - Ducking voix sur les pistes non vocales.
 - Saturation basse sur la basse, ou sur l’accompagnement en mode simple.
+- Chorus, flanger et phaser sur la voix et les pistes d’instruments.
+- Trémolo sur la voix, la batterie et les instruments ; bitcrusher sur la batterie et les instruments.
+- Noise gate sur la voix et la batterie ; de-esser sur la voix uniquement.
+- Limiteur sur toutes les pistes et exciter sur la voix et les pistes d’instruments.
+
+Chaque carte indique les pistes compatibles. Les réglages s’appliquent pendant l’écoute et sont inclus dans l’export WAV.
 
 ## À savoir
 

@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3
+# AudioSplit Studio — v1.3.1
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -56,6 +56,12 @@ The Fx button beside each track gives access to context-appropriate effects:
 - Stereo width on accompaniment or instruments.
 - Vocal ducking on non-vocal tracks.
 - Bass saturation on bass, or on accompaniment in simple mode.
+- Chorus, flanger, and phaser on vocals and instrument tracks.
+- Tremolo on vocals, drums, and instruments; bitcrusher on drums and instruments.
+- Noise gate on vocals and drums; de-esser on vocals only.
+- Limiter on every track and exciter on vocals and instrument tracks.
+
+Every card shows which tracks support the effect. Adjustments apply during playback and are included in the WAV export.
 
 ## Notes
 

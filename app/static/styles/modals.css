@@ -55,6 +55,9 @@
 .fx-bass-label::before { width: 5px; height: 5px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px #d7ff54a3; content: ''; }
 .fx-effect-card h3 { font-size: 16px; }
 .fx-effect-card p { margin-top: 5px; color: #b5bdac; font-size: 12px; line-height: 1.45; }
+.fx-effect-card.is-unavailable { border-color: #30343d; opacity: .68; }
+.fx-effect-card .fx-availability { margin-top: 9px; color: var(--lime); font-size: 10px; }
+.fx-effect-card.is-unavailable .fx-availability { color: #d4b66a; }
 .fx-control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; margin-top: 12px; }
 .fx-control { display: grid; grid-template-rows: 1fr 12px; gap: 5px; min-height: 34px; color: #cfd5c4; font: 10px 'DM Mono', monospace; }
 .fx-control output { align-self: center; color: var(--lime); text-align: center; }
