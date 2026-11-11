@@ -1,4 +1,4 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.3-beta4';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.3';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.

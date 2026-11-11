@@ -6,8 +6,8 @@ import { createDelay, updateDelay } from './js/effects/delay.js';
 import { createFilters, updateFilters } from './js/effects/filters.js';
 import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.2';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3-beta4';
-import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3-beta4';
+import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
@@ -15,7 +15,7 @@ const tracks = {};
 const automationByTrack = {};
 const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHigh: 0, reverb: 0, delay: 0, highPass: 0, lowPass: 0, width: 100, ducking: 0 };
 const effectsByTrack = {};
-let audioCtx, liveNodes = new Map(), playing = false, paused = false, playStartedAt = 0, automationDragging = false, playheadFrame, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
+let audioCtx, liveNodes = new Map(), playing = false, paused = false, playStartedAt = 0, playheadOffset = 0, playheadDragging = false, playheadWasPlaying = false, automationDragging = false, playheadFrame, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
 let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
@@ -204,23 +204,108 @@ function bindFxButtons() {
   // Track buttons are generated after a separation, so bind them after every render.
   document.querySelectorAll('[data-fx]').forEach(button => button.onclick = () => fxModal?.open(button.dataset.fx));
 }
-function updatePlayheads(offset = 0) {
+function timelineDuration() {
+  return Math.max(0, ...Object.values(tracks).map(buffer => buffer.duration));
+}
+function updatePlayheads(offset = playheadOffset) {
+  const duration = timelineDuration();
+  const position = duration ? Math.min(100, Math.max(0, (offset / duration) * 100)) : 0;
   document.querySelectorAll('[data-playhead]').forEach(playhead => {
-    const buffer = tracks[playhead.dataset.playhead];
-    const position = playing && buffer ? Math.min(100, Math.max(0, (offset / buffer.duration) * 100)) : 0;
     playhead.style.left = `${position}%`;
     playhead.classList.toggle('is-playing', playing);
+    playhead.classList.toggle('is-ready', duration > 0);
+    playhead.setAttribute('aria-valuenow', String(Math.round(position)));
+    playhead.setAttribute('aria-valuetext', formatTime(offset));
   });
+}
+function seekMix(offset, restartPlayback = true) {
+  const duration = timelineDuration();
+  if (!duration) return;
+  playheadOffset = Math.min(Math.max(0, duration - 0.02), Math.max(0, offset));
+  updatePlayheads(playheadOffset);
+  if (!restartPlayback || !playing || !audioCtx) return;
+
+  // Recreate every source at the same offset so all stems stay aligned.
+  playbackToken += 1;
+  if (playheadFrame) cancelAnimationFrame(playheadFrame);
+  playheadFrame = undefined;
+  voiceMeter = undefined;
+  liveNodes.forEach(({ source }) => {
+    source.onended = null;
+    try { source.stop(); } catch {}
+  });
+  liveNodes = new Map();
+  playStartedAt = audioCtx.currentTime - playheadOffset;
+  startPlaybackSources(playheadOffset);
+  updatePlayheads(playheadOffset);
+  if (!paused) playheadFrame = requestAnimationFrame(animatePlayheads);
+}
+function seekFromPlayhead(event, playhead) {
+  const rect = playhead.parentElement.getBoundingClientRect();
+  const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+  seekMix(ratio * timelineDuration(), false);
+}
+function bindPlayheadSeeking() {
+  document.querySelectorAll('[data-playhead]').forEach(playhead => {
+    playhead.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      playheadDragging = true;
+      playheadWasPlaying = playing;
+      playhead.setPointerCapture(event.pointerId);
+      seekFromPlayhead(event, playhead);
+    });
+    playhead.addEventListener('pointermove', event => {
+      if (playheadDragging) seekFromPlayhead(event, playhead);
+    });
+    const finishDrag = event => {
+      if (!playheadDragging) return;
+      playheadDragging = false;
+      try { playhead.releasePointerCapture(event.pointerId); } catch {}
+      if (playheadWasPlaying) seekMix(playheadOffset, true);
+      playheadWasPlaying = false;
+    };
+    playhead.addEventListener('pointerup', finishDrag);
+    playhead.addEventListener('pointercancel', finishDrag);
+    playhead.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const duration = timelineDuration();
+      const step = event.shiftKey ? 10 : 5;
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? duration : playheadOffset + (event.key === 'ArrowRight' ? step : -step);
+      seekMix(next);
+    });
+  });
+}
+function startPlaybackSources(offset = playheadOffset) {
+  const token = playbackToken;
+  const entries = Object.entries(tracks);
+  let completedSources = 0;
+  for (const [name, buffer] of entries) {
+    const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, audioCtx.destination);
+    source.buffer = buffer;
+    schedulePan(nodes.panner, name, cfg, audioCtx.currentTime, offset);
+    source.onended = () => {
+      if (token !== playbackToken) return;
+      completedSources += 1;
+      if (completedSources === entries.length) stop();
+    };
+    const sourceOffset = Math.min(offset, Math.max(0, buffer.duration - 1 / buffer.sampleRate));
+    source.start(0, sourceOffset);
+    liveNodes.set(name, { source, ...nodes });
+  }
+  if (liveNodes.has('vocals')) voiceMeter = createVoiceMeter(audioCtx, liveNodes.get('vocals').gain);
 }
 function animatePlayheads() {
   if (!playing || !audioCtx) { playheadFrame = undefined; updatePlayheads(); return; }
-  if (paused) { playheadFrame = undefined; updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt)); return; }
+  if (paused) { playheadFrame = undefined; updatePlayheads(playheadOffset); return; }
   // Ducking shares the animation clock with the playhead to avoid another loop.
   const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
   for (const [name, nodes] of liveNodes) {
     if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, settings(name).effects.ducking, audioCtx, true);
   }
-  updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt));
+  if (!playheadDragging) playheadOffset = Math.min(timelineDuration(), Math.max(0, audioCtx.currentTime - playStartedAt));
+  updatePlayheads(playheadOffset);
   playheadFrame = requestAnimationFrame(animatePlayheads);
 }
 function snapshotTrackControls(names) {
@@ -356,11 +441,12 @@ function renderTracks(names, savedControls = {}) {
     const info = stemInfo[name], trackTitle = t(info.titleKey), trackDetail = t(info.detailKey), saved = savedControls[name] || {};
     const volume = saved.volume ?? 100, pan = saved.pan ?? 0, muted = saved.muted ?? false;
     const automation = `<div class="automation-tools"><span>${t('automation.pan', { track: trackTitle.toLowerCase() })}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">${t('automation.left')}</button><button type="button" data-automation-pan="${name}" data-pan="0">${t('automation.center')}</button><button type="button" data-automation-pan="${name}" data-pan="100">${t('automation.right')}</button><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}">×</button></div>`;
-    return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${trackTitle}</h3><p>${trackDetail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="${t('fx.open', { track: trackTitle })}">Fx</button><div class="pan-fader" title="${t('control.panTitle')}"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="${t('control.pan', { track: trackTitle })}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="${pan}"></div><output id="${name}PanOut">${pan}</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="${trackTitle}"></canvas><span class="playhead" data-playhead="${name}" aria-hidden="true"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="${muted}" title="${t('control.mute', { track: trackTitle })}">${speakerIcon(muted)}</button><div class="volume-fader" title="${t('control.volumeTitle')}"><div class="gauge volume-gauge"><i></i><input aria-label="${t('control.volume', { track: trackTitle })}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="${volume}"></div><output id="${name}VolumeOut">${volume}</output></div></div></article>`;
+    return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${trackTitle}</h3><p>${trackDetail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="${t('fx.open', { track: trackTitle })}">Fx</button><div class="pan-fader" title="${t('control.panTitle')}"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="${t('control.pan', { track: trackTitle })}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="${pan}"></div><output id="${name}PanOut">${pan}</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="${trackTitle}"></canvas><span class="playhead" data-playhead="${name}" role="slider" tabindex="0" aria-label="${t('playhead.label', { track: trackTitle })}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="${muted}" title="${t('control.mute', { track: trackTitle })}">${speakerIcon(muted)}</button><div class="volume-fader" title="${t('control.volumeTitle')}"><div class="gauge volume-gauge"><i></i><input aria-label="${t('control.volume', { track: trackTitle })}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="${volume}"></div><output id="${name}VolumeOut">${volume}</output></div></div></article>`;
   }).join('');
   document.querySelectorAll('[data-control]').forEach(el => el.oninput = () => { updateOutputs(); markProjectDirty(); });
   document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.innerHTML = speakerIcon(!muted); updateLiveMix(); markProjectDirty(); });
   bindAutomation();
+  bindPlayheadSeeking();
   bindFxButtons();
   updateOutputs();
 }
@@ -377,6 +463,7 @@ function stop() {
   liveNodes = new Map();
   playing = false;
   paused = false;
+  playheadOffset = 0;
   updatePlayheads();
   setTransportState();
 }
@@ -392,7 +479,8 @@ async function playMix() {
         await audioCtx.suspend();
         paused = true;
         setTransportState('paused');
-        updatePlayheads(Math.max(0, audioCtx.currentTime - playStartedAt));
+        playheadOffset = Math.max(0, audioCtx.currentTime - playStartedAt);
+        updatePlayheads(playheadOffset);
       }
     } catch (error) {
       status(t('status.playbackChange', { error: error.message }), true);
@@ -401,35 +489,20 @@ async function playMix() {
   }
 
   if (!Object.keys(tracks).length) return;
+  const startOffset = playheadOffset;
   stop();
+  playheadOffset = startOffset;
   if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
   try {
     // A context created after a long Demucs task is commonly suspended by Chrome.
     await audioCtx.resume();
-    playStartedAt = audioCtx.currentTime;
-    const token = ++playbackToken;
-    const totalSources = Object.keys(tracks).length;
-    let completedSources = 0;
+    playStartedAt = audioCtx.currentTime - playheadOffset;
+    playbackToken += 1;
     playing = true;
     paused = false;
     setTransportState('playing');
-
-    for (const [name, buffer] of Object.entries(tracks)) {
-      const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, audioCtx.destination);
-      source.buffer = buffer;
-      schedulePan(nodes.panner, name, cfg, playStartedAt);
-      source.onended = () => {
-        if (token !== playbackToken) return;
-        completedSources += 1;
-        if (completedSources === totalSources) stop();
-      };
-      source.start();
-      liveNodes.set(name, { source, ...nodes });
-    }
-
-    // The vocal meter drives every instrumental ducking node during playback.
-    if (liveNodes.has('vocals')) voiceMeter = createVoiceMeter(audioCtx, liveNodes.get('vocals').gain);
-    updatePlayheads();
+    startPlaybackSources(playheadOffset);
+    updatePlayheads(playheadOffset);
     playheadFrame = requestAnimationFrame(animatePlayheads);
   } catch (error) {
     stop();
