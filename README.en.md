@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.2.3
+# AudioSplit Studio — v1.3 beta
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -28,6 +28,10 @@ When `Installation complete: OK` appears, the app is ready. Keep the PowerShell 
 2. Import an `MP3`, `WAV`, `FLAC`, `M4A`, or `OGG` file.
 3. Start local separation and wait for it to finish.
 4. Play the result, adjust tracks and effects, then export a stereo WAV mix.
+
+### Local folders and projects
+
+Open **Projects** in the header to create folders and save each separation as a project. The suggested project name comes from the imported filename. Separated tracks and all mixer settings (volume, pan, mute, effects, and automation curves) are stored locally in `data/library/`, with no database. After the first save, changes are autosaved every 10 seconds; the status appears at the top of the page. You can reopen, rename, or delete projects and folders after restarting the app. The cache-clearing button does not delete this library.
 
 ### Pick the right separation mode
 
@@ -73,10 +77,10 @@ If `winget` is unavailable, install **App Installer** from the Microsoft Store a
 
 ## Project structure
 
-The project intentionally stays simple: FastAPI runs Demucs locally in `app/main.py`, while the Web Audio mixer lives in `app/static/`. Temporary separation data is stored locally in `data/` and is not versioned.
+The project intentionally stays simple: FastAPI runs Demucs locally in `app/main.py`, while the Web Audio mixer lives in `app/static/`. Temporary separations live in `data/jobs/` and `data/uploads/`. The persistent library lives in `data/library/` as folders, audio files, and JSON manifests, with no database. Local data is not versioned.
 
 - `app/static/index.html`: application shell.
-- `app/static/components/`: Fx, language, and version-history modal HTML.
+- `app/static/components/`: Fx, language, project-library, and version-history modal HTML.
 - `app/static/js/i18n.js`: French/English UI dictionary and language persistence.
 - `app/static/js/effects/`: one Web Audio module per effect.
 - `app/static/js/modal-manager.js`: loading and lifecycle for modal components.

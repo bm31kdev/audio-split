@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.2.3
+# AudioSplit Studio — v1.3 beta
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -38,6 +38,10 @@ Lorsque `Installation complete: OK` s’affiche, l’application est prête. Gar
 
 Pendant la lecture, les réglages de volume, panoramique, sourdine, automatisation et effets sont appliqués immédiatement. Chaque piste possède une forme d’onde avec repères temporels et points d’automatisation du panoramique.
 
+### Dossiers et projets locaux
+
+Ouvrez **Projets** dans l’en-tête pour créer des dossiers et y enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, effets et courbes) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes ; l’état apparaît en haut de la page. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque.
+
 ## Changer la langue
 
 Utilisez le petit bouton globe en haut à droite de l’application pour choisir **Français** ou **English**. Le choix est enregistré dans votre navigateur et s’applique aussi aux messages de l’application.
@@ -73,10 +77,10 @@ Si `winget` est introuvable, installez **App Installer** depuis le Microsoft Sto
 
 ## Structure du projet
 
-Le projet reste volontairement simple : FastAPI exécute Demucs localement dans `app/main.py`, tandis que le mixeur Web Audio se trouve dans `app/static/`. Les données temporaires sont enregistrées localement dans `data/` et ne sont pas versionnées.
+Le projet reste volontairement simple : FastAPI exécute Demucs localement dans `app/main.py`, tandis que le mixeur Web Audio se trouve dans `app/static/`. Les séparations temporaires sont dans `data/jobs/` et `data/uploads/`. La bibliothèque durable se trouve dans `data/library/`, sous forme de dossiers, fichiers audio et manifestes JSON, sans base de données. Ces données locales ne sont pas versionnées.
 
 - `app/static/index.html` : structure principale de l’application.
-- `app/static/components/` : HTML des modals Fx, langue et historique des versions.
+- `app/static/components/` : HTML des modals Fx, langue, bibliothèque de projets et historique des versions.
 - `app/static/js/i18n.js` : dictionnaires français/anglais et sauvegarde du choix de langue.
 - `app/static/js/effects/` : un module Web Audio par effet.
 - `app/static/js/modal-manager.js` : chargement et cycle de vie des modals.

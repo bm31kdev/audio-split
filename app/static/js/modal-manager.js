@@ -1,4 +1,4 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.2.3';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.3-beta4';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -20,12 +20,13 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
+    loadComponent('library-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}`;
 }
 
 /**
@@ -122,7 +123,7 @@ export function createChangelogModal(trigger) {
   const animated = createAnimatedModal(modal, '.changelog-close', trigger);
   const list = modal.querySelector('.release-list');
   const releases = [...list.querySelectorAll('.release')];
-  const groups = new Map([['1.2', []], ['1.1', []], ['1.0', []]]);
+  const groups = new Map([['1.3', []], ['1.2', []], ['1.1', []], ['1.0', []]]);
   releases.forEach((release) => {
     const version = release.querySelector('h3')?.textContent.match(/\d+\.\d+/)?.[0];
     if (groups.has(version)) groups.get(version).push(release);

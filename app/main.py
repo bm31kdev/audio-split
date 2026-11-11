@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import shutil
 import subprocess
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -17,13 +19,16 @@ from fastapi.staticfiles import StaticFiles
 ROOT = Path(__file__).resolve().parent.parent
 JOBS = ROOT / "data" / "jobs"
 UPLOADS = ROOT / "data" / "uploads"
+LIBRARY = ROOT / "data" / "library"
 ALLOWED = {".mp3", ".wav", ".flac", ".m4a", ".ogg"}
 JOBS.mkdir(parents=True, exist_ok=True)
 UPLOADS.mkdir(parents=True, exist_ok=True)
+LIBRARY.mkdir(parents=True, exist_ok=True)
 
 # The in-memory map only exposes stems produced during the current server run.
 app = FastAPI(title="AudioSplit Studio")
 job_stems: dict[str, Path] = {}
+job_sources: dict[str, Path] = {}
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 app.mount("/logo", StaticFiles(directory=ROOT / "logo"), name="logo")
 
@@ -48,6 +53,36 @@ def localized(language: str, french: str, english: str) -> str:
     return english if language.lower().startswith("en") else french
 
 
+def read_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(500, "Local project metadata is unreadable.") from exc
+
+
+def safe_id(value: str) -> bool:
+    return bool(value) and all(char in "0123456789abcdef-" for char in value.lower())
+
+
+def folder_path(folder_id: str) -> Path:
+    if not safe_id(folder_id):
+        raise HTTPException(404, "Folder not found.")
+    path = LIBRARY / folder_id
+    if not (path / "folder.json").is_file():
+        raise HTTPException(404, "Folder not found.")
+    return path
+
+
+def project_path(project_id: str) -> Path:
+    if not safe_id(project_id):
+        raise HTTPException(404, "Project not found.")
+    for folder in LIBRARY.iterdir():
+        candidate = folder / "projects" / project_id
+        if candidate.is_dir() and (candidate / "project.json").is_file():
+            return candidate
+    raise HTTPException(404, "Project not found.")
+
+
 @app.get("/")
 def home():
     # The application shell loads static modules and component fragments itself.
@@ -60,6 +95,7 @@ def clear_cache(lang: str = "fr"):
     removed_jobs = clear_directory_children(JOBS)
     removed_uploads = clear_directory_children(UPLOADS)
     job_stems.clear()
+    job_sources.clear()
     return {
         "cleared": True,
         "removedJobs": removed_jobs,
@@ -108,6 +144,7 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     stem_dir = JOBS / model_name / source.stem
     if all((stem_dir / filename).is_file() for filename in filenames.values()):
         job_stems[job_id] = stem_dir
+        job_sources[job_id] = source
         return {"jobId": job_id, "cacheHit": True, "stems": {name: f"/api/jobs/{job_id}/{name}" for name in filenames}}
 
     # Use the current virtual-environment Python to avoid calling a global Demucs.
@@ -148,6 +185,7 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     if any(not (stem_dir / filename).exists() for filename in filenames.values()):
         raise HTTPException(500, localized(language, "Demucs n'a pas produit tous les stems attendus.", "Demucs did not produce every expected stem."))
     job_stems[job_id] = stem_dir
+    job_sources[job_id] = source
     return {
         "jobId": job_id,
         "cacheHit": False,
@@ -167,5 +205,143 @@ def stem(job_id: str, stem: str, lang: str = "fr"):
     path = stem_dir / filename
     if not path.is_file():
         raise HTTPException(404, localized(lang, "Stem introuvable.", "Stem not found."))
+    return FileResponse(path, media_type="audio/wav", filename=f"{stem}.wav")
+
+
+@app.get("/api/library")
+def list_library():
+    """The local folders and JSON manifests are the library; there is no database."""
+    folders = []
+    for path in LIBRARY.iterdir():
+        manifest = path / "folder.json"
+        if not path.is_dir() or not manifest.is_file():
+            continue
+        folder = read_json(manifest)
+        projects = []
+        for project_dir in (path / "projects").glob("*/"):
+            metadata = project_dir / "project.json"
+            if metadata.is_file():
+                projects.append(read_json(metadata))
+        folder["projects"] = sorted(projects, key=lambda project: project.get("updatedAt", ""), reverse=True)
+        folders.append(folder)
+    return {"folders": sorted(folders, key=lambda folder: folder.get("createdAt", ""))}
+
+
+@app.post("/api/library/folders")
+def create_folder(payload: dict):
+    name = str(payload.get("name", "")).strip()
+    if not name or len(name) > 80:
+        raise HTTPException(400, "Folder name must contain 1 to 80 characters.")
+    folder_id = uuid.uuid4().hex
+    path = LIBRARY / folder_id
+    (path / "projects").mkdir(parents=True)
+    now = datetime.now(timezone.utc).isoformat()
+    (path / "folder.json").write_text(json.dumps({"id": folder_id, "name": name, "createdAt": now}, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"id": folder_id, "name": name, "createdAt": now, "projects": []}
+
+
+@app.patch("/api/library/folders/{folder_id}")
+def rename_folder(folder_id: str, payload: dict):
+    path = folder_path(folder_id)
+    name = str(payload.get("name", "")).strip()
+    if not name or len(name) > 80:
+        raise HTTPException(400, "Folder name must contain 1 to 80 characters.")
+    folder = read_json(path / "folder.json")
+    folder["name"] = name
+    (path / "folder.json").write_text(json.dumps(folder, ensure_ascii=False, indent=2), encoding="utf-8")
+    return folder
+
+
+@app.delete("/api/library/folders/{folder_id}")
+def delete_folder(folder_id: str):
+    path = folder_path(folder_id)
+    shutil.rmtree(path)
+    return {"deleted": True}
+
+
+@app.post("/api/library/folders/{folder_id}/projects")
+def save_project(folder_id: str, payload: dict):
+    parent = folder_path(folder_id)
+    job_id = str(payload.get("jobId", ""))
+    source = job_sources.get(job_id)
+    stems = job_stems.get(job_id)
+    if not source or not source.is_file() or not stems or not stems.is_dir():
+        raise HTTPException(404, "The current separation is no longer available. Separate the track again before saving.")
+    title = str(payload.get("name", "")).strip()
+    if not title or len(title) > 120:
+        raise HTTPException(400, "Project name must contain 1 to 120 characters.")
+    mode = payload.get("mode", "simple")
+    available = ["vocals", "accompaniment"] if mode == "simple" else ["vocals", "drums", "bass", "other"]
+    files = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav"}
+    if any(not (stems / files[name]).is_file() for name in available):
+        raise HTTPException(404, "One or more separated tracks are missing.")
+    project_id = uuid.uuid4().hex
+    destination = parent / "projects" / project_id
+    try:
+        (destination / "stems").mkdir(parents=True)
+        shutil.copy2(source, destination / f"source{source.suffix.lower()}")
+        for name in available:
+            shutil.copy2(stems / files[name], destination / "stems" / files[name])
+        now = datetime.now(timezone.utc).isoformat()
+        metadata = {"id": project_id, "folderId": folder_id, "name": title, "sourceName": str(payload.get("sourceName", source.name)), "mode": mode, "engine": payload.get("engine", "fast"), "stems": available, "settings": payload.get("settings", {}), "automation": payload.get("automation", {}), "effects": payload.get("effects", {}), "createdAt": now, "updatedAt": now}
+        (destination / "project.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as exc:
+        shutil.rmtree(destination, ignore_errors=True)
+        raise HTTPException(500, f"Could not save local project: {exc}") from exc
+    return metadata
+
+
+@app.get("/api/library/projects/{project_id}")
+def load_project(project_id: str):
+    path = project_path(project_id)
+    metadata = read_json(path / "project.json")
+    metadata["audio"] = {name: f"/api/library/projects/{project_id}/{name}" for name in metadata.get("stems", [])}
+    return metadata
+
+
+@app.patch("/api/library/projects/{project_id}")
+def rename_project(project_id: str, payload: dict):
+    path = project_path(project_id)
+    metadata = read_json(path / "project.json")
+    name = str(payload.get("name", "")).strip()
+    if not name or len(name) > 120:
+        raise HTTPException(400, "Project name must contain 1 to 120 characters.")
+    metadata["name"] = name
+    metadata["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    (path / "project.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    return metadata
+
+
+@app.put("/api/library/projects/{project_id}")
+def update_project(project_id: str, payload: dict):
+    path = project_path(project_id)
+    metadata = read_json(path / "project.json")
+    name = str(payload.get("name", metadata.get("name", ""))).strip()
+    if not name or len(name) > 120:
+        raise HTTPException(400, "Project name must contain 1 to 120 characters.")
+    metadata["name"] = name
+    metadata["settings"] = payload.get("settings", metadata.get("settings", {}))
+    metadata["automation"] = payload.get("automation", metadata.get("automation", {}))
+    metadata["effects"] = payload.get("effects", metadata.get("effects", {}))
+    metadata["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    (path / "project.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    return metadata
+
+
+@app.delete("/api/library/projects/{project_id}")
+def delete_project(project_id: str):
+    path = project_path(project_id)
+    shutil.rmtree(path)
+    return {"deleted": True}
+
+
+@app.get("/api/library/projects/{project_id}/{stem}")
+def saved_stem(project_id: str, stem: str):
+    if stem not in {"vocals", "accompaniment", "drums", "bass", "other"}:
+        raise HTTPException(404, "Track not found.")
+    filename = "no_vocals.wav" if stem == "accompaniment" else f"{stem}.wav"
+    path = project_path(project_id) / "stems" / filename
+    if not path.is_file():
+        raise HTTPException(404, "Track not found.")
     return FileResponse(path, media_type="audio/wav", filename=f"{stem}.wav")
 

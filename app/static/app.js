@@ -6,8 +6,8 @@ import { createDelay, updateDelay } from './js/effects/delay.js';
 import { createFilters, updateFilters } from './js/effects/filters.js';
 import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.2';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.2.3';
-import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.2.3';
+import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3-beta4';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3-beta4';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
@@ -17,6 +17,32 @@ const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHig
 const effectsByTrack = {};
 let audioCtx, liveNodes = new Map(), playing = false, paused = false, playStartedAt = 0, automationDragging = false, playheadFrame, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
 let fxModal, changelogModal, languageModal;
+let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
+let projectDirty = false, projectSaving = false, projectRevision = 0;
+
+function autosaveNotice(state, detail = '') {
+  const notice = $('#autosaveStatus');
+  if (!notice) return;
+  const english = getLanguage() === 'en';
+  const messages = {
+    ready: english ? 'Autosave active · every 10 seconds' : 'Sauvegarde auto active · toutes les 10 s',
+    waiting: english ? 'Save this project once to enable autosave.' : 'Enregistre le projet une fois pour activer la sauvegarde auto.',
+    dirty: english ? 'Changes pending · autosave in 10 seconds' : 'Modifications en attente · sauvegarde auto sous 10 s',
+    saving: english ? 'Saving project…' : 'Sauvegarde du projet…',
+    saved: english ? `Project saved at ${detail}` : `Projet sauvegardé à ${detail}`,
+    error: english ? `Autosave failed: ${detail}` : `Échec de la sauvegarde auto : ${detail}`,
+    manualError: english ? `Could not save project: ${detail}` : `Impossible d’enregistrer le projet : ${detail}`,
+  };
+  notice.textContent = messages[state] || detail;
+  notice.dataset.state = state;
+}
+function markProjectDirty() {
+  if (!activeProjectId && !currentJobId) return;
+  projectDirty = true;
+  projectRevision += 1;
+  autosaveNotice(activeProjectId ? 'dirty' : 'waiting');
+}
+function clockTime() { return new Intl.DateTimeFormat(getLanguage() === 'en' ? 'en-US' : 'fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date()); }
 
 function status(message, error = false) {
   // The import card is the single place where asynchronous work reports status.
@@ -151,6 +177,7 @@ function selectAutomationPoint(event) {
   if (closeIndex >= 0) automation.selected = closeIndex;
   else { automation.points.push({ time, pan }); automation.points.sort((a, b) => a.time - b.time); automation.selected = automation.points.findIndex(point => point.time === time); }
   refreshAutomation(name);
+  markProjectDirty();
 }
 function moveAutomationPoint(event) {
   if (!automationDragging) return;
@@ -158,6 +185,7 @@ function moveAutomationPoint(event) {
   point.pan = pan;
   if (automation.selected > 0 && automation.selected < last) point.time = Math.max(automation.points[automation.selected - 1].time + .05, Math.min(automation.points[automation.selected + 1].time - .05, time));
   refreshAutomation(name);
+  markProjectDirty();
 }
 function refreshAutomation(name) {
   // Refreshing the curve also reschedules live panning from the current play time.
@@ -169,8 +197,8 @@ function refreshAutomation(name) {
 }
 function bindAutomation() {
   document.querySelectorAll('[data-waveform]').forEach(canvas => { canvas.addEventListener('pointerdown', event => { selectAutomationPoint(event); automationDragging = true; canvas.setPointerCapture(event.pointerId); }); canvas.addEventListener('pointermove', moveAutomationPoint); canvas.addEventListener('pointerup', event => { automationDragging = false; canvas.releasePointerCapture(event.pointerId); }); });
-  document.querySelectorAll('[data-automation-pan]').forEach(button => button.onclick = () => { const name = button.dataset.automationPan, automation = automationByTrack[name], point = automation.points[automation.selected]; if (!point) return; point.pan = +button.dataset.pan; refreshAutomation(name); });
-  document.querySelectorAll('[data-automation-remove]').forEach(remove => remove.onclick = () => { const name = remove.dataset.automationRemove, automation = automationByTrack[name]; if (automation.selected > 0 && automation.selected < automation.points.length - 1) { automation.points.splice(automation.selected, 1); automation.selected--; refreshAutomation(name); } });
+  document.querySelectorAll('[data-automation-pan]').forEach(button => button.onclick = () => { const name = button.dataset.automationPan, automation = automationByTrack[name], point = automation.points[automation.selected]; if (!point) return; point.pan = +button.dataset.pan; refreshAutomation(name); markProjectDirty(); });
+  document.querySelectorAll('[data-automation-remove]').forEach(remove => remove.onclick = () => { const name = remove.dataset.automationRemove, automation = automationByTrack[name]; if (automation.selected > 0 && automation.selected < automation.points.length - 1) { automation.points.splice(automation.selected, 1); automation.selected--; refreshAutomation(name); markProjectDirty(); } });
 }
 function bindFxButtons() {
   // Track buttons are generated after a separation, so bind them after every render.
@@ -203,6 +231,122 @@ function snapshotTrackControls(names) {
     return [name, volume && pan && mute ? { volume: volume.value, pan: pan.value, muted: mute.getAttribute('aria-pressed') === 'true' } : {}];
   }));
 }
+function savePayload() {
+  const names = Object.keys(tracks);
+  return {
+    settings: snapshotTrackControls(names),
+    effects: Object.fromEntries(names.map(name => [name, effectsByTrack[name] || { ...effectDefaults }])),
+    automation: Object.fromEntries(names.map(name => [name, automationByTrack[name] || { points: [], selected: 0 }])),
+  };
+}
+async function apiJson(url, options = {}) {
+  const response = await fetch(url, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+  return data;
+}
+function libraryLabels() {
+  return getLanguage() === 'en' ? {
+    title: 'My projects', description: 'Your folders and separations saved on this computer.', folder: 'Folder name', create: 'Create folder', empty: 'No folders yet. Create one to organize your projects.', noProjects: 'No projects in this folder yet.', open: 'Open', rename: 'Rename', remove: 'Delete', save: 'Save', update: 'Update project', saved: 'Project saved locally.', deleted: 'Deleted.', confirmFolder: 'Delete this folder and all projects inside it?', confirmProject: 'Delete this project and its audio files?', select: 'Choose a folder', needFolder: 'Create or select a folder first.', currentTitle: 'Save current separation', hint: 'A project includes the separated tracks and all mixer settings.', name: 'Project name', createSavedFolder: 'Create a folder', noAudio: 'Separate a track before creating a project.'
+  } : {
+    title: 'Mes projets', description: 'Vos dossiers et séparations enregistrés sur cet ordinateur.', folder: 'Nom du nouveau dossier', create: 'Créer un dossier', empty: 'Aucun dossier. Créez-en un pour organiser vos projets.', noProjects: 'Aucun projet dans ce dossier pour le moment.', open: 'Ouvrir', rename: 'Renommer', remove: 'Supprimer', save: 'Enregistrer', update: 'Mettre à jour', saved: 'Projet enregistré localement.', deleted: 'Élément supprimé.', confirmFolder: 'Supprimer ce dossier et tous les projets qu’il contient ?', confirmProject: 'Supprimer ce projet et ses fichiers audio ?', select: 'Choisir un dossier', needFolder: 'Créez ou choisissez d’abord un dossier.', name: 'Nom du projet', noAudio: 'Séparez un morceau avant de créer un projet.'
+  };
+}
+const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+let libraryData = { folders: [] }, selectedFolderId = null;
+async function refreshLibrary() {
+  libraryData = await apiJson('/api/library');
+  if (!libraryData.folders.some(folder => folder.id === selectedFolderId)) selectedFolderId = libraryData.folders[0]?.id || null;
+  renderLibrary();
+}
+function renderLibrary() {
+  const labels = libraryLabels(), workspace = $('#libraryWorkspace'), select = $('#saveFolderSelect');
+  $('#libraryTitle').textContent = labels.title;
+  $('#libraryDescription').textContent = labels.description;
+  const closeButton = $('#libraryModal')?.querySelector('.changelog-close');
+  if (closeButton) { const closeLabel = getLanguage() === 'en' ? 'Close' : 'Fermer'; closeButton.title = closeLabel; closeButton.setAttribute('aria-label', closeLabel); }
+  $('#newFolderName').placeholder = labels.folder;
+  $('#createFolderButton').textContent = labels.create;
+  $('#saveProjectHeading').textContent = labels.currentTitle;
+  $('#saveProjectHint').textContent = labels.hint || (getLanguage() === 'en' ? 'A project includes separated tracks and all mixer settings.' : 'Un projet contient les pistes séparées et tous les réglages du mixeur.');
+  $('#projectNameInput').placeholder = labels.name;
+  $('#saveProjectButton').textContent = activeProjectId ? labels.update : labels.save;
+  $('#saveProjectPanel').classList.toggle('hidden', !Object.keys(tracks).length || (!currentJobId && !activeProjectId));
+  select.innerHTML = libraryData.folders.length ? libraryData.folders.map(folder => `<option value="${folder.id}" ${folder.id === selectedFolderId ? 'selected' : ''}>${escapeHtml(folder.name)}</option>`).join('') : `<option value="">${labels.select}</option>`;
+  const current = libraryData.folders.find(folder => folder.id === selectedFolderId);
+  if (!current) { workspace.innerHTML = `<p class="library-empty">${labels.empty}</p>`; return; }
+  workspace.innerHTML = `<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${escapeHtml(current.name)}</h3><div><button type="button" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-delete-folder="${current.id}">${labels.remove}</button></div></div>${current.projects.length ? current.projects.map(project => `<article class="library-project"><div><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.sourceName || '')} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div><button type="button" data-open-project="${project.id}">${labels.open}</button><button type="button" data-rename-project="${project.id}">${labels.rename}</button><button type="button" data-delete-project="${project.id}">${labels.remove}</button></div></article>`).join('') : `<p class="library-empty">${labels.noProjects}</p>`}</section>`;
+  workspace.querySelectorAll('[data-folder]').forEach(button => button.onclick = () => { selectedFolderId = button.dataset.folder; renderLibrary(); });
+  workspace.querySelectorAll('[data-rename-folder]').forEach(button => button.onclick = () => void renameLibraryItem(`/api/library/folders/${button.dataset.renameFolder}`, current.name));
+  workspace.querySelectorAll('[data-delete-folder]').forEach(button => button.onclick = async () => { if (confirm(labels.confirmFolder)) { await apiJson(`/api/library/folders/${button.dataset.deleteFolder}`, { method: 'DELETE' }); if (activeProjectId && current.projects.some(project => project.id === activeProjectId)) { activeProjectId = null; currentJobId = null; } selectedFolderId = null; await refreshLibrary(); } });
+  workspace.querySelectorAll('[data-open-project]').forEach(button => button.onclick = () => void openSavedProject(button.dataset.openProject));
+  workspace.querySelectorAll('[data-rename-project]').forEach(button => button.onclick = () => { const project = current.projects.find(item => item.id === button.dataset.renameProject); void renameLibraryItem(`/api/library/projects/${project.id}`, project.name); });
+  workspace.querySelectorAll('[data-delete-project]').forEach(button => button.onclick = async () => { if (confirm(labels.confirmProject)) { await apiJson(`/api/library/projects/${button.dataset.deleteProject}`, { method: 'DELETE' }); if (activeProjectId === button.dataset.deleteProject) { activeProjectId = null; currentJobId = null; } await refreshLibrary(); } });
+}
+async function renameLibraryItem(url, oldName) {
+  const value = prompt(getLanguage() === 'en' ? 'New name:' : 'Nouveau nom :', oldName);
+  if (!value?.trim()) return;
+  try { await apiJson(url, { method: 'PATCH', body: JSON.stringify({ name: value.trim() }) }); await refreshLibrary(); }
+  catch (error) { status(error.message, true); }
+}
+async function openSavedProject(projectId) {
+  try {
+    const project = await apiJson(`/api/library/projects/${projectId}`);
+    if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
+    const decoded = await Promise.all(project.stems.map(async name => {
+      const response = await fetch(project.audio[name]);
+      if (!response.ok) throw new Error(`${name}: ${response.statusText}`);
+      return [name, await audioCtx.decodeAudioData(await response.arrayBuffer())];
+    }));
+    stop();
+    Object.keys(tracks).forEach(name => delete tracks[name]);
+    Object.keys(effectsByTrack).forEach(name => delete effectsByTrack[name]);
+    Object.keys(automationByTrack).forEach(name => delete automationByTrack[name]);
+    decoded.forEach(([name, buffer]) => { tracks[name] = buffer; effectsByTrack[name] = { ...effectDefaults, ...(project.effects?.[name] || {}) }; automationByTrack[name] = project.automation?.[name] || { points: [{ time: 0, pan: 0 }, { time: buffer.duration, pan: 0 }], selected: 0 }; });
+    currentSourceName = project.sourceName || project.name;
+    currentMode = project.mode || 'simple'; currentEngine = project.engine || 'fast';
+    document.querySelector(`input[name="splitMode"][value="${currentMode}"]`).checked = true;
+    document.querySelector(`input[name="engine"][value="${currentEngine}"]`).checked = true;
+    currentJobId = null; activeProjectId = project.id; projectDirty = false;
+    $('#fileName').textContent = currentSourceName;
+    $('#projectNameInput').value = project.name;
+    renderTracks(project.stems, project.settings || {});
+    $('#mixer').classList.remove('hidden'); $('#exportButton').disabled = false;
+    setTransportState();
+    autosaveNotice('ready');
+    requestAnimationFrame(() => { decoded.forEach(([name, buffer]) => drawWaveform(name, buffer)); project.stems.forEach(refreshAutomation); });
+    libraryModal.close(); status(getLanguage() === 'en' ? 'Project loaded from local storage.' : 'Projet chargé depuis le stockage local.');
+  } catch (error) { console.error('Could not load local project.', error); status(error.message, true); }
+}
+async function saveCurrentProject({ automatic = false } = {}) {
+  const labels = libraryLabels(), name = $('#projectNameInput').value.trim() || currentSourceName.replace(/\.[^.]+$/, '') || 'AudioSplit project';
+  if (projectSaving || !Object.keys(tracks).length) return false;
+  projectSaving = true;
+  const savedRevision = projectRevision;
+  const payload = savePayload();
+  if (activeProjectId) autosaveNotice('saving');
+  try {
+    let result;
+    if (activeProjectId) result = await apiJson(`/api/library/projects/${activeProjectId}`, { method: 'PUT', body: JSON.stringify({ name, ...payload }) });
+    else {
+      const folderId = $('#saveFolderSelect').value;
+      if (!folderId) throw new Error(labels.needFolder);
+      if (!currentJobId) throw new Error(labels.noAudio);
+      result = await apiJson(`/api/library/folders/${folderId}/projects`, { method: 'POST', body: JSON.stringify({ jobId: currentJobId, name, sourceName: currentSourceName, mode: currentMode, engine: currentEngine, ...payload }) });
+      activeProjectId = result.id;
+    }
+    $('#projectNameInput').value = result.name || name;
+    if (projectRevision === savedRevision) projectDirty = false;
+    await refreshLibrary();
+    status(labels.saved);
+    if (projectDirty) autosaveNotice('dirty'); else autosaveNotice('saved', clockTime());
+    return true;
+  } catch (error) {
+    status(error.message, true);
+    autosaveNotice(automatic ? 'error' : 'manualError', error.message);
+    return false;
+  } finally { projectSaving = false; }
+}
 function renderTracks(names, savedControls = {}) {
   // Detailed splits expose a bass stem; simple splits use accompaniment as the bass source.
   saturationTarget = names.includes('bass') ? 'bass' : 'accompaniment';
@@ -214,8 +358,8 @@ function renderTracks(names, savedControls = {}) {
     const automation = `<div class="automation-tools"><span>${t('automation.pan', { track: trackTitle.toLowerCase() })}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-automation-pan="${name}" data-pan="-100">${t('automation.left')}</button><button type="button" data-automation-pan="${name}" data-pan="0">${t('automation.center')}</button><button type="button" data-automation-pan="${name}" data-pan="100">${t('automation.right')}</button><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}">×</button></div>`;
     return `<article class="track ${name}"><div class="track-icon">${icon(info.icon)}</div><div class="track-title"><h3>${trackTitle}</h3><p>${trackDetail}</p></div><button type="button" class="fx-button" data-fx="${name}" title="${t('fx.open', { track: trackTitle })}">Fx</button><div class="pan-fader" title="${t('control.panTitle')}"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="${t('control.pan', { track: trackTitle })}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="${pan}"></div><output id="${name}PanOut">${pan}</output><span class="pan-letter">R</span></div><div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="${trackTitle}"></canvas><span class="playhead" data-playhead="${name}" aria-hidden="true"></span>${automation}</div><div class="volume-stack"><button class="mute" data-mute="${name}" aria-pressed="${muted}" title="${t('control.mute', { track: trackTitle })}">${speakerIcon(muted)}</button><div class="volume-fader" title="${t('control.volumeTitle')}"><div class="gauge volume-gauge"><i></i><input aria-label="${t('control.volume', { track: trackTitle })}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="${volume}"></div><output id="${name}VolumeOut">${volume}</output></div></div></article>`;
   }).join('');
-  document.querySelectorAll('[data-control]').forEach(el => el.oninput = updateOutputs);
-  document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.innerHTML = speakerIcon(!muted); updateLiveMix(); });
+  document.querySelectorAll('[data-control]').forEach(el => el.oninput = () => { updateOutputs(); markProjectDirty(); });
+  document.querySelectorAll('[data-mute]').forEach(button => button.onclick = () => { const muted = button.getAttribute('aria-pressed') === 'true'; button.setAttribute('aria-pressed', String(!muted)); button.innerHTML = speakerIcon(!muted); updateLiveMix(); markProjectDirty(); });
   bindAutomation();
   bindFxButtons();
   updateOutputs();
@@ -356,6 +500,13 @@ async function separateAudio() {
     ]));
 
     stop();
+    currentJobId = data.jobId;
+    currentSourceName = file.name;
+    currentMode = mode;
+    currentEngine = engine;
+    activeProjectId = null;
+    projectDirty = false;
+    if ($('#projectNameInput')) $('#projectNameInput').value = file.name.replace(/\.[^.]+$/, '');
     Object.keys(tracks).forEach((name) => delete tracks[name]);
     Object.keys(effectsByTrack).forEach((name) => delete effectsByTrack[name]);
     Object.keys(automationByTrack).forEach((name) => delete automationByTrack[name]);
@@ -371,6 +522,7 @@ async function separateAudio() {
       names.forEach(refreshAutomation);
     });
     $('#exportButton').disabled = false;
+    autosaveNotice('waiting');
     status(data.cacheHit ? t('status.cached') : t('status.finished'));
   } catch (error) {
     console.error('Audio separation failed.', error);
@@ -414,13 +566,33 @@ async function initializeModalComponents() {
     applyTranslations();
     fxModal = createFxModal({
       stemInfo,
-      getSaturationTarget: () => saturationTarget,
+    getSaturationTarget: () => saturationTarget,
       getWidthTarget: () => widthTarget,
       getValues: (name) => effectsByTrack[name] || { ...effectDefaults },
-      setValue: (name, key, value) => { effectsByTrack[name][key] = value; updateLiveMix(); },
+      setValue: (name, key, value) => { effectsByTrack[name][key] = value; updateLiveMix(); markProjectDirty(); },
     });
     changelogModal = createChangelogModal($('#versionButton'));
     languageModal = createLanguageModal($('#languageButton'));
+    const libraryElement = $('#libraryModal'), libraryTrigger = $('#libraryButton');
+    const closeLibrary = () => { libraryElement.classList.remove('is-open'); setTimeout(() => libraryElement.setAttribute('aria-hidden', 'true'), 240); libraryTrigger.focus(); };
+    libraryElement.querySelectorAll('[data-library-close]').forEach(button => button.onclick = closeLibrary);
+    libraryTrigger.onclick = async () => {
+      try { await refreshLibrary(); } catch (error) { status(error.message, true); }
+      libraryElement.setAttribute('aria-hidden', 'false'); requestAnimationFrame(() => libraryElement.classList.add('is-open'));
+      libraryElement.querySelector('.changelog-close').focus();
+    };
+    libraryModal = { close: closeLibrary };
+    $('#libraryButton').textContent = getLanguage() === 'en' ? 'Projects' : 'Projets';
+    $('#projectNameInput').value = currentSourceName.replace(/\.[^.]+$/, '');
+    $('#projectNameInput').oninput = markProjectDirty;
+    $('#createFolderButton').onclick = async () => {
+      const input = $('#newFolderName'), name = input.value.trim();
+      if (!name) { input.focus(); return; }
+      try { const folder = await apiJson('/api/library/folders', { method: 'POST', body: JSON.stringify({ name }) }); selectedFolderId = folder.id; input.value = ''; await refreshLibrary(); }
+      catch (error) { status(error.message, true); }
+    };
+    $('#saveProjectButton').onclick = () => void saveCurrentProject();
+    $('#saveFolderSelect').onchange = event => { selectedFolderId = event.target.value || null; };
     bindFxButtons();
   } catch (error) {
     // A missing component should not block audio separation or mixing.
@@ -429,6 +601,10 @@ async function initializeModalComponents() {
   }
 }
 onLanguageChange(() => {
+  $('#libraryButton').textContent = getLanguage() === 'en' ? 'Projects' : 'Projets';
+  if (activeProjectId) autosaveNotice(projectDirty ? 'dirty' : 'ready');
+  else if (currentJobId) autosaveNotice('waiting');
+  if ($('#libraryModal')) renderLibrary();
   const names = Object.keys(tracks);
   if (names.length) {
     const savedControls = snapshotTrackControls(names);
@@ -443,5 +619,8 @@ onLanguageChange(() => {
   setTransportState(playing ? (paused ? 'paused' : 'playing') : 'stopped');
 });
 initializeModalComponents();
-document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); } });
+setInterval(() => {
+  if (activeProjectId && projectDirty && !projectSaving) void saveCurrentProject({ automatic: true });
+}, 10000);
+document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); libraryModal?.close(); } });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));

@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.2.3">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.2.3">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.3-beta4">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.3-beta4">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.2.3">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.2.3">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.2.3">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.3-beta4">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.3-beta4">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.3-beta4">
 </head>
 <body>
   <main>
@@ -18,6 +18,8 @@
     <header>
       <img class="brand-logo" src="/logo/logov2snas%20fond%20%21.png" alt="AudioSplit Studio">
       <div><h1>AudioSplit <span>Studio</span></h1><p data-i18n="app.tagline">Séparez. Mixez. Exportez.</p></div>
+      <span id="autosaveStatus" class="autosave-status" aria-live="polite"></span>
+      <button id="libraryButton" class="library-button" type="button" title="Projets enregistrés">Projets</button>
       <button id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9S14.5 18.5 12 21M12 3c-2.5 2.5-3.5 5.5-3.5 9S9.5 18.5 12 21"/></svg><span data-i18n="language.trigger">FR</span></button>
       <div class="local" data-i18n="app.local">● Traitement local</div>
     </header>
@@ -46,10 +48,10 @@
   <button id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M9 7l1-3h4l1 3M6 7l1 13h10l1-13"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
 
   <!-- The badge is always available; its dialog is loaded from a component file. -->
-  <button id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.2.3</strong></button>
+  <button id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.3 beta</strong></button>
   <div id="modalRoot"></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.2.3"></script>
+  <script type="module" src="/static/app.js?v=1.3-beta4"></script>
 </body>
 </html>

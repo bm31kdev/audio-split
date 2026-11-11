@@ -86,6 +86,37 @@
 .release-tag { padding: 3px 6px; color: #d7ff54; font: 9px 'DM Mono', monospace; text-transform: uppercase; border: 1px solid #465035; border-radius: 999px; }
 .release p { margin-top: 4px; color: #b1b7c2; font-size: 11px; line-height: 1.35; }
 
+/* The library keeps its heading fixed while the folder and project list scroll. */
+.library-dialog { width: min(760px, calc(100vw - 40px)); }
+.library-content { min-height: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.library-toolbar, .save-project-controls { display: flex; gap: 8px; }
+.library-toolbar input, .save-project-controls input, .save-project-controls select { min-width: 0; padding: 10px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Manrope, sans-serif; }
+.library-toolbar input { flex: 1; }
+.library-toolbar button, .save-project-controls button { flex: 0 0 auto; margin: 0; padding: 9px 12px; font-size: 11px; }
+.library-workspace { display: grid; min-height: 190px; grid-template-columns: minmax(130px, .7fr) minmax(0, 1.6fr); gap: 14px; margin-top: 16px; }
+.library-folders { display: grid; align-content: start; gap: 6px; }
+.library-folder { justify-content: space-between; padding: 9px 10px; text-align: left; font-size: 11px; }
+.library-folder.active { color: var(--lime); border-color: #657e37; background: #202816; }
+.library-folder small { color: var(--muted); }
+.library-projects { min-width: 0; }
+.library-folder-heading, .library-project, .library-folder-heading > div, .library-project > div:last-child { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+.library-folder-heading { margin-bottom: 8px; }
+.library-folder-heading h3 { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.library-folder-heading button, .library-project button { padding: 6px 8px; font-size: 10px; }
+.library-project { padding: 10px; border: 1px solid #303540; border-radius: 9px; background: #15171d; }
+.library-project + .library-project { margin-top: 7px; }
+.library-project > div:first-child { min-width: 0; }
+.library-project h4 { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.library-project p, .library-empty { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.library-project > div:last-child { flex: 0 0 auto; }
+.save-project-panel { margin-top: 16px; padding: 14px; border: 1px solid #3b414e; border-radius: 11px; background: #15171d; }
+.save-project-panel h3 { font-size: 13px; }
+.save-project-panel p { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.save-project-controls { margin-top: 10px; }
+.save-project-controls select { flex: 0 0 25%; }
+.save-project-controls input { flex: 1; }
+.save-project-controls button { color: #101407; background: var(--lime); border-color: var(--lime); }
+
 /* Match every modal to the changelog frame, fixed title bar, and inner content scroll. */
 .fx-dialog, .language-dialog, .changelog-dialog { border-color: #3b404b; background: linear-gradient(145deg, #1b1e25, #111217 68%); }
 .fx-dialog-top, .language-dialog-top { flex: 0 0 auto; padding: 24px 24px 18px; border-bottom: 1px solid var(--line); }
@@ -115,6 +146,13 @@
   .release h3 { font-size: 11px; }
   .release p { font-size: 10px; }
   .release-tag { display: none; }
+  .library-content { padding: 14px; }
+  .library-workspace { grid-template-columns: 1fr; }
+  .library-folders { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .library-project { align-items: flex-start; flex-direction: column; }
+  .library-project > div:last-child { flex-wrap: wrap; }
+  .library-toolbar, .save-project-controls { flex-wrap: wrap; }
+  .save-project-controls select, .save-project-controls input { flex: 1 1 40%; }
 }
 
 /* All dialogs share one title block and one full-width separator. */
