@@ -1,5 +1,5 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.3.1';
-import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.3.2';
+import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.3.2';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -36,15 +36,19 @@ export async function mountModalComponents(root) {
  */
 function createAnimatedModal(modal, closeSelector, returnFocus) {
   let closeTimer;
+  let focusReturnTarget = returnFocus;
 
   const close = () => {
     if (modal.getAttribute('aria-hidden') === 'true') return;
     modal.classList.remove('is-open');
-    closeTimer = setTimeout(() => modal.setAttribute('aria-hidden', 'true'), 240);
-    returnFocus?.focus();
+    closeTimer = setTimeout(() => {
+      modal.setAttribute('aria-hidden', 'true');
+      focusReturnTarget?.focus();
+    }, 240);
   };
 
   const show = () => {
+    focusReturnTarget = returnFocus || document.activeElement;
     clearTimeout(closeTimer);
     modal.setAttribute('aria-hidden', 'false');
     requestAnimationFrame(() => modal.classList.add('is-open'));
@@ -52,8 +56,26 @@ function createAnimatedModal(modal, closeSelector, returnFocus) {
   };
 
   modal.querySelectorAll('[data-modal-close]').forEach(button => { button.onclick = close; });
+  bindModalFocusTrap(modal);
   return { close, show };
 }
+
+function bindModalFocusTrap(modal) {
+  modal.addEventListener('keydown', (event) => {
+    if (event.key !== 'Tab') return;
+    const focusable = [...modal.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])')]
+      .filter(element => element.getClientRects().length > 0);
+    if (!focusable.length) { event.preventDefault(); return; }
+    const first = focusable[0], last = focusable.at(-1);
+    if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+      event.preventDefault(); first.focus();
+    }
+  });
+}
+
+export function bindModalAccessibility(modal) { bindModalFocusTrap(modal); }
 
 // Render a compact control: its accessible name remains available without a visible label.
 function controlMarkup(key, labelKey, value, min, max, step = 1) {

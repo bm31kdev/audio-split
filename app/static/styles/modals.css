@@ -1,5 +1,5 @@
 /* Fixed version badge opens the changelog component from components/. */
-.version-button { position: fixed; z-index: 10; bottom: 18px; left: 18px; padding: 8px 11px; color: #cbd1dc; font: 500 10px 'DM Mono', monospace; background: #171a21e8; border-color: #3e4654; border-radius: 999px; box-shadow: 0 8px 24px #0007; backdrop-filter: blur(10px); }
+.version-button { position: fixed; z-index: 10; bottom: 18px; left: 18px; padding: 8px 11px; color: #cbd1dc; font: 500 10px Consolas, 'Courier New', monospace; background: #171a21e8; border-color: #3e4654; border-radius: 999px; box-shadow: 0 8px 24px #0007; backdrop-filter: blur(10px); }
 .version-button strong { color: var(--lime); font-weight: 500; }
 .version-button:hover:not(:disabled) { color: #fff; background: #20252d; border-color: var(--lime); transform: translateY(-2px); }
 
@@ -43,7 +43,7 @@
 .language-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 22px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .language-options button { display: flex; min-height: 76px; flex-direction: column; gap: 8px; background: #17191e; border-color: #363c2e; }
 .language-options button:hover:not(:disabled), .language-options button.active { color: #f5ffe0; background: #202816; border-color: #667a3f; }
-.language-code { color: var(--lime); font: 500 17px 'DM Mono', monospace; }
+.language-code { color: var(--lime); font: 500 17px Consolas, 'Courier New', monospace; }
 
 /* Saturation controls are only injected for the selected bass-oriented stem. */
 .fx-effect-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -59,7 +59,7 @@
 .fx-effect-card .fx-availability { margin-top: 9px; color: var(--lime); font-size: 10px; }
 .fx-effect-card.is-unavailable .fx-availability { color: #d4b66a; }
 .fx-control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; margin-top: 12px; }
-.fx-control { display: grid; grid-template-rows: 1fr 12px; gap: 5px; min-height: 34px; color: #cfd5c4; font: 10px 'DM Mono', monospace; }
+.fx-control { display: grid; grid-template-rows: 1fr 12px; gap: 5px; min-height: 34px; color: #cfd5c4; font: 10px Consolas, 'Courier New', monospace; }
 .fx-control output { align-self: center; color: var(--lime); text-align: center; }
 .fx-control input { width: 100%; margin: 0; align-self: center; accent-color: var(--lime); }
 
@@ -77,23 +77,23 @@
 .changelog-close { width: 34px; height: 34px; padding: 0; border-radius: 8px; }
 .changelog-close svg { width: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 .release-list { display: grid; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; list-style: none; }
-.release-group { grid-column: 1 / -1; padding: 8px 2px 2px; color: var(--lime); font: 500 11px 'DM Mono', monospace; letter-spacing: .7px; text-transform: uppercase; }
+.release-group { grid-column: 1 / -1; padding: 8px 2px 2px; color: var(--lime); font: 500 11px Consolas, 'Courier New', monospace; letter-spacing: .7px; text-transform: uppercase; }
 .release { position: relative; padding: 10px 11px 10px 14px; background: #16191f; border: 1px solid #313641; border-radius: 11px; }
 .release::before { position: absolute; top: 11px; bottom: 11px; left: 0; width: 3px; content: ''; background: #657080; border-radius: 0 3px 3px 0; }
 .release.current { background: linear-gradient(100deg, #202816, #16191f); border-color: #657e37; }
 .release.current::before { background: var(--lime); }
 .release-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.release h3 { font: 500 12px 'DM Mono', monospace; }
-.release-date { display: block; margin-top: 3px; color: #858c99; font: 9px 'DM Mono', monospace; }
+.release h3 { font: 500 12px Consolas, 'Courier New', monospace; }
+.release-date { display: block; margin-top: 3px; color: #858c99; font: 9px Consolas, 'Courier New', monospace; }
 .release.current h3 { color: var(--lime); }
-.release-tag { padding: 3px 6px; color: #d7ff54; font: 9px 'DM Mono', monospace; text-transform: uppercase; border: 1px solid #465035; border-radius: 999px; }
+.release-tag { padding: 3px 6px; color: #d7ff54; font: 9px Consolas, 'Courier New', monospace; text-transform: uppercase; border: 1px solid #465035; border-radius: 999px; }
 .release p { margin-top: 4px; color: #b1b7c2; font-size: 11px; line-height: 1.35; }
 
 /* The library keeps its heading fixed while the folder and project list scroll. */
 .library-dialog { width: min(760px, calc(100vw - 40px)); }
 .library-content { min-height: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .library-toolbar, .save-project-controls { display: flex; gap: 8px; }
-.library-toolbar input, .save-project-controls input, .save-project-controls select { min-width: 0; padding: 10px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Manrope, sans-serif; }
+.library-toolbar input, .save-project-controls input, .save-project-controls select { min-width: 0; padding: 10px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Segoe UI, Arial, sans-serif; }
 .library-toolbar input { flex: 1; }
 .library-toolbar button, .save-project-controls button { flex: 0 0 auto; margin: 0; padding: 9px 12px; font-size: 11px; }
 .library-workspace { display: grid; min-height: 190px; grid-template-columns: minmax(130px, .7fr) minmax(0, 1.6fr); gap: 14px; margin-top: 16px; }
@@ -176,4 +176,18 @@
   .fx-modal-content { padding: 0 18px; }
   .fx-done { margin: 0 18px 16px; }
   .language-options { padding: 0 18px 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-modal *, .changelog-modal *, .language-modal * { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+.library-warning {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--orange) 45%, transparent);
+  border-radius: 10px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--orange) 9%, transparent);
+  font-size: 0.86rem;
 }

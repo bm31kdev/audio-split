@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.3.1">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.3.1">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.3.2">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.3.2">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.3.1">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.3.1">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.3.1">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.3.2">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.3.2">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.3.2">
 </head>
 <body>
   <main>
@@ -34,6 +34,7 @@
       <fieldset class="split-mode engine-mode"><legend data-i18n="speed.title">Vitesse de séparation</legend><label><input type="radio" name="engine" value="fast" checked> <span data-i18n="speed.fast">Rapide — recommandé sur CPU</span></label><label><input type="radio" name="engine" value="studio"> <span data-i18n="speed.studio">Studio — meilleure précision, plus lent</span></label></fieldset>
       <button id="chooseButton" data-i18n="file.choose">Choisir un fichier</button><strong id="fileName"></strong>
       <button id="separateButton" class="primary" disabled data-i18n="file.separate">Séparer la voix et l'accompagnement</button>
+      <button id="cancelSeparationButton" class="cancel-separation hidden" type="button" disabled data-i18n="file.cancel">Annuler la séparation</button>
       <p id="status" class="status" aria-live="polite"></p>
     </section>
 
@@ -48,10 +49,10 @@
   <button id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M9 7l1-3h4l1 3M6 7l1 13h10l1-13"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
 
   <!-- The badge is always available; its dialog is loaded from a component file. -->
-  <button id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.3.1</strong></button>
+  <button id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.3.2</strong></button>
   <div id="modalRoot"></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.3.1"></script>
+  <script type="module" src="/static/app.js?v=1.3.2"></script>
 </body>
 </html>

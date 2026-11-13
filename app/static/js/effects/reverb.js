@@ -5,9 +5,11 @@ function createImpulse(context) {
   const buffer = context.createBuffer(2, Math.floor(context.sampleRate * seconds), context.sampleRate);
   for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
     const data = buffer.getChannelData(channel);
+    let seed = (0x12345678 + channel * 0x9e3779b9) >>> 0;
     for (let index = 0; index < data.length; index += 1) {
       const envelope = (1 - index / data.length) ** 2.8;
-      data[index] = (Math.random() * 2 - 1) * envelope;
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      data[index] = (seed / 0xffffffff * 2 - 1) * envelope;
     }
   }
   return buffer;

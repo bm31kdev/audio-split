@@ -1,34 +1,38 @@
-import { createBassSaturation, updateBassSaturation } from './js/effects/bass-saturation.js';
-import { createCompressor, updateCompressor } from './js/effects/compressor.js';
-import { createThreeBandEq, updateThreeBandEq } from './js/effects/three-band-eq.js';
-import { createReverb, updateReverb } from './js/effects/reverb.js';
-import { createDelay, updateDelay } from './js/effects/delay.js';
-import { createFilters, updateFilters } from './js/effects/filters.js';
-import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.2';
-import { createChorus, updateChorus } from './js/effects/chorus.js';
-import { createFlanger, updateFlanger } from './js/effects/flanger.js';
-import { createPhaser, updatePhaser } from './js/effects/phaser.js';
-import { createTremolo, updateTremolo } from './js/effects/tremolo.js';
-import { createBitcrusher, updateBitcrusher } from './js/effects/bitcrusher.js';
-import { createNoiseGate, updateNoiseGate } from './js/effects/noise-gate.js';
-import { createDeEsser, updateDeEsser } from './js/effects/de-esser.js';
-import { createLimiter, updateLimiter } from './js/effects/limiter.js';
-import { createExciter, updateExciter } from './js/effects/exciter.js';
-import { effectCatalog, effectIsAvailable } from './js/effects/catalog.js';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js';
-import { createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.1';
-import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3.1';
+import { createBassSaturation, updateBassSaturation } from './js/effects/bass-saturation.js?v=1.3.2';
+import { createCompressor, updateCompressor } from './js/effects/compressor.js?v=1.3.2';
+import { createThreeBandEq, updateThreeBandEq } from './js/effects/three-band-eq.js?v=1.3.2';
+import { createReverb, updateReverb } from './js/effects/reverb.js?v=1.3.2';
+import { createDelay, updateDelay } from './js/effects/delay.js?v=1.3.2';
+import { createFilters, updateFilters } from './js/effects/filters.js?v=1.3.2';
+import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.3.2';
+import { createChorus, updateChorus } from './js/effects/chorus.js?v=1.3.2';
+import { createFlanger, updateFlanger } from './js/effects/flanger.js?v=1.3.2';
+import { createPhaser, updatePhaser } from './js/effects/phaser.js?v=1.3.2';
+import { createTremolo, updateTremolo } from './js/effects/tremolo.js?v=1.3.2';
+import { createBitcrusher, updateBitcrusher } from './js/effects/bitcrusher.js?v=1.3.2';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './js/effects/noise-gate.js?v=1.3.2';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './js/effects/de-esser.js?v=1.3.2';
+import { createLimiter, updateLimiter } from './js/effects/limiter.js?v=1.3.2';
+import { createExciter, updateExciter } from './js/effects/exciter.js?v=1.3.2';
+import { effectCatalog, effectIsAvailable } from './js/effects/catalog.js?v=1.3.2';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js?v=1.3.2';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.2';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3.2';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
 const tracks = {};
 const automationByTrack = {};
 const effectDefaults = { saturation: 0, compressor: 0, eqLow: 0, eqMid: 0, eqHigh: 0, reverb: 0, delay: 0, highPass: 0, lowPass: 0, width: 100, ducking: 0, chorus: 0, flanger: 0, phaser: 0, tremolo: 0, bitcrusher: 0, gate: 0, deEsser: 0, limiter: 0, exciter: 0 };
+const MAX_DECODED_STEM_BYTES = 1024 * 1024 * 1024;
+const MAX_EXPORT_WORKING_BYTES = 2 * 1024 * 1024 * 1024;
+const WAV_RIFF_MAX_BYTES = 0xffffffff;
 const effectsByTrack = {};
-let audioCtx, liveNodes = new Map(), playing = false, paused = false, playStartedAt = 0, playheadOffset = 0, playheadDragging = false, playheadWasPlaying = false, automationDragging = false, playheadFrame, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
+let audioCtx, liveNodes = new Map(), liveMaster, playing = false, paused = false, playStartedAt = 0, playheadOffset = 0, playheadDragging = false, playheadWasPlaying = false, automationDragging = false, playheadFrame, playbackEndTimer, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
 let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
+let activeSeparationRequestId = null, separationPollTimer, separationPollBusy = false, separationCancelRequested = false;
 
 function autosaveNotice(state, detail = '') {
   const notice = $('#autosaveStatus');
@@ -57,6 +61,25 @@ function clockTime() { return new Intl.DateTimeFormat(getLanguage() === 'en' ? '
 function status(message, error = false) {
   // The import card is the single place where asynchronous work reports status.
   const target = $('#status'); target.textContent = message; target.style.color = error ? '#ff987f' : '';
+}
+function startSeparationProgressPolling(requestId) {
+  if (separationPollTimer) clearInterval(separationPollTimer);
+  separationPollTimer = setInterval(async () => {
+    if (separationPollBusy || activeSeparationRequestId !== requestId) return;
+    separationPollBusy = true;
+    try {
+      const progress = await apiJson(`/api/separations/${requestId}`);
+      if (activeSeparationRequestId !== requestId) return;
+      if (progress.status === 'canceling') status(t('status.canceling'));
+      else if (Number.isFinite(progress.progress) && progress.progress > 0 && progress.progress < 100) status(t('status.progress', { percent: progress.progress }));
+    } catch { /* The route becomes visible once the upload reaches the server handler. */ }
+    finally { separationPollBusy = false; }
+  }, 700);
+}
+function stopSeparationProgressPolling() {
+  if (separationPollTimer) clearInterval(separationPollTimer);
+  separationPollTimer = undefined;
+  separationPollBusy = false;
 }
 function settings(name) {
   // Read the native controls on demand so live playback and offline export agree.
@@ -90,13 +113,32 @@ function tickStep(duration) { return duration <= 30 ? 5 : duration <= 90 ? 10 : 
 function getAutomationPan(name, time) {
   const points = automationByTrack[name]?.points || [];
   if (!points.length || time <= points[0].time) return points[0]?.pan || 0;
-  for (let i = 1; i < points.length; i++) { const next = points[i], previous = points[i - 1]; if (time <= next.time) { const ratio = (time - previous.time) / (next.time - previous.time); return previous.pan + (next.pan - previous.pan) * ratio; } }
+  for (let i = 1; i < points.length; i++) {
+    const next = points[i], previous = points[i - 1];
+    if (time <= next.time) {
+      const before = points[i - 2] || previous, after = points[i + 1] || next;
+      const span = next.time - previous.time, ratio = (time - previous.time) / span;
+      const slopeStart = before === previous ? (next.pan - previous.pan) / span : (next.pan - before.pan) / (next.time - before.time);
+      const slopeEnd = after === next ? (next.pan - previous.pan) / span : (after.pan - previous.pan) / (after.time - previous.time);
+      const u2 = ratio * ratio, u3 = u2 * ratio;
+      const value = (2 * u3 - 3 * u2 + 1) * previous.pan
+        + (u3 - 2 * u2 + ratio) * slopeStart * span
+        + (-2 * u3 + 3 * u2) * next.pan
+        + (u3 - u2) * slopeEnd * span;
+      return Math.max(-100, Math.min(100, value));
+    }
+  }
   return points.at(-1).pan;
 }
 function combinedPan(pointPan, cfg) { return Math.max(-1, Math.min(1, pointPan / 100 + cfg.pan)); }
 function trackHasEffect(key, name) { return effectIsAvailable(effectCatalog.find(effect => effect.key === key), name, { saturation: saturationTarget, width: widthTarget }); }
 function disposeTrackNodes(nodes) {
   Object.values(nodes?.effects || {}).forEach(effect => effect?.oscillators?.forEach(oscillator => { try { oscillator.stop(); } catch {} }));
+  Object.values(nodes?.effects || {}).forEach(effect => {
+    effect?.detector?.disconnect();
+    effect?.analyser?.disconnect();
+    effect?.silentOutput?.disconnect();
+  });
 }
 // Each track keeps a dry signal. Only the selected bass source gets an extra
 // low-frequency saturated branch, so other stems remain untouched.
@@ -149,12 +191,20 @@ function updateTrackEffects(nodes, values, context, voiceLevel = 0) {
   if (nodes.effects.limiter) updateLimiter(nodes.effects.limiter, values.limiter, context, true);
   if (nodes.effects.exciter) updateExciter(nodes.effects.exciter, values.exciter, context, true);
 }
-function schedulePan(panner, name, cfg, startAt, offset = 0) {
-  panner.pan.cancelScheduledValues(startAt);
+function schedulePan(panner, name, cfg, startAt, offset = 0, remainingDuration = timelineDuration() - offset) {
+  if (typeof panner.pan.cancelAndHoldAtTime === 'function') panner.pan.cancelAndHoldAtTime(startAt);
+  else panner.pan.cancelScheduledValues(startAt);
   const automation = automationByTrack[name];
   if (!automation?.points.length) { panner.pan.setValueAtTime(cfg.pan, startAt); return; }
-  panner.pan.setValueAtTime(combinedPan(getAutomationPan(name, offset), cfg), startAt);
-  automation.points.filter(point => point.time > offset).forEach(point => panner.pan.linearRampToValueAtTime(combinedPan(point.pan, cfg), startAt + point.time - offset));
+  const duration = Math.max(0, remainingDuration);
+  if (duration < 0.01) { panner.pan.setValueAtTime(combinedPan(getAutomationPan(name, offset), cfg), startAt); return; }
+  const sampleCount = Math.min(8192, Math.max(2, Math.ceil(duration * 60) + 1));
+  const curve = new Float32Array(sampleCount);
+  for (let index = 0; index < sampleCount; index += 1) {
+    const time = offset + duration * index / (sampleCount - 1);
+    curve[index] = combinedPan(getAutomationPan(name, time), cfg);
+  }
+  panner.pan.setValueCurveAtTime(curve, startAt, duration);
 }
 function drawWaveform(name, buffer) {
   // The waveform is drawn only on load/resize; the playhead is a lightweight CSS overlay.
@@ -167,7 +217,17 @@ function drawWaveform(name, buffer) {
   ctx.beginPath(); for (let x = 0; x < width; x++) { let min = 1, max = -1; const start = x * step; for (let i = 0; i < step && start + i < data.length; i++) { const value = data[start + i]; if (value < min) min = value; if (value > max) max = value; } const y1 = (1 + min) * graphHeight / 2, y2 = (1 + max) * graphHeight / 2; ctx.moveTo(x, y1); ctx.lineTo(x, y2); } ctx.stroke();
   ctx.globalAlpha = .42; ctx.strokeStyle = '#69717e'; ctx.fillStyle = '#aeb5c0'; ctx.font = '9px DM Mono, monospace'; ctx.lineWidth = 1;
   const stepSeconds = tickStep(buffer.duration); for (let t = 0; t <= buffer.duration; t += stepSeconds) { const x = (t / buffer.duration) * width; ctx.beginPath(); ctx.moveTo(x + .5, graphHeight + 1); ctx.lineTo(x + .5, graphHeight + 5); ctx.stroke(); if (x < width - 22) ctx.fillText(formatTime(t), x + 3, height - 5); }
-  const automation = automationByTrack[name]; if (automation?.points.length) { const points = automation.points.map(point => ({ x: (point.time / buffer.duration) * width, y: graphHeight * (1 - (point.pan + 100) / 200) })); ctx.globalAlpha = 1; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); for (let i = 0; i < points.length - 1; i++) { const p0 = points[i - 1] || points[i], p1 = points[i], p2 = points[i + 1], p3 = points[i + 2] || p2; ctx.bezierCurveTo(p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6, p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6, p2.x, p2.y); } ctx.stroke(); points.forEach((point, index) => { ctx.fillStyle = index === automation.selected ? '#d7ff54' : '#a78bfa'; ctx.beginPath(); ctx.arc(point.x, point.y, index === automation.selected ? 5 : 4, 0, Math.PI * 2); ctx.fill(); }); }
+  const automation = automationByTrack[name]; if (automation?.points.length) {
+    const points = automation.points.map(point => ({ x: (point.time / buffer.duration) * width, y: graphHeight * (1 - (point.pan + 100) / 200) }));
+    ctx.globalAlpha = 1; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2; ctx.beginPath();
+    for (let x = 0; x < width; x += 1) {
+      const time = (x / Math.max(1, width - 1)) * buffer.duration;
+      const y = graphHeight * (1 - (getAutomationPan(name, time) + 100) / 200);
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    points.forEach((point, index) => { ctx.fillStyle = index === automation.selected ? '#d7ff54' : '#a78bfa'; ctx.beginPath(); ctx.arc(point.x, point.y, index === automation.selected ? 5 : 4, 0, Math.PI * 2); ctx.fill(); });
+  }
 }
 const stemInfo = {
   vocals: { titleKey: 'stem.vocals', detailKey: 'stem.vocalsDetail', icon: 'mic' },
@@ -266,6 +326,8 @@ function seekMix(offset, restartPlayback = true) {
     disposeTrackNodes({ effects });
   });
   liveNodes = new Map();
+  liveMaster?.disconnect();
+  liveMaster = undefined;
   playStartedAt = audioCtx.currentTime - playheadOffset;
   startPlaybackSources(playheadOffset);
   updatePlayheads(playheadOffset);
@@ -312,20 +374,44 @@ function startPlaybackSources(offset = playheadOffset) {
   const token = playbackToken;
   const entries = Object.entries(tracks);
   let completedSources = 0;
+  if (playbackEndTimer) clearTimeout(playbackEndTimer);
+  playbackEndTimer = undefined;
+  liveMaster = createMasterLimiter(audioCtx);
   for (const [name, buffer] of entries) {
-    const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, audioCtx.destination);
+    const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, liveMaster);
     source.buffer = buffer;
-    schedulePan(nodes.panner, name, cfg, audioCtx.currentTime, offset);
+    schedulePan(nodes.panner, name, cfg, audioCtx.currentTime, offset, Math.max(0, buffer.duration - offset));
     source.onended = () => {
       if (token !== playbackToken) return;
       completedSources += 1;
-      if (completedSources === entries.length) stop();
+      if (completedSources === entries.length) {
+        playbackEndTimer = setTimeout(() => { if (token === playbackToken) stop(); }, effectTailSeconds() * 1000);
+      }
     };
     const sourceOffset = Math.min(offset, Math.max(0, buffer.duration - 1 / buffer.sampleRate));
     source.start(0, sourceOffset);
     liveNodes.set(name, { source, ...nodes });
   }
   if (liveNodes.has('vocals')) voiceMeter = createVoiceMeter(audioCtx, liveNodes.get('vocals').gain);
+}
+function createMasterLimiter(context) {
+  const limiter = context.createDynamicsCompressor();
+  limiter.threshold.setValueAtTime(-1, context.currentTime);
+  limiter.knee.setValueAtTime(0, context.currentTime);
+  limiter.ratio.setValueAtTime(20, context.currentTime);
+  limiter.attack.setValueAtTime(0.003, context.currentTime);
+  limiter.release.setValueAtTime(0.16, context.currentTime);
+  limiter.connect(context.destination);
+  return limiter;
+}
+function effectTailSeconds() {
+  let tail = 0;
+  for (const name of Object.keys(tracks)) {
+    const values = effectsByTrack[name] || effectDefaults;
+    if (values.reverb > 0 && trackHasEffect('reverb', name)) tail = Math.max(tail, 1.7);
+    if (values.delay > 0 && trackHasEffect('delay', name)) tail = Math.max(tail, 4.5);
+  }
+  return tail;
 }
 function animatePlayheads() {
   if (!playing || !audioCtx) { playheadFrame = undefined; updatePlayheads(); return; }
@@ -334,6 +420,8 @@ function animatePlayheads() {
   const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
   for (const [name, nodes] of liveNodes) {
     if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, settings(name).effects.ducking, audioCtx, true);
+    if (nodes.effects.deEsser) updateDeEsser(nodes.effects.deEsser, settings(name).effects.deEsser, audioCtx, true);
+    if (nodes.effects.gate) updateNoiseGate(nodes.effects.gate, settings(name).effects.gate, audioCtx, true);
   }
   if (!playheadDragging) playheadOffset = Math.min(timelineDuration(), Math.max(0, audioCtx.currentTime - playStartedAt));
   updatePlayheads(playheadOffset);
@@ -356,16 +444,21 @@ function savePayload() {
   };
 }
 async function apiJson(url, options = {}) {
-  const response = await fetch(url, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+  const headers = new Headers(options.headers || {});
+  if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  const response = await fetch(url, { ...options, headers });
+  const body = await response.text();
+  let data = {};
+  try { data = body ? JSON.parse(body) : {}; }
+  catch { if (!response.ok) throw new Error(body.slice(0, 400) || `HTTP ${response.status}`); throw new Error('The server returned an invalid response.'); }
+  if (!response.ok) throw new Error(data?.detail || `HTTP ${response.status}`);
   return data;
 }
 function libraryLabels() {
   return getLanguage() === 'en' ? {
-    title: 'My projects', description: 'Your folders and separations saved on this computer.', folder: 'Folder name', create: 'Create folder', empty: 'No folders yet. Create one to organize your projects.', noProjects: 'No projects in this folder yet.', open: 'Open', rename: 'Rename', remove: 'Delete', save: 'Save', update: 'Update project', saved: 'Project saved locally.', deleted: 'Deleted.', confirmFolder: 'Delete this folder and all projects inside it?', confirmProject: 'Delete this project and its audio files?', select: 'Choose a folder', needFolder: 'Create or select a folder first.', currentTitle: 'Save current separation', hint: 'A project includes the separated tracks and all mixer settings.', name: 'Project name', createSavedFolder: 'Create a folder', noAudio: 'Separate a track before creating a project.'
+    title: 'My projects', description: 'Your folders and separations saved on this computer.', folder: 'Folder name', create: 'Create folder', importArchive: 'Import project', exportArchive: 'Export', imported: 'Project restored from archive.', empty: 'No folders yet. Create one to organize your projects.', noProjects: 'No projects in this folder yet.', open: 'Open', rename: 'Rename', remove: 'Delete', save: 'Save', update: 'Update project', saved: 'Project saved locally.', deleted: 'Deleted.', confirmFolder: 'Permanently delete this folder and all its projects? Type the exact folder name:', confirmProject: 'Permanently delete this project and its audio files? Type the exact project name:', select: 'Choose a folder', needFolder: 'Create or select a folder first.', currentTitle: 'Save current separation', hint: 'A project includes the separated tracks and all mixer settings.', name: 'Project name', noAudio: 'Separate a track before creating a project.'
   } : {
-    title: 'Mes projets', description: 'Vos dossiers et séparations enregistrés sur cet ordinateur.', folder: 'Nom du nouveau dossier', create: 'Créer un dossier', empty: 'Aucun dossier. Créez-en un pour organiser vos projets.', noProjects: 'Aucun projet dans ce dossier pour le moment.', open: 'Ouvrir', rename: 'Renommer', remove: 'Supprimer', save: 'Enregistrer', update: 'Mettre à jour', saved: 'Projet enregistré localement.', deleted: 'Élément supprimé.', confirmFolder: 'Supprimer ce dossier et tous les projets qu’il contient ?', confirmProject: 'Supprimer ce projet et ses fichiers audio ?', select: 'Choisir un dossier', needFolder: 'Créez ou choisissez d’abord un dossier.', name: 'Nom du projet', noAudio: 'Séparez un morceau avant de créer un projet.'
+    title: 'Mes projets', description: 'Vos dossiers et séparations enregistrés sur cet ordinateur.', folder: 'Nom du nouveau dossier', create: 'Créer un dossier', importArchive: 'Importer un projet', exportArchive: 'Exporter', imported: 'Projet restauré depuis l’archive.', empty: 'Aucun dossier. Créez-en un pour organiser vos projets.', noProjects: 'Aucun projet dans ce dossier pour le moment.', open: 'Ouvrir', rename: 'Renommer', remove: 'Supprimer', save: 'Enregistrer', update: 'Mettre à jour', saved: 'Projet enregistré localement.', deleted: 'Élément supprimé.', confirmFolder: 'Supprimer définitivement ce dossier et tous ses projets ? Tapez le nom exact du dossier :', confirmProject: 'Supprimer définitivement ce projet et ses fichiers audio ? Tapez le nom exact du projet :', select: 'Choisir un dossier', needFolder: 'Créez ou choisissez d’abord un dossier.', name: 'Nom du projet', noAudio: 'Séparez un morceau avant de créer un projet.'
   };
 }
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -377,12 +470,15 @@ async function refreshLibrary() {
 }
 function renderLibrary() {
   const labels = libraryLabels(), workspace = $('#libraryWorkspace'), select = $('#saveFolderSelect');
+  const warnings = libraryData.warnings || [];
+  const warningHtml = warnings.length ? `<p class="library-warning" role="alert">${getLanguage() === 'en' ? `${warnings.length} local item${warnings.length === 1 ? '' : 's'} could not be read. A manifest backup was checked when available.` : `${warnings.length} élément${warnings.length === 1 ? '' : 's'} local${warnings.length === 1 ? '' : 'aux'} n’a pu être lu. Une sauvegarde de manifeste a été essayée lorsqu’elle était disponible.`}</p>` : '';
   $('#libraryTitle').textContent = labels.title;
   $('#libraryDescription').textContent = labels.description;
   const closeButton = $('#libraryModal')?.querySelector('.changelog-close');
   if (closeButton) { const closeLabel = getLanguage() === 'en' ? 'Close' : 'Fermer'; closeButton.title = closeLabel; closeButton.setAttribute('aria-label', closeLabel); }
   $('#newFolderName').placeholder = labels.folder;
   $('#createFolderButton').textContent = labels.create;
+  $('#importProjectButton').textContent = labels.importArchive;
   $('#saveProjectHeading').textContent = labels.currentTitle;
   $('#saveProjectHint').textContent = labels.hint || (getLanguage() === 'en' ? 'A project includes separated tracks and all mixer settings.' : 'Un projet contient les pistes séparées et tous les réglages du mixeur.');
   $('#projectNameInput').placeholder = labels.name;
@@ -390,14 +486,34 @@ function renderLibrary() {
   $('#saveProjectPanel').classList.toggle('hidden', !Object.keys(tracks).length || (!currentJobId && !activeProjectId));
   select.innerHTML = libraryData.folders.length ? libraryData.folders.map(folder => `<option value="${folder.id}" ${folder.id === selectedFolderId ? 'selected' : ''}>${escapeHtml(folder.name)}</option>`).join('') : `<option value="">${labels.select}</option>`;
   const current = libraryData.folders.find(folder => folder.id === selectedFolderId);
-  if (!current) { workspace.innerHTML = `<p class="library-empty">${labels.empty}</p>`; return; }
-  workspace.innerHTML = `<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${escapeHtml(current.name)}</h3><div><button type="button" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-delete-folder="${current.id}">${labels.remove}</button></div></div>${current.projects.length ? current.projects.map(project => `<article class="library-project"><div><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.sourceName || '')} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div><button type="button" data-open-project="${project.id}">${labels.open}</button><button type="button" data-rename-project="${project.id}">${labels.rename}</button><button type="button" data-delete-project="${project.id}">${labels.remove}</button></div></article>`).join('') : `<p class="library-empty">${labels.noProjects}</p>`}</section>`;
+  if (!current) { workspace.innerHTML = `${warningHtml}<p class="library-empty">${labels.empty}</p>`; return; }
+  workspace.innerHTML = `${warningHtml}<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${escapeHtml(current.name)}</h3><div><button type="button" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-delete-folder="${current.id}">${labels.remove}</button></div></div>${current.projects.length ? current.projects.map(project => `<article class="library-project"><div><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.sourceName || '')} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div><button type="button" data-open-project="${project.id}">${labels.open}</button><button type="button" data-export-project="${project.id}">${labels.exportArchive}</button><button type="button" data-rename-project="${project.id}">${labels.rename}</button><button type="button" data-delete-project="${project.id}">${labels.remove}</button></div></article>`).join('') : `<p class="library-empty">${labels.noProjects}</p>`}</section>`;
   workspace.querySelectorAll('[data-folder]').forEach(button => button.onclick = () => { selectedFolderId = button.dataset.folder; renderLibrary(); });
   workspace.querySelectorAll('[data-rename-folder]').forEach(button => button.onclick = () => void renameLibraryItem(`/api/library/folders/${button.dataset.renameFolder}`, current.name));
-  workspace.querySelectorAll('[data-delete-folder]').forEach(button => button.onclick = async () => { if (confirm(labels.confirmFolder)) { await apiJson(`/api/library/folders/${button.dataset.deleteFolder}`, { method: 'DELETE' }); if (activeProjectId && current.projects.some(project => project.id === activeProjectId)) { activeProjectId = null; currentJobId = null; } selectedFolderId = null; await refreshLibrary(); } });
+  workspace.querySelectorAll('[data-delete-folder]').forEach(button => button.onclick = async () => {
+    const confirmation = window.prompt(labels.confirmFolder);
+    if (confirmation !== current.name) return;
+    try {
+      await apiJson(`/api/library/folders/${button.dataset.deleteFolder}`, { method: 'DELETE', body: JSON.stringify({ confirmation }) });
+      if (activeProjectId && current.projects.some(project => project.id === activeProjectId)) { activeProjectId = null; currentJobId = null; }
+      selectedFolderId = null;
+      await refreshLibrary();
+    } catch (error) { status(error.message, true); }
+  });
   workspace.querySelectorAll('[data-open-project]').forEach(button => button.onclick = () => void openSavedProject(button.dataset.openProject));
+  workspace.querySelectorAll('[data-export-project]').forEach(button => button.onclick = () => { window.location.href = `/api/library/projects/${button.dataset.exportProject}/archive`; });
   workspace.querySelectorAll('[data-rename-project]').forEach(button => button.onclick = () => { const project = current.projects.find(item => item.id === button.dataset.renameProject); void renameLibraryItem(`/api/library/projects/${project.id}`, project.name); });
-  workspace.querySelectorAll('[data-delete-project]').forEach(button => button.onclick = async () => { if (confirm(labels.confirmProject)) { await apiJson(`/api/library/projects/${button.dataset.deleteProject}`, { method: 'DELETE' }); if (activeProjectId === button.dataset.deleteProject) { activeProjectId = null; currentJobId = null; } await refreshLibrary(); } });
+  workspace.querySelectorAll('[data-delete-project]').forEach(button => button.onclick = async () => {
+    const project = current.projects.find(item => item.id === button.dataset.deleteProject);
+    if (!project) return;
+    const confirmation = window.prompt(labels.confirmProject);
+    if (confirmation !== project.name) return;
+    try {
+      await apiJson(`/api/library/projects/${project.id}`, { method: 'DELETE', body: JSON.stringify({ confirmation }) });
+      if (activeProjectId === project.id) { activeProjectId = null; currentJobId = null; projectDirty = false; }
+      await refreshLibrary();
+    } catch (error) { status(error.message, true); }
+  });
 }
 async function renameLibraryItem(url, oldName) {
   const value = prompt(getLanguage() === 'en' ? 'New name:' : 'Nouveau nom :', oldName);
@@ -405,19 +521,39 @@ async function renameLibraryItem(url, oldName) {
   try { await apiJson(url, { method: 'PATCH', body: JSON.stringify({ name: value.trim() }) }); await refreshLibrary(); }
   catch (error) { status(error.message, true); }
 }
+async function confirmCurrentMixReplacement() {
+  if (activeProjectId) {
+    if (!projectDirty) return true;
+    if (projectSaving) {
+      status(getLanguage() === 'en' ? 'The current project is still saving. Try again in a moment.' : 'Le projet actuel est encore en cours de sauvegarde. Réessayez dans un instant.', true);
+      return false;
+    }
+    return saveCurrentProject({ automatic: true });
+  }
+  if (currentJobId) {
+    return window.confirm(getLanguage() === 'en'
+      ? 'The current separation has not been saved as a project. Replace it and its mix settings?'
+      : 'La séparation actuelle n’est pas enregistrée comme projet. La remplacer ainsi que ses réglages de mixage ?');
+  }
+  return true;
+}
 async function openSavedProject(projectId) {
   try {
+    if (!(await confirmCurrentMixReplacement())) return;
     const project = await apiJson(`/api/library/projects/${projectId}`);
+    const decodedStemBytes = Object.values(project.stemDecodedBytes || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+    const largestDownloadBytes = Math.max(0, ...Object.values(project.stemFileBytes || {}).map(value => Number(value || 0)));
+    if (decodedStemBytes + largestDownloadBytes > MAX_DECODED_STEM_BYTES) throw new Error(t('status.decodeMemoryLimit'));
     if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
-    const decoded = await Promise.all(project.stems.map(async name => {
+    clearMixerForReplacement();
+    status(getLanguage() === 'en' ? 'Loading project audio…' : 'Chargement de l’audio du projet…');
+    const decoded = [];
+    for (const name of project.stems) {
       const response = await fetch(project.audio[name]);
       if (!response.ok) throw new Error(`${name}: ${response.statusText}`);
-      return [name, await audioCtx.decodeAudioData(await response.arrayBuffer())];
-    }));
-    stop();
-    Object.keys(tracks).forEach(name => delete tracks[name]);
-    Object.keys(effectsByTrack).forEach(name => delete effectsByTrack[name]);
-    Object.keys(automationByTrack).forEach(name => delete automationByTrack[name]);
+      const bytes = await response.arrayBuffer();
+      decoded.push([name, await audioCtx.decodeAudioData(bytes)]);
+    }
     decoded.forEach(([name, buffer]) => { tracks[name] = buffer; effectsByTrack[name] = { ...effectDefaults, ...(project.effects?.[name] || {}) }; automationByTrack[name] = project.automation?.[name] || { points: [{ time: 0, pan: 0 }, { time: buffer.duration, pan: 0 }], selected: 0 }; });
     currentSourceName = project.sourceName || project.name;
     currentMode = project.mode || 'simple'; currentEngine = project.engine || 'fast';
@@ -481,9 +617,25 @@ function renderTracks(names, savedControls = {}) {
   bindFxButtons();
   updateOutputs();
 }
+function clearMixerForReplacement() {
+  // Release decoded buffers before loading a replacement so both mixes are
+  // never resident in memory at the same time.
+  stop();
+  Object.keys(tracks).forEach(name => delete tracks[name]);
+  Object.keys(effectsByTrack).forEach(name => delete effectsByTrack[name]);
+  Object.keys(automationByTrack).forEach(name => delete automationByTrack[name]);
+  currentJobId = null;
+  activeProjectId = null;
+  projectDirty = false;
+  $('#mixer').classList.add('hidden');
+  $('#tracks').replaceChildren();
+  $('#exportButton').disabled = true;
+}
 // Stop all live nodes together because every stem starts at the same audio clock time.
 function stop() {
   playbackToken += 1;
+  if (playbackEndTimer) clearTimeout(playbackEndTimer);
+  playbackEndTimer = undefined;
   if (playheadFrame) cancelAnimationFrame(playheadFrame);
   playheadFrame = undefined;
   voiceMeter = undefined;
@@ -493,6 +645,8 @@ function stop() {
     disposeTrackNodes({ effects });
   });
   liveNodes = new Map();
+  liveMaster?.disconnect();
+  liveMaster = undefined;
   playing = false;
   paused = false;
   playheadOffset = 0;
@@ -542,26 +696,45 @@ async function playMix() {
     status(t('status.playbackStart', { error: error.message }), true);
   }
 }
-function wavBlob(buffer) {
-  const channels = buffer.numberOfChannels, length = buffer.length * channels * 2, out = new ArrayBuffer(44 + length), view = new DataView(out);
-  const write = (offset, str) => [...str].forEach((c, i) => view.setUint8(offset + i, c.charCodeAt(0)));
-  write(0,'RIFF'); view.setUint32(4,36+length,true); write(8,'WAVE'); write(12,'fmt '); view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,channels,true); view.setUint32(24,buffer.sampleRate,true); view.setUint32(28,buffer.sampleRate*channels*2,true); view.setUint16(32,channels*2,true); view.setUint16(34,16,true); write(36,'data'); view.setUint32(40,length,true);
-  let at=44; for(let i=0;i<buffer.length;i++) for(let ch=0;ch<channels;ch++){let s=Math.max(-1,Math.min(1,buffer.getChannelData(ch)[i]));view.setInt16(at,s<0?s*0x8000:s*0x7fff,true);at+=2;} return new Blob([out],{type:'audio/wav'});
+function encodeWavInWorker(buffer) {
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.2', import.meta.url), { type: 'module' });
+  const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
+  return new Promise((resolve, reject) => {
+    worker.onmessage = ({ data }) => {
+      worker.terminate();
+      if (data.error) reject(new Error(data.error)); else resolve(data);
+    };
+    worker.onerror = (event) => { worker.terminate(); reject(new Error(event.message || 'WAV encoding worker failed.')); };
+    worker.postMessage({ channels, sampleRate: buffer.sampleRate }, channels.map(channel => channel.buffer));
+  });
 }
 async function exportMix() {
   // OfflineAudioContext renders the current mix without recording speaker output.
   if (!Object.keys(tracks).length) return;
+  const button = $('#exportButton');
+  if (button.disabled) return;
+  button.disabled = true;
   try {
     stop(); const duration = Math.max(...Object.values(tracks).map(b => b.duration)), rate = tracks.vocals.sampleRate;
-    const offline = new OfflineAudioContext(2, Math.ceil(duration * rate), rate);
+    const renderDuration = duration + effectTailSeconds(), renderLength = Math.ceil(renderDuration * rate);
+    const decodedBytes = Object.values(tracks).reduce((total, buffer) => total + buffer.length * buffer.numberOfChannels * 4, 0);
+    const renderBytes = renderLength * 2 * 4, wavBytes = renderLength * 2 * 2 + 44;
+    const workingBytes = decodedBytes + renderBytes * 2 + wavBytes * 2;
+    if (workingBytes > MAX_EXPORT_WORKING_BYTES) throw new Error(t('status.exportMemoryLimit'));
+    if (wavBytes - 44 + 36 > WAV_RIFF_MAX_BYTES) throw new Error('WAV export exceeds the 4 GiB RIFF limit.');
+    const offline = new OfflineAudioContext(2, renderLength, rate), master = createMasterLimiter(offline);
     const offlineNodes = new Map();
-    for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,offline.destination); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0);source.start();offlineNodes.set(name,nodes); }
+    for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,master); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0,0,buffer.duration);source.start();offlineNodes.set(name,nodes); }
     // Offline rendering has no animation frame, so schedule the vocal envelope in advance.
     if (tracks.vocals) for (const [name, nodes] of offlineNodes) if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline);
-    status(t('status.rendering')); const rendered=await offline.startRendering(), url=URL.createObjectURL(wavBlob(rendered)), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();setTimeout(() => URL.revokeObjectURL(url), 0);status(t('status.exported'));
+    for (const [name, nodes] of offlineNodes) if (nodes.effects.deEsser) scheduleOfflineDeEsser(nodes.effects.deEsser, tracks[name], settings(name).effects.deEsser);
+    for (const [name, nodes] of offlineNodes) if (nodes.effects.gate) scheduleOfflineNoiseGate(nodes.effects.gate, tracks[name], settings(name).effects.gate, offline);
+    status(t('status.rendering')); const rendered=await offline.startRendering(), result=await encodeWavInWorker(rendered), url=URL.createObjectURL(result.blob), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();setTimeout(() => URL.revokeObjectURL(url), 1000);status(result.normalized ? t('status.exportedNormalized') : t('status.exported'));
   } catch (error) {
     console.error('Audio export failed.', error);
     status(t('status.exportError', { error: error.message || error }), true);
+  } finally {
+    button.disabled = !Object.keys(tracks).length;
   }
 }
 $('#chooseButton').onclick = () => $('#fileInput').click();
@@ -576,35 +749,52 @@ async function separateAudio() {
   const file = $('#fileInput').files[0];
   if (!file) return;
   const button = $('#separateButton');
+  if (button.disabled) return;
+  button.disabled = true;
+  if (!(await confirmCurrentMixReplacement())) {
+    button.disabled = !$('#fileInput').files[0];
+    return;
+  }
   const cacheButton = $('#clearCacheButton');
+  const cancelButton = $('#cancelSeparationButton');
   const mode = document.querySelector('input[name="splitMode"]:checked').value;
   const engine = document.querySelector('input[name="engine"]:checked').value;
-  button.disabled = true;
   cacheButton.disabled = true;
+  separationCancelRequested = false;
+  activeSeparationRequestId = window.crypto?.randomUUID
+    ? window.crypto.randomUUID().replaceAll('-', '')
+    : Array.from(window.crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
+  const requestId = activeSeparationRequestId;
+  cancelButton.disabled = false;
+  cancelButton.classList.remove('hidden');
+  startSeparationProgressPolling(requestId);
   status(engine === 'fast' ? t('status.fast') : t('status.studio'));
   const form = new FormData();
   form.append('file', file);
   form.append('mode', mode);
   form.append('engine', engine);
   form.append('language', getLanguage());
+  form.append('request_id', requestId);
 
   try {
-    const response = await fetch('/api/separate', { method: 'POST', body: form });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.detail || t('status.separationError'));
+    const data = await apiJson('/api/separate', { method: 'POST', body: form });
+    const estimatedDecodedBytes = data.duration * 44_100 * 2 * 4 * Object.keys(data.stems).length;
+    const estimatedPeakDecodeBytes = estimatedDecodedBytes * (1 + 0.5 / Object.keys(data.stems).length);
+    if (estimatedPeakDecodeBytes > MAX_DECODED_STEM_BYTES) throw new Error(t('status.decodeMemoryLimit'));
 
     // Decoding completes before the mixer is rendered, preventing a half-ready UI.
     if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext();
+    clearMixerForReplacement();
+    status(getLanguage() === 'en' ? 'Loading separated tracks…' : 'Chargement des pistes séparées…');
     const names = Object.keys(data.stems);
-    const decoded = await Promise.all(names.map(async (name) => [
-      name,
-      await fetch(`${data.stems[name]}?lang=${getLanguage()}`).then(async (stemResponse) => {
-        if (!stemResponse.ok) throw Error(t('status.trackMissing', { track: t(stemInfo[name].titleKey) }));
-        return audioCtx.decodeAudioData(await stemResponse.arrayBuffer());
-      }),
-    ]));
+    const decoded = [];
+    for (const name of names) {
+      const stemResponse = await fetch(`${data.stems[name]}?lang=${getLanguage()}`);
+      if (!stemResponse.ok) throw Error(t('status.trackMissing', { track: t(stemInfo[name].titleKey) }));
+      const bytes = await stemResponse.arrayBuffer();
+      decoded.push([name, await audioCtx.decodeAudioData(bytes)]);
+    }
 
-    stop();
     currentJobId = data.jobId;
     currentSourceName = file.name;
     currentMode = mode;
@@ -612,9 +802,6 @@ async function separateAudio() {
     activeProjectId = null;
     projectDirty = false;
     if ($('#projectNameInput')) $('#projectNameInput').value = file.name.replace(/\.[^.]+$/, '');
-    Object.keys(tracks).forEach((name) => delete tracks[name]);
-    Object.keys(effectsByTrack).forEach((name) => delete effectsByTrack[name]);
-    Object.keys(automationByTrack).forEach((name) => delete automationByTrack[name]);
     decoded.forEach(([name, buffer]) => {
       tracks[name] = buffer;
       ensureAutomation(name, buffer.duration);
@@ -631,20 +818,36 @@ async function separateAudio() {
     status(data.cacheHit ? t('status.cached') : t('status.finished'));
   } catch (error) {
     console.error('Audio separation failed.', error);
-    status(error.message, true);
+    status(separationCancelRequested ? t('status.cancelled') : error.message, !separationCancelRequested);
   } finally {
+    stopSeparationProgressPolling();
+    activeSeparationRequestId = null;
+    cancelButton.disabled = true;
+    cancelButton.classList.add('hidden');
     button.disabled = !$('#fileInput').files[0];
     cacheButton.disabled = false;
   }
 }
 
+$('#cancelSeparationButton').onclick = async () => {
+  const button = $('#cancelSeparationButton'), requestId = activeSeparationRequestId;
+  if (!requestId || button.disabled) return;
+  button.disabled = true;
+  try {
+    await apiJson(`/api/separations/${requestId}/cancel`, { method: 'POST' });
+    separationCancelRequested = true;
+    status(t('status.canceling'));
+  } catch (error) {
+    button.disabled = false;
+    status(error.message, true);
+  }
+};
+
 async function clearAudioSplitCache() {
   const button = $('#clearCacheButton');
   button.disabled = true;
   try {
-    const response = await fetch(`/api/cache?lang=${getLanguage()}`, { method: 'DELETE' });
-    const data = await response.json();
-    if (!response.ok) throw Error(data.detail || t('status.cacheError'));
+    const data = await apiJson(`/api/cache?lang=${getLanguage()}`, { method: 'DELETE' });
     const total = data.removedJobs + data.removedUploads;
     status(t('status.cacheCleared', { count: total, plural: total > 1 ? 's' : '' }));
   } catch (error) {
@@ -679,7 +882,8 @@ async function initializeModalComponents() {
     changelogModal = createChangelogModal($('#versionButton'));
     languageModal = createLanguageModal($('#languageButton'));
     const libraryElement = $('#libraryModal'), libraryTrigger = $('#libraryButton');
-    const closeLibrary = () => { libraryElement.classList.remove('is-open'); setTimeout(() => libraryElement.setAttribute('aria-hidden', 'true'), 240); libraryTrigger.focus(); };
+    bindModalAccessibility(libraryElement);
+    const closeLibrary = () => { libraryElement.classList.remove('is-open'); setTimeout(() => { libraryElement.setAttribute('aria-hidden', 'true'); libraryTrigger.focus(); }, 240); };
     libraryElement.querySelectorAll('[data-library-close]').forEach(button => button.onclick = closeLibrary);
     libraryTrigger.onclick = async () => {
       try { await refreshLibrary(); } catch (error) { status(error.message, true); }
@@ -695,6 +899,26 @@ async function initializeModalComponents() {
       if (!name) { input.focus(); return; }
       try { const folder = await apiJson('/api/library/folders', { method: 'POST', body: JSON.stringify({ name }) }); selectedFolderId = folder.id; input.value = ''; await refreshLibrary(); }
       catch (error) { status(error.message, true); }
+    };
+    $('#importProjectButton').onclick = () => $('#projectArchiveInput').click();
+    $('#projectArchiveInput').onchange = async event => {
+      const file = event.target.files[0], folderId = selectedFolderId || $('#saveFolderSelect').value;
+      if (!file) return;
+      if (!folderId) { status(libraryLabels().needFolder, true); event.target.value = ''; return; }
+      const form = new FormData();
+      form.append('file', file);
+      $('#importProjectButton').disabled = true;
+      try {
+        await apiJson(`/api/library/folders/${folderId}/projects/import`, { method: 'POST', body: form });
+        selectedFolderId = folderId;
+        await refreshLibrary();
+        status(libraryLabels().imported);
+      } catch (error) {
+        status(error.message, true);
+      } finally {
+        $('#importProjectButton').disabled = false;
+        event.target.value = '';
+      }
     };
     $('#saveProjectButton').onclick = () => void saveCurrentProject();
     $('#saveFolderSelect').onchange = event => { selectedFolderId = event.target.value || null; };
@@ -727,5 +951,11 @@ initializeModalComponents();
 setInterval(() => {
   if (activeProjectId && projectDirty && !projectSaving) void saveCurrentProject({ automatic: true });
 }, 10000);
+window.addEventListener('beforeunload', (event) => {
+  if ((activeProjectId && projectDirty) || (currentJobId && !activeProjectId)) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
+});
 document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); libraryModal?.close(); } });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));

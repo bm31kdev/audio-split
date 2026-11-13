@@ -4,7 +4,7 @@
   <section class="changelog-dialog library-dialog" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
     <header class="changelog-header"><div><p class="eyebrow">AUDIO SPLIT STUDIO</p><h2 id="libraryTitle">Mes projets</h2><p id="libraryDescription">Vos dossiers et séparations enregistrés sur cet ordinateur.</p></div><button type="button" class="changelog-close" data-library-close aria-label="Fermer" title="Fermer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></header>
     <div class="library-content">
-      <div class="library-toolbar"><input id="newFolderName" type="text" maxlength="80" placeholder="Nom du nouveau dossier"><button id="createFolderButton" class="primary" type="button">Créer un dossier</button></div>
+      <div class="library-toolbar"><input id="newFolderName" type="text" maxlength="80" placeholder="Nom du nouveau dossier"><button id="createFolderButton" class="primary" type="button">Créer un dossier</button><button id="importProjectButton" type="button">Importer un projet</button><input id="projectArchiveInput" type="file" accept=".zip,application/zip" hidden></div>
       <div id="libraryWorkspace" class="library-workspace"></div>
       <div id="saveProjectPanel" class="save-project-panel"><div><h3 id="saveProjectHeading">Enregistrer la séparation actuelle</h3><p id="saveProjectHint">Un projet contient les pistes séparées et tous les réglages du mixeur.</p></div><div class="save-project-controls"><select id="saveFolderSelect" aria-label="Dossier du projet"></select><input id="projectNameInput" type="text" maxlength="120" placeholder="Nom du projet"><button id="saveProjectButton" class="primary" type="button">Enregistrer</button></div></div>
     </div>
