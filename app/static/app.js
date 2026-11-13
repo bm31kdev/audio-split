@@ -1,23 +1,23 @@
-import { createBassSaturation, updateBassSaturation } from './js/effects/bass-saturation.js?v=1.3.2';
-import { createCompressor, updateCompressor } from './js/effects/compressor.js?v=1.3.2';
-import { createThreeBandEq, updateThreeBandEq } from './js/effects/three-band-eq.js?v=1.3.2';
-import { createReverb, updateReverb } from './js/effects/reverb.js?v=1.3.2';
-import { createDelay, updateDelay } from './js/effects/delay.js?v=1.3.2';
-import { createFilters, updateFilters } from './js/effects/filters.js?v=1.3.2';
-import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.3.2';
-import { createChorus, updateChorus } from './js/effects/chorus.js?v=1.3.2';
-import { createFlanger, updateFlanger } from './js/effects/flanger.js?v=1.3.2';
-import { createPhaser, updatePhaser } from './js/effects/phaser.js?v=1.3.2';
-import { createTremolo, updateTremolo } from './js/effects/tremolo.js?v=1.3.2';
-import { createBitcrusher, updateBitcrusher } from './js/effects/bitcrusher.js?v=1.3.2';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './js/effects/noise-gate.js?v=1.3.2';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './js/effects/de-esser.js?v=1.3.2';
-import { createLimiter, updateLimiter } from './js/effects/limiter.js?v=1.3.2';
-import { createExciter, updateExciter } from './js/effects/exciter.js?v=1.3.2';
-import { effectCatalog, effectIsAvailable } from './js/effects/catalog.js?v=1.3.2';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js?v=1.3.2';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.2';
-import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3.2';
+import { createBassSaturation, updateBassSaturation } from './js/effects/bass-saturation.js?v=1.3.3';
+import { createCompressor, updateCompressor } from './js/effects/compressor.js?v=1.3.3';
+import { createThreeBandEq, updateThreeBandEq } from './js/effects/three-band-eq.js?v=1.3.3';
+import { createReverb, updateReverb } from './js/effects/reverb.js?v=1.3.3';
+import { createDelay, updateDelay } from './js/effects/delay.js?v=1.3.3';
+import { createFilters, updateFilters } from './js/effects/filters.js?v=1.3.3';
+import { createStereoWidth, updateStereoWidth } from './js/effects/stereo-width.js?v=1.3.3';
+import { createChorus, updateChorus } from './js/effects/chorus.js?v=1.3.3';
+import { createFlanger, updateFlanger } from './js/effects/flanger.js?v=1.3.3';
+import { createPhaser, updatePhaser } from './js/effects/phaser.js?v=1.3.3';
+import { createTremolo, updateTremolo } from './js/effects/tremolo.js?v=1.3.3';
+import { createBitcrusher, updateBitcrusher } from './js/effects/bitcrusher.js?v=1.3.3';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './js/effects/noise-gate.js?v=1.3.3';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './js/effects/de-esser.js?v=1.3.3';
+import { createLimiter, updateLimiter } from './js/effects/limiter.js?v=1.3.3';
+import { createExciter, updateExciter } from './js/effects/exciter.js?v=1.3.3';
+import { effectCatalog, effectIsAvailable } from './js/effects/catalog.js?v=1.3.3';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './js/effects/voice-ducking.js?v=1.3.3';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.3';
+import { applyTranslations, getLanguage, onLanguageChange, t } from './js/i18n.js?v=1.3.3';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 const $ = (sel) => document.querySelector(sel);
@@ -697,7 +697,7 @@ async function playMix() {
   }
 }
 function encodeWavInWorker(buffer) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.2', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.3', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {

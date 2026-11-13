@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.2
+# AudioSplit Studio — v1.3.3
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -21,6 +21,8 @@ Au premier lancement, le script fait tout automatiquement :
 Lorsque `Installation complete: OK` s’affiche, l’application est prête. Le lanceur affiche son adresse exacte ; si AudioSplit Studio tourne déjà, il ouvre cette instance. Gardez la fenêtre PowerShell ouverte pendant son utilisation. Pour arrêter le serveur, faites `Ctrl+C` dans cette fenêtre.
 
 > Vous avez déjà utilisé cette commande ? Relancez exactement la même. Elle vérifie l’installation existante et ne réinstalle pas inutilement les paquets.
+
+Après l’installation, vous pouvez aussi lancer le serveur manuellement avec `powershell -ExecutionPolicy Bypass -File .\start.ps1`. Ce lanceur ouvre l’instance déjà active ou choisit un port libre entre 8000 et 8010.
 
 ## Utiliser AudioSplit Studio
 

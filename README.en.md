@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.2
+# AudioSplit Studio — v1.3.3
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -21,6 +21,8 @@ On the first run, the launcher does everything automatically:
 When `Installation complete: OK` appears, the app is ready. The launcher prints the exact URL; if AudioSplit Studio is already running, it opens that instance. Keep the PowerShell window open while using AudioSplit Studio. Press `Ctrl+C` in that window to stop the server.
 
 > Already ran the command once? Run the exact same command again. It checks the existing setup and does not reinstall packages unnecessarily.
+
+After setup, you can also start the server manually with `powershell -ExecutionPolicy Bypass -File .\start.ps1`. This launcher opens an existing instance or selects a free port from 8000 to 8010.
 
 ## Use AudioSplit Studio
 
