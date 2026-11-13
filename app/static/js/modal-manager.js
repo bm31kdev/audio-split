@@ -1,5 +1,5 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.3.3';
-import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.3.3';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.3.4.4';
+import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.3.4.4';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -113,12 +113,13 @@ export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, g
         controlMarkup('eqMid', 'fx.mid', values.eqMid, -12, 12),
         controlMarkup('eqHigh', 'fx.high', values.eqHigh, -12, 12),
       ].join('');
+      else if (available && effect.key === 'bassBoost') controls = controlMarkup('bassBoost', 'fx.bassBoost.amount', values.bassBoost, 0, 100);
       else if (available && effect.key === 'filters') controls = [
         controlMarkup('highPass', 'fx.highPass', values.highPass, 0, 100),
         controlMarkup('lowPass', 'fx.lowPass', values.lowPass, 0, 100),
       ].join('');
       else if (available) {
-        const labelKey = { compressor: 'fx.compression', reverb: 'fx.mix', delay: 'fx.mix', width: 'fx.width', ducking: 'fx.duck', saturation: 'fx.amount' }[effect.key] || 'fx.amount';
+        const labelKey = { compressor: 'fx.compression', reverb: 'fx.mix', delay: 'fx.mix', width: 'fx.width', ducking: 'fx.duck', saturation: 'fx.amount', bassBoost: 'fx.bassBoost.amount' }[effect.key] || 'fx.amount';
         controls = controlMarkup(effect.key, labelKey, values[effect.key], effect.key === 'width' ? 0 : 0, effect.key === 'width' ? 200 : 100);
       }
       return effectCard(effect, controls, available, targets);

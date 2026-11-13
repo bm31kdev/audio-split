@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.3
+# AudioSplit Studio — v1.3.4
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -57,6 +57,7 @@ The Fx button beside each track gives access to context-appropriate effects:
 - Reverb and delay on vocals.
 - Stereo width on accompaniment or instruments.
 - Vocal ducking on non-vocal tracks.
+- Bass boost on the Bass track: a linear low-frequency filter without saturation.
 - Bass saturation on bass, or on accompaniment in simple mode.
 - Chorus, flanger, and phaser on vocals and instrument tracks.
 - Tremolo on vocals, drums, and instruments; bitcrusher on drums and instruments.
@@ -96,7 +97,8 @@ The project intentionally stays simple: FastAPI runs Demucs locally in `app/main
 - `app/static/index.html`: application shell.
 - `app/static/components/`: Fx, language, project-library, and version-history modal HTML.
 - `app/static/js/i18n.js`: French/English UI dictionary and language persistence.
-- `app/static/js/effects/`: one Web Audio module per effect.
+- `app/static/js/audio-engine.js` and `track-state.js`: audio engine and mixer control state.
+- `app/static/js/effects/`: one Web Audio module per effect, including linear bass boost.
 - `app/static/js/modal-manager.js`: loading and lifecycle for modal components.
 - `app/static/app.js`: mixer orchestration, playback, export, and language-aware UI.
 - `requirements.txt` lists direct dependencies; `requirements-windows-py311.lock` pins transitive dependencies with SHA-256 hashes for Windows/Python 3.11.

@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.3
+# AudioSplit Studio — v1.3.4
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -57,6 +57,7 @@ Le bouton **Fx** à côté de chaque piste affiche les effets pertinents :
 - Reverb et delay sur la voix.
 - Largeur stéréo sur l’accompagnement ou les instruments.
 - Ducking voix sur les pistes non vocales.
+- Boost basse sur la piste Basse : filtre linéaire de graves, sans saturation.
 - Saturation basse sur la basse, ou sur l’accompagnement en mode simple.
 - Chorus, flanger et phaser sur la voix et les pistes d’instruments.
 - Trémolo sur la voix, la batterie et les instruments ; bitcrusher sur la batterie et les instruments.
@@ -91,12 +92,13 @@ Si `winget` est introuvable, installez **App Installer** depuis le Microsoft Sto
 
 ## Structure du projet
 
-Le projet reste volontairement simple : FastAPI exécute Demucs localement dans `app/main.py`, tandis que le mixeur Web Audio se trouve dans `app/static/`. Les séparations temporaires sont dans `data/jobs/` et `data/uploads/`. La bibliothèque durable se trouve dans `data/library/`, sous forme de dossiers, fichiers audio et manifestes JSON, sans base de données. Ces données locales ne sont pas versionnées.
+Le projet reste volontairement simple : `app/main.py` assemble FastAPI et ses middlewares ; les routes de séparation et de bibliothèque, l’état local et les utilitaires sont répartis dans des modules dédiés. Le mixeur Web Audio se trouve dans `app/static/`, avec un module par effet. Les séparations temporaires sont dans `data/jobs/` et `data/uploads/`. La bibliothèque durable se trouve dans `data/library/`, sous forme de dossiers, fichiers audio et manifestes JSON, sans base de données. Ces données locales ne sont pas versionnées.
 
 - `app/static/index.html` : structure principale de l’application.
 - `app/static/components/` : HTML des modals Fx, langue, bibliothèque de projets et historique des versions.
 - `app/static/js/i18n.js` : dictionnaires français/anglais et sauvegarde du choix de langue.
-- `app/static/js/effects/` : un module Web Audio par effet.
+- `app/static/js/audio-engine.js` et `track-state.js` : moteur audio et état des contrôles du mixeur.
+- `app/static/js/effects/` : un module Web Audio par effet, dont le boost basse linéaire.
 - `app/static/js/modal-manager.js` : chargement et cycle de vie des modals.
 - `app/static/app.js` : orchestration du mixeur, de la lecture, de l’export et de l’interface multilingue.
 - `requirements.txt` décrit les dépendances principales ; `requirements-windows-py311.lock` verrouille leurs dépendances indirectes avec hashes SHA-256 pour Windows/Python 3.11.

@@ -8,6 +8,7 @@ export const effectCatalog = [
   { key: 'width', title: 'fx.width.title', description: 'fx.width.description', targets: 'width' },
   { key: 'ducking', title: 'fx.duck.title', description: 'fx.duck.description', targets: ['accompaniment', 'drums', 'bass', 'other'] },
   { key: 'saturation', title: 'fx.bass.title', description: 'fx.bass.description', targets: 'saturation' },
+  { key: 'bassBoost', title: 'fx.bassBoost.title', description: 'fx.bassBoost.description', targets: 'bass' },
   { key: 'chorus', title: 'fx.chorus.title', description: 'fx.chorus.description', targets: ['vocals', 'accompaniment', 'other'] },
   { key: 'flanger', title: 'fx.flanger.title', description: 'fx.flanger.description', targets: ['vocals', 'accompaniment', 'other'] },
   { key: 'phaser', title: 'fx.phaser.title', description: 'fx.phaser.description', targets: ['vocals', 'accompaniment', 'other'] },
@@ -23,6 +24,7 @@ export function effectIsAvailable(effect, track, targets) {
   if (effect.targets === 'all') return true;
   if (effect.targets === 'width') return track === targets.width;
   if (effect.targets === 'saturation') return track === targets.saturation;
+  if (effect.targets === 'bass') return track === 'bass';
   return effect.targets.includes(track);
 }
 
@@ -31,5 +33,6 @@ export function effectTrackNames(effect, targets, translate) {
   if (names === 'all') return translate('fx.availableAll');
   if (names === 'width') names = [targets.width];
   if (names === 'saturation') names = [targets.saturation];
+  if (names === 'bass') names = ['bass'];
   return names.map((name) => translate(`stem.${name}`)).join(', ');
 }
