@@ -1,0 +1,72 @@
+/* Four shared visual modes: primary, secondary, danger, and modal. */
+button.audio-button,
+button.audio-button[data-button-variant] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 14px;
+  color: #e9ebf0;
+  font: 600 12px Segoe UI, Arial, sans-serif;
+  line-height: 1.15;
+  text-decoration: none;
+  white-space: nowrap;
+  background: #242833;
+  border: 1px solid #3c4350;
+  border-radius: 9px;
+  box-shadow: 0 1px 1px #0003;
+  cursor: pointer;
+  transition: color .16s ease, background .16s ease, border-color .16s ease,
+    transform .16s ease, box-shadow .16s ease;
+}
+
+/* Primary stays neutral like Choose file and Projects. */
+button.audio-button[data-button-variant="primary"] { color: #dce1e9; background: #242833; border-color: #3c4350; }
+button.audio-button[data-button-variant="primary"]:hover:not(:disabled) { color: var(--lime); background: #202816; border-color: var(--lime); box-shadow: 0 0 18px #d7ff5438; }
+
+/* Secondary is the filled AudioSplit lime action; hover adds a soft glow. */
+button.audio-button[data-button-variant="secondary"] { color: #171b0f; background: var(--lime); border-color: var(--lime); }
+button.audio-button[data-button-variant="secondary"]:hover:not(:disabled) { color: #111609; background: #e2ff83; border-color: #e2ff83; box-shadow: 0 0 20px #d7ff5466; }
+
+/* Danger starts neutral like Clear cache and turns red only on hover. */
+button.audio-button[data-button-variant="danger"] { color: #dce1e9; background: #242833; border-color: #3c4350; }
+button.audio-button[data-button-variant="danger"]:hover:not(:disabled) { color: #fff1ed; background: #452a28; border-color: var(--orange); box-shadow: 0 0 18px #ff785533; }
+
+/* Modal buttons use the former dialog treatment: dark, quiet, lime on hover. */
+button.audio-button[data-button-variant="modal"] { color: #d9dce4; background: #17191e; border-color: #363c2e; }
+button.audio-button[data-button-variant="modal"]:hover:not(:disabled) { color: #f5ffe0; background: #202816; border-color: #667a3f; box-shadow: 0 0 16px #d7ff542b; }
+button.audio-button[data-button-variant] strong { color: inherit; font-weight: inherit; }
+
+button.audio-button:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+button.audio-button:disabled { opacity: .42; box-shadow: none; cursor: not-allowed; transform: none; }
+button.audio-button:hover:not(:disabled) { transform: translateY(-1px); }
+button.audio-button.hidden { display: none; }
+
+/* Size modifiers keep icons and compact controls aligned in their layouts. */
+button.audio-button[data-button-size="transport"] { width: 38px; height: 38px; min-height: 38px; padding: 0; }
+button.audio-button[data-button-size="header-icon"] { width: 54px; height: 34px; min-height: 34px; padding: 0 8px; gap: 6px; }
+button.audio-button[data-button-size="small-icon"] { width: 34px; height: 34px; min-height: 34px; padding: 0; }
+button.audio-button[data-button-size="tiny-icon"] { width: 25px; height: 25px; min-height: 25px; padding: 0; }
+button.audio-button[data-button-size="mute"] { width: 56px; height: 34px; min-height: 34px; padding: 0; }
+button.audio-button[data-button-size="fx"] { width: 42px; height: 42px; min-height: 42px; padding: 0; }
+button.audio-button[data-button-size="choice"] { min-height: 76px; }
+button.audio-button[data-button-size="compact"] { min-height: 32px; padding: 0 11px; }
+button.audio-button[data-button-size="folder"] { width: 100%; justify-content: space-between; padding: 0 12px; text-align: left; }
+
+button.audio-button[data-button-variant="modal"] svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+button.audio-button[data-button-variant="primary"] svg,
+button.audio-button[data-button-variant="secondary"] svg,
+button.audio-button[data-button-variant="danger"] svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+button.audio-button.play svg { fill: currentColor; stroke: none; }
+
+@media (max-width: 540px) {
+  button.audio-button[data-button-size="transport"] { width: 38px; height: 38px; min-height: 38px; }
+  button.audio-button[data-button-size="header-icon"] { width: 54px; height: 34px; min-height: 34px; padding: 0 8px; }
+  button.audio-button[data-button-size="small-icon"] { width: 34px; height: 34px; min-height: 34px; }
+  button.audio-button[data-button-size="tiny-icon"] { width: 25px; height: 25px; min-height: 25px; }
+  button.audio-button[data-button-size="mute"] { width: 50px; height: 34px; min-height: 34px; }
+  button.audio-button[data-button-size="fx"] { width: 38px; height: 38px; min-height: 38px; }
+  button.audio-button[data-button-size="choice"] { min-height: 70px; }
+}

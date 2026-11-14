@@ -1,8 +1,10 @@
-# AudioSplit Studio — v1.3.4
+# AudioSplit Studio — v1.3.5
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
 > [Read this guide in English →](README.en.md)
+>
+> [Feuille de route jusqu’à la V2 →](ROADMAP_V2.md)
 
 ## Démarrer l’application
 
@@ -102,6 +104,8 @@ Le projet reste volontairement simple : `app/main.py` assemble FastAPI et ses mi
 - `app/static/js/modal-manager.js` : chargement et cycle de vie des modals.
 - `app/static/app.js` : orchestration du mixeur, de la lecture, de l’export et de l’interface multilingue.
 - `requirements.txt` décrit les dépendances principales ; `requirements-windows-py311.lock` verrouille leurs dépendances indirectes avec hashes SHA-256 pour Windows/Python 3.11.
+
+- `app/static/components/button.html` et `button-component.js` : bouton réutilisable et variantes visuelles communes.
 
 ## Licence
 

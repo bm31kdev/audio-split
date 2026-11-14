@@ -35,6 +35,14 @@ header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .eyebrow { margin-bottom: 12px; font: 500 11px Consolas, 'Courier New', monospace; letter-spacing: 1.5px; }
 .hero h2, .mixer h2 { font-size: clamp(35px, 6vw, 62px); line-height: 1.02; letter-spacing: -2.5px; }
 .hero > p:last-child { max-width: 470px; margin-top: 19px; color: var(--muted); line-height: 1.6; }
+.v2-teaser { display: flex; align-items: center; gap: 15px; margin: 0 0 22px; padding: 15px 18px; overflow: hidden; border: 1px solid #3b472b; border-radius: 14px; background: linear-gradient(105deg, #1a2017, #15171d 72%); box-shadow: inset 0 1px #ffffff08; }
+.v2-teaser-mark { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; color: var(--lime); border: 1px solid #526638; border-radius: 12px; background: #252f1c; }
+.v2-teaser-mark svg { width: 22px; height: 22px; fill: currentColor; }
+.v2-teaser-copy { min-width: 0; flex: 1; }
+.v2-teaser-kicker { color: var(--lime); font: 500 9px Consolas, 'Courier New', monospace; letter-spacing: 1.3px; }
+.v2-teaser-copy h3 { margin-top: 4px; font-size: 15px; line-height: 1.25; }
+.v2-teaser-copy > p:last-child { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.v2-teaser-version { display: grid; width: 39px; height: 39px; flex: 0 0 auto; place-items: center; color: var(--lime); font: 600 11px Consolas, 'Courier New', monospace; border: 1px solid #435232; border-radius: 50%; background: #202719; }
 
 /* Shared button and card primitives keep the import panel lightweight. */
 .card { border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(135deg, #181a20, #111216); }
@@ -70,4 +78,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .autosave-status { display: block; flex: 1 1 100%; max-width: none; margin-left: 49px; order: 5; }
   .library-button { padding: 7px 9px; font-size: 10px; }
   .hero { padding: 44px 0 31px; }
+  .v2-teaser { gap: 11px; margin-bottom: 18px; padding: 13px; }
+  .v2-teaser-mark { width: 37px; height: 37px; border-radius: 10px; }
+  .v2-teaser-copy h3 { font-size: 13px; }
+  .v2-teaser-copy > p:last-child { font-size: 10px; }
+  .v2-teaser-version { width: 34px; height: 34px; }
 }

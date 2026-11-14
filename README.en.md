@@ -1,8 +1,10 @@
-# AudioSplit Studio — v1.3.4
+# AudioSplit Studio — v1.3.5
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
 > [Lire ce guide en français →](README.md)
+>
+> [Roadmap to V2 (French) →](ROADMAP_V2.md)
 
 ## Start the application
 
@@ -102,6 +104,8 @@ The project intentionally stays simple: FastAPI runs Demucs locally in `app/main
 - `app/static/js/modal-manager.js`: loading and lifecycle for modal components.
 - `app/static/app.js`: mixer orchestration, playback, export, and language-aware UI.
 - `requirements.txt` lists direct dependencies; `requirements-windows-py311.lock` pins transitive dependencies with SHA-256 hashes for Windows/Python 3.11.
+
+- `app/static/components/button.html` and `button-component.js`: reusable button template and shared visual variants.
 
 ## License
 
