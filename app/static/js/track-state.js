@@ -1,5 +1,5 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, setTrackTargets } from './audio-engine.js?v=1.3.5.1';
-import { t } from './i18n.js?v=1.3.5.1';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, setTrackTargets } from './audio-engine.js?v=1.3.6.1';
+import { t } from './i18n.js?v=1.3.6.1';
 
 export function snapshotTrackControls(names) {
   return Object.fromEntries(names.map((name) => {

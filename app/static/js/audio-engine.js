@@ -1,23 +1,23 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.3.5.1';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.3.5.1';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.3.5.1';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.3.5.1';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.3.5.1';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.3.5.1';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.3.5.1';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.3.5.1';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.3.5.1';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.3.5.1';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.3.5.1';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.3.5.1';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.3.5.1';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.3.5.1';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.3.5.1';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.3.5.1';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.3.5.1';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.3.5.1';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.3.5.1';
-import { getLanguage, t } from './i18n.js?v=1.3.5.1';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.3.6.1';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.3.6.1';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.3.6.1';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.3.6.1';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.3.6.1';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.3.6.1';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.3.6.1';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.3.6.1';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.3.6.1';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.3.6.1';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.3.6.1';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.3.6.1';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.3.6.1';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.3.6.1';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.3.6.1';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.3.6.1';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.3.6.1';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.3.6.1';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.3.6.1';
+import { getLanguage, t } from './i18n.js?v=1.3.6.1';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -317,22 +317,28 @@ export function seekMix(offset, restartPlayback = true) {
   if (!restartPlayback || !playing || !audioCtx) return;
 
   // Recreate every source at the same offset so all stems stay aligned.
-  playbackToken += 1;
-  if (playheadFrame) cancelAnimationFrame(playheadFrame);
-  playheadFrame = undefined;
-  voiceMeter = undefined;
-  liveNodes.forEach(({ source, effects }) => {
-    source.onended = null;
-    try { source.stop(); } catch {}
-    disposeTrackNodes({ effects });
-  });
-  liveNodes = new Map();
-  liveMaster?.disconnect();
-  liveMaster = undefined;
-  playStartedAt = audioCtx.currentTime - playheadOffset;
-  startPlaybackSources(playheadOffset);
-  updatePlayheads(playheadOffset);
-  if (!paused) playheadFrame = requestAnimationFrame(animatePlayheads);
+  try {
+    playbackToken += 1;
+    if (playheadFrame) cancelAnimationFrame(playheadFrame);
+    playheadFrame = undefined;
+    voiceMeter = undefined;
+    liveNodes.forEach(({ source, effects }) => {
+      source.onended = null;
+      try { source.stop(); } catch {}
+      disposeTrackNodes({ effects });
+    });
+    liveNodes = new Map();
+    liveMaster?.disconnect();
+    liveMaster = undefined;
+    playStartedAt = audioCtx.currentTime - playheadOffset;
+    startPlaybackSources(playheadOffset);
+    updatePlayheads(playheadOffset);
+    if (!paused) playheadFrame = requestAnimationFrame(animatePlayheads);
+  } catch (error) {
+    console.error('Could not seek the live mix.', error);
+    stop();
+    status(t('status.playbackStart'), true);
+  }
 }
 export function seekFromPlayhead(event, playhead) {
   const rect = playhead.parentElement.getBoundingClientRect();
@@ -417,16 +423,22 @@ export function effectTailSeconds() {
 export function animatePlayheads() {
   if (!playing || !audioCtx) { playheadFrame = undefined; updatePlayheads(); return; }
   if (paused) { playheadFrame = undefined; updatePlayheads(playheadOffset); return; }
-  // Ducking shares the animation clock with the playhead to avoid another loop.
-  const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
-  for (const [name, nodes] of liveNodes) {
-    if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, settings(name).effects.ducking, audioCtx, true);
-    if (nodes.effects.deEsser) updateDeEsser(nodes.effects.deEsser, settings(name).effects.deEsser, audioCtx, true);
-    if (nodes.effects.gate) updateNoiseGate(nodes.effects.gate, settings(name).effects.gate, audioCtx, true);
+  try {
+    // Ducking shares the animation clock with the playhead to avoid another loop.
+    const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
+    for (const [name, nodes] of liveNodes) {
+      if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, settings(name).effects.ducking, audioCtx, true);
+      if (nodes.effects.deEsser) updateDeEsser(nodes.effects.deEsser, settings(name).effects.deEsser, audioCtx, true);
+      if (nodes.effects.gate) updateNoiseGate(nodes.effects.gate, settings(name).effects.gate, audioCtx, true);
+    }
+    if (!playheadDragging) playheadOffset = Math.min(timelineDuration(), Math.max(0, audioCtx.currentTime - playStartedAt));
+    updatePlayheads(playheadOffset);
+    playheadFrame = requestAnimationFrame(animatePlayheads);
+  } catch (error) {
+    console.error('Live mixer update failed.', error);
+    stop();
+    status(t('status.playbackChange'), true);
   }
-  if (!playheadDragging) playheadOffset = Math.min(timelineDuration(), Math.max(0, audioCtx.currentTime - playStartedAt));
-  updatePlayheads(playheadOffset);
-  playheadFrame = requestAnimationFrame(animatePlayheads);
 }
 export async function apiJson(url, options = {}) {
   const headers = new Headers(options.headers || {});
@@ -464,8 +476,9 @@ export function stop() {
 export async function playMix() {
   if (playing && audioCtx) {
     try {
-      if (paused) {
+      if (paused || audioCtx.state !== 'running') {
         await audioCtx.resume();
+        if (audioCtx.state !== 'running') throw new Error('The audio context did not resume.');
         paused = false;
         setTransportState('playing');
         playheadFrame ??= requestAnimationFrame(animatePlayheads);
@@ -477,7 +490,8 @@ export async function playMix() {
         updatePlayheads(playheadOffset);
       }
     } catch (error) {
-      status(t('status.playbackChange', { error: error.message }), true);
+      console.error('Could not change playback state.', error);
+      status(t('status.playbackChange'), true);
     }
     return;
   }
@@ -486,10 +500,11 @@ export async function playMix() {
   const startOffset = playheadOffset;
   stop();
   playheadOffset = startOffset;
-  ensureAudioContext();
   try {
+    ensureAudioContext();
     // A context created after a long Demucs task is commonly suspended by Chrome.
     await audioCtx.resume();
+    if (audioCtx.state !== 'running') throw new Error('The audio context did not resume.');
     playStartedAt = audioCtx.currentTime - playheadOffset;
     playbackToken += 1;
     playing = true;
@@ -501,6 +516,6 @@ export async function playMix() {
   } catch (error) {
     stop();
     console.error('Audio playback could not start.', error);
-    status(t('status.playbackStart', { error: error.message }), true);
+    status(t('status.playbackStart'), true);
   }
 }

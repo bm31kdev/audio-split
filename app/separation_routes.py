@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import os
 import shutil
 import sys
@@ -28,6 +29,7 @@ from .runtime import (
 from .project_store import clear_directory_children, localized, safe_id
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.delete("/api/cache")
 @serialized_cache_operation
@@ -219,6 +221,7 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
         # both streams: taking only the tail of stderr could hide the actual
         # exception behind a harmless Torchaudio deprecation warning.
         detail = output.strip()
+        logger.error("Demucs failed for separation %s (exit %s):\n%s", request_id, returncode, detail[-16_000:])
         if "not enough memory" in detail.lower() or "defaultcpuallocator" in detail.lower():
             message = localized(
                 language,
@@ -232,7 +235,11 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
         shutil.rmtree(stem_dir, ignore_errors=True)
         shutil.rmtree(source_dir, ignore_errors=True)
         update_separation_state(request_id, status="failed", progress=0, error="demucs")
-        raise HTTPException(500, f"{localized(language, 'Demucs a échoué', 'Demucs failed')}: {detail[-6000:]}")
+        raise HTTPException(500, localized(
+            language,
+            "La séparation a échoué. Consultez le journal du serveur pour le détail technique.",
+            "Separation failed. Check the server log for technical details.",
+        ))
 
     if any(not (stem_dir / filename).exists() for filename in filenames.values()):
         update_separation_state(request_id, status="failed", progress=0, error="missing-stems")

@@ -30,14 +30,14 @@ export function readVoiceLevel(meter) {
   return Math.sqrt(energy);
 }
 
-export function scheduleOfflineVoiceDucking(effect, vocalBuffer, amount, context) {
+export function scheduleOfflineVoiceDucking(effect, vocalBuffer, amount, context, vocalGain = 1) {
   const channel = vocalBuffer.getChannelData(0);
   const step = Math.max(1, Math.floor(vocalBuffer.sampleRate * 0.04));
   for (let start = 0; start < channel.length; start += step) {
     let energy = 0;
     const end = Math.min(channel.length, start + step);
     for (let index = start; index < end; index += 1) energy += channel[index] * channel[index];
-    const level = Math.sqrt(energy / Math.max(1, end - start));
+    const level = Math.sqrt(energy / Math.max(1, end - start)) * vocalGain;
     effect.gain.gain.setValueAtTime(targetGain(level, amount), start / vocalBuffer.sampleRate);
   }
 }

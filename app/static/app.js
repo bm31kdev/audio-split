@@ -1,9 +1,9 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.3.5.1';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.5.1';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.3.5.1';
-import { libraryLabels } from './js/library-text.js?v=1.3.5.1';
-import { mountButtonComponent } from './js/button-component.js?v=1.3.5.1';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.3.5.1';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.3.6.1';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.6.1';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.3.6.1';
+import { libraryLabels } from './js/library-text.js?v=1.3.6.1';
+import { mountButtonComponent } from './js/button-component.js?v=1.3.6.1';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.3.6.1';
 
 await mountButtonComponent($('#buttonComponentRoot'));
 
@@ -11,6 +11,11 @@ let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationPollTimer, separationPollBusy = false, separationCancelRequested = false;
+function userFacingError(error, fallbackKey) {
+  const message = String(error?.message || '').trim();
+  if (error instanceof TypeError || !message || message.length > 240 || /failed to fetch|networkerror|load failed/i.test(message)) return t(fallbackKey);
+  return message;
+}
 function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 window.addEventListener('audiosplit:project-dirty', () => {
   if (!activeProjectId && !currentJobId) return;
@@ -54,7 +59,7 @@ function renderLibrary() {
       if (activeProjectId && current.projects.some(project => project.id === activeProjectId)) { activeProjectId = null; currentJobId = null; }
       selectedFolderId = null;
       await refreshLibrary();
-    } catch (error) { status(error.message, true); }
+    } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
   });
   workspace.querySelectorAll('[data-open-project]').forEach(button => button.onclick = () => void openSavedProject(button.dataset.openProject));
   workspace.querySelectorAll('[data-export-project]').forEach(button => button.onclick = () => { window.location.href = `/api/library/projects/${button.dataset.exportProject}/archive`; });
@@ -68,14 +73,14 @@ function renderLibrary() {
       await apiJson(`/api/library/projects/${project.id}`, { method: 'DELETE', body: JSON.stringify({ confirmation }) });
       if (activeProjectId === project.id) { activeProjectId = null; currentJobId = null; projectDirty = false; }
       await refreshLibrary();
-    } catch (error) { status(error.message, true); }
+    } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
   });
 }
 async function renameLibraryItem(url, oldName) {
   const value = prompt(getLanguage() === 'en' ? 'New name:' : 'Nouveau nom :', oldName);
   if (!value?.trim()) return;
   try { await apiJson(url, { method: 'PATCH', body: JSON.stringify({ name: value.trim() }) }); await refreshLibrary(); }
-  catch (error) { status(error.message, true); }
+  catch (error) { status(userFacingError(error, 'status.actionError'), true); }
 }
 async function confirmCurrentMixReplacement() {
   if (activeProjectId) {
@@ -124,7 +129,7 @@ async function openSavedProject(projectId) {
     autosaveNotice('ready');
     requestAnimationFrame(() => { decoded.forEach(([name, buffer]) => drawWaveform(name, buffer)); project.stems.forEach(refreshAutomation); });
     libraryModal.close(); status(getLanguage() === 'en' ? 'Project loaded from local storage.' : 'Projet chargé depuis le stockage local.');
-  } catch (error) { console.error('Could not load local project.', error); status(error.message, true); }
+  } catch (error) { console.error('Could not load local project.', error); status(userFacingError(error, 'status.actionError'), true); }
 }
 async function saveCurrentProject({ automatic = false } = {}) {
   const labels = libraryLabels(), name = $('#projectNameInput').value.trim() || currentSourceName.replace(/\.[^.]+$/, '') || 'AudioSplit project';
@@ -150,8 +155,10 @@ async function saveCurrentProject({ automatic = false } = {}) {
     if (projectDirty) autosaveNotice('dirty'); else autosaveNotice('saved', clockTime());
     return true;
   } catch (error) {
-    status(error.message, true);
-    autosaveNotice(automatic ? 'error' : 'manualError', error.message);
+    console.error('Project save failed.', error);
+    const message = userFacingError(error, 'status.actionError');
+    status(message, true);
+    autosaveNotice(automatic ? 'error' : 'manualError', message);
     return false;
   } finally { projectSaving = false; }
 }
@@ -170,7 +177,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.5.1', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.6.1', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
@@ -194,18 +201,24 @@ async function exportMix() {
     const renderBytes = renderLength * 2 * 4, wavBytes = renderLength * 2 * 2 + 44;
     const workingBytes = decodedBytes + renderBytes * 2 + wavBytes * 2;
     if (workingBytes > MAX_EXPORT_WORKING_BYTES) throw new Error(t('status.exportMemoryLimit'));
-    if (wavBytes - 44 + 36 > WAV_RIFF_MAX_BYTES) throw new Error('WAV export exceeds the 4 GiB RIFF limit.');
+    if (wavBytes - 44 + 36 > WAV_RIFF_MAX_BYTES) throw new Error(t('status.exportTooLarge'));
     const offline = new OfflineAudioContext(2, renderLength, rate), master = createMasterLimiter(offline);
     const offlineNodes = new Map();
     for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,master); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0,0,buffer.duration);source.start();offlineNodes.set(name,nodes); }
     // Offline rendering has no animation frame, so schedule the vocal envelope in advance.
-    if (tracks.vocals) for (const [name, nodes] of offlineNodes) if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline);
+    if (tracks.vocals) {
+      const vocalSettings = settings('vocals');
+      const vocalGain = vocalSettings.muted ? 0 : vocalSettings.volume;
+      for (const [name, nodes] of offlineNodes) {
+        if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline, vocalGain);
+      }
+    }
     for (const [name, nodes] of offlineNodes) if (nodes.effects.deEsser) scheduleOfflineDeEsser(nodes.effects.deEsser, tracks[name], settings(name).effects.deEsser);
     for (const [name, nodes] of offlineNodes) if (nodes.effects.gate) scheduleOfflineNoiseGate(nodes.effects.gate, tracks[name], settings(name).effects.gate, offline);
     status(t('status.rendering')); const rendered=await offline.startRendering(), result=await encodeWavInWorker(rendered), url=URL.createObjectURL(result.blob), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();setTimeout(() => URL.revokeObjectURL(url), 1000);status(result.normalized ? t('status.exportedNormalized') : t('status.exported'));
   } catch (error) {
     console.error('Audio export failed.', error);
-    status(t('status.exportError', { error: error.message || error }), true);
+    status(error.message === t('status.exportMemoryLimit') || error.message === t('status.exportTooLarge') ? error.message : t('status.exportError'), true);
   } finally {
     button.disabled = !Object.keys(tracks).length;
   }
@@ -291,7 +304,7 @@ async function separateAudio() {
     status(data.cacheHit ? t('status.cached') : t('status.finished'));
   } catch (error) {
     console.error('Audio separation failed.', error);
-    status(separationCancelRequested ? t('status.cancelled') : error.message, !separationCancelRequested);
+    status(separationCancelRequested ? t('status.cancelled') : userFacingError(error, 'status.separationError'), !separationCancelRequested);
   } finally {
     stopSeparationProgressPolling();
     activeSeparationRequestId = null;
@@ -307,12 +320,13 @@ $('#cancelSeparationButton').onclick = async () => {
   if (!requestId || button.disabled) return;
   button.disabled = true;
   try {
-    await apiJson(`/api/separations/${requestId}/cancel`, { method: 'POST' });
+    await apiJson(`/api/separations/${requestId}/cancel?lang=${getLanguage()}`, { method: 'POST' });
     separationCancelRequested = true;
     status(t('status.canceling'));
   } catch (error) {
+    console.error('Could not cancel separation.', error);
     button.disabled = false;
-    status(error.message, true);
+    status(userFacingError(error, 'status.cancelError'), true);
   }
 };
 
@@ -325,7 +339,7 @@ async function clearAudioSplitCache() {
     status(t('status.cacheCleared', { count: total, plural: total > 1 ? 's' : '' }));
   } catch (error) {
     console.error('AudioSplit cache could not be cleared.', error);
-    status(error.message, true);
+    status(userFacingError(error, 'status.actionError'), true);
   } finally {
     button.disabled = false;
   }
@@ -360,7 +374,7 @@ async function initializeModalComponents() {
     const closeLibrary = () => { libraryElement.classList.remove('is-open'); setTimeout(() => { libraryElement.setAttribute('aria-hidden', 'true'); libraryTrigger.focus(); }, 240); };
     libraryElement.querySelectorAll('[data-library-close]').forEach(button => button.onclick = closeLibrary);
     libraryTrigger.onclick = async () => {
-      try { await refreshLibrary(); } catch (error) { status(error.message, true); }
+      try { await refreshLibrary(); } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
       libraryElement.setAttribute('aria-hidden', 'false'); requestAnimationFrame(() => libraryElement.classList.add('is-open'));
       libraryElement.querySelector('.changelog-close').focus();
     };
@@ -372,7 +386,7 @@ async function initializeModalComponents() {
       const input = $('#newFolderName'), name = input.value.trim();
       if (!name) { input.focus(); return; }
       try { const folder = await apiJson('/api/library/folders', { method: 'POST', body: JSON.stringify({ name }) }); selectedFolderId = folder.id; input.value = ''; await refreshLibrary(); }
-      catch (error) { status(error.message, true); }
+      catch (error) { status(userFacingError(error, 'status.actionError'), true); }
     };
     $('#importProjectButton').onclick = () => $('#projectArchiveInput').click();
     $('#projectArchiveInput').onchange = async event => {
@@ -388,7 +402,7 @@ async function initializeModalComponents() {
         await refreshLibrary();
         status(libraryLabels().imported);
       } catch (error) {
-        status(error.message, true);
+        status(userFacingError(error, 'status.actionError'), true);
       } finally {
         $('#importProjectButton').disabled = false;
         event.target.value = '';
