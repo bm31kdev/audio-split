@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import shutil
 import tempfile
 
@@ -10,6 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 from urllib.parse import urlsplit
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 
 from .config import *
 from .state import (
@@ -177,10 +179,23 @@ from .runtime import (
 
 
 from .separation_routes import router as separation_router
+from . import project_routes
 from .project_routes import router as project_router
 
 app.include_router(separation_router)
 app.include_router(project_router)
+
+
+@app.on_event("startup")
+async def recover_project_library():
+    recovered, discarded = await run_in_threadpool(project_routes.recover_interrupted_project_writes)
+    project_routes.project_recovery_status = {"restored": recovered, "discarded": discarded}
+    if recovered or discarded:
+        logging.getLogger(__name__).info(
+            "Project library recovery complete: restored %s staged project(s), removed %s incomplete temporary save(s).",
+            recovered,
+            discarded,
+        )
 
 # Keep this outermost so streamed request bodies are limited before FastAPI's
 # multipart parser writes upload data to its temporary spool.

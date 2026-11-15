@@ -31,6 +31,71 @@ from .project_store import (
 )
 
 router = APIRouter()
+project_recovery_status = {"restored": 0, "discarded": 0}
+
+
+def recover_interrupted_project_writes() -> tuple[int, int]:
+    """Promote complete staged saves and remove only incomplete staging folders."""
+    recovered = discarded = 0
+    stem_files = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav"}
+    for folder_dir in LIBRARY.iterdir():
+        if folder_dir.is_symlink() or not folder_dir.is_dir():
+            continue
+        try:
+            folder = read_json(folder_dir / "folder.json")
+            validate_folder_manifest(folder, folder_dir)
+        except (OSError, HTTPException):
+            continue
+        projects_dir = folder_dir / "projects"
+        if not projects_dir.is_dir() or projects_dir.is_symlink():
+            continue
+        for staging in projects_dir.iterdir():
+            if staging.is_symlink() or not staging.is_dir() or not staging.name.startswith((".save-", ".import-")):
+                continue
+            try:
+                metadata = read_json(staging / "project.json")
+                project_id = metadata.get("id", "")
+                validate_project_manifest(metadata, Path(project_id), folder["id"])
+                source_files = [path for path in staging.glob("source.*") if path.suffix.lower() in ALLOWED and path.is_file()]
+                if len(source_files) != 1 or source_files[0].stat().st_size == 0:
+                    raise ValueError("staged source file is missing")
+                if any(not (staging / "stems" / stem_files[name]).is_file() or (staging / "stems" / stem_files[name]).stat().st_size == 0 for name in metadata["stems"]):
+                    raise ValueError("staged audio track is missing")
+                destination = projects_dir / project_id
+                if destination.exists():
+                    shutil.rmtree(staging)
+                    discarded += 1
+                else:
+                    os.replace(staging, destination)
+                    recovered += 1
+            except (OSError, ValueError, HTTPException, KeyError, TypeError):
+                shutil.rmtree(staging, ignore_errors=True)
+                discarded += 1
+    return recovered, discarded
+
+
+def unique_project_name(name: str, projects_dir: Path) -> tuple[str, bool]:
+    """Keep imported project names unique within their destination folder."""
+    existing_names = set()
+    for project_dir in projects_dir.iterdir():
+        if project_dir.is_symlink() or not project_dir.is_dir():
+            continue
+        try:
+            project = read_json(project_dir / "project.json")
+            existing = project.get("name")
+            if isinstance(existing, str):
+                existing_names.add(existing.casefold())
+        except (HTTPException, OSError):
+            continue
+    if name.casefold() not in existing_names:
+        return name, False
+    number = 2
+    while True:
+        suffix = f" ({number})"
+        candidate = f"{name[:120 - len(suffix)].rstrip()}{suffix}"
+        if candidate.casefold() not in existing_names:
+            return candidate, True
+        number += 1
 
 @router.get("/api/library")
 def list_library():
@@ -62,7 +127,7 @@ def list_library():
                     warnings.append({"kind": "project", "id": project_dir.name, "folderId": folder["id"]})
         folder["projects"] = sorted(projects, key=lambda project: project.get("updatedAt", ""), reverse=True)
         folders.append(folder)
-    return {"folders": sorted(folders, key=lambda folder: folder.get("createdAt", "")), "warnings": warnings}
+    return {"folders": sorted(folders, key=lambda folder: folder.get("createdAt", "")), "warnings": warnings, "recovery": dict(project_recovery_status)}
 
 
 @router.post("/api/library/folders")
@@ -132,20 +197,27 @@ async def save_project(folder_id: str, payload: dict):
     if shutil.disk_usage(parent).free < project_bytes + MIN_FREE_DISK_BYTES:
         raise HTTPException(507, "There is not enough free disk space to save this project.")
     project_id = uuid.uuid4().hex
-    destination = parent / "projects" / project_id
+    projects_dir = parent / "projects"
+    destination = projects_dir / project_id
+    staging = projects_dir / f".save-{project_id}"
     try:
         def copy_project_audio():
-            (destination / "stems").mkdir(parents=True)
-            shutil.copy2(source, destination / f"source{source.suffix.lower()}")
+            (staging / "stems").mkdir(parents=True)
+            shutil.copy2(source, staging / f"source{source.suffix.lower()}")
             for name in available:
-                shutil.copy2(stems / files[name], destination / "stems" / files[name])
+                shutil.copy2(stems / files[name], staging / "stems" / files[name])
         await run_in_threadpool(copy_project_audio)
         now = datetime.now(timezone.utc).isoformat()
         metadata = {"schemaVersion": 1, "id": project_id, "folderId": folder_id, "name": title, "sourceName": source_name, "mode": mode, "engine": engine, "stems": available, "settings": payload.get("settings", {}), "automation": payload.get("automation", {}), "effects": payload.get("effects", {}), "createdAt": now, "updatedAt": now}
-        write_json_atomic(destination / "project.json", metadata)
+        validate_project_manifest(metadata, Path(project_id), folder_id)
+        write_json_atomic(staging / "project.json", metadata)
+        os.replace(staging, destination)
     except OSError as exc:
-        await run_in_threadpool(shutil.rmtree, destination, ignore_errors=True)
+        await run_in_threadpool(shutil.rmtree, staging, ignore_errors=True)
         raise HTTPException(500, f"Could not save local project: {exc}") from exc
+    except BaseException:
+        await run_in_threadpool(shutil.rmtree, staging, ignore_errors=True)
+        raise
     return metadata
 
 
@@ -175,6 +247,9 @@ def export_project_archive(project_id: str):
                 archive.write(path, arcname=member)
         if archive_path.stat().st_size > MAX_PROJECT_ARCHIVE_BYTES:
             raise HTTPException(413, "This project is too large to export as one archive.")
+        with zipfile.ZipFile(archive_path, "r") as archive:
+            if archive.namelist() != [member for _, member in files] or archive.testzip() is not None:
+                raise HTTPException(500, "The project archive could not be verified after export.")
     except BaseException:
         remove_temp_file(archive_path)
         raise
@@ -242,6 +317,7 @@ async def import_project_archive(folder_id: str, file: UploadFile = File(...)):
                 metadata["id"] = project_id
                 metadata["folderId"] = folder_id
                 metadata["schemaVersion"] = 1
+                metadata["name"], renamed = unique_project_name(metadata["name"], projects_dir)
                 now = datetime.now(timezone.utc).isoformat()
                 metadata["createdAt"] = now
                 metadata["updatedAt"] = now
@@ -270,7 +346,7 @@ async def import_project_archive(folder_id: str, file: UploadFile = File(...)):
                 write_json_atomic(staging / "project.json", metadata)
                 validate_project_manifest(metadata, Path(project_id), folder_id)
                 os.replace(staging, destination)
-                return metadata
+                return {**metadata, "renamed": renamed}
         except (zipfile.BadZipFile, EOFError, zlib.error, NotImplementedError, RuntimeError) as exc:
             raise HTTPException(400, "Project archive is damaged or is not a ZIP file.") from exc
         except OSError as exc:

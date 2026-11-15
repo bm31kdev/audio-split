@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.6
+# AudioSplit Studio — v1.3.7
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -44,7 +44,7 @@ Pendant la lecture, les réglages de volume, panoramique, sourdine, automatisati
 
 ### Dossiers et projets locaux
 
-Ouvrez **Projets** dans l’en-tête pour créer des dossiers et y enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, effets et courbes) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes ; l’état apparaît en haut de la page. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque.
+Ouvrez **Projets** dans l’en-tête pour créer des dossiers et y enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, effets et courbes) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes ; l’état apparaît en haut de la page. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque. Les sauvegardes inachevées sont récupérées au prochain démarrage lorsqu’elles contiennent un projet complet ; les sauvegardes ZIP importées qui portent déjà un nom reçoivent un suffixe (2), (3), etc.
 
 ## Changer la langue
 

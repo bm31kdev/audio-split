@@ -123,6 +123,15 @@ def update_separation_state(request_id: str, **values) -> None:
     state.update(values)
 
 
+def extract_demucs_progress(output: str) -> int | None:
+    """Read the newest tqdm percentage, including ANSI-colored Windows output."""
+    plain_output = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", output).replace("\r", "\n")
+    percentages = re.findall(r"(?<![\d.])(\d{1,3})\s*%", plain_output)
+    if not percentages:
+        return None
+    return max(0, min(100, int(percentages[-1])))
+
+
 async def run_demucs_with_progress(command: list[str], request_id: str, source_dir: Path, runtime_env: dict) -> tuple[int, str, bool, bool]:
     """Run Demucs as a cancellable process and retain bounded progress output."""
     log_path = source_dir / "demucs.log"
@@ -139,25 +148,25 @@ async def run_demucs_with_progress(command: list[str], request_id: str, source_d
             while process.poll() is None:
                 if request_id in cancelled_separations:
                     try:
-                        process.terminate()
+                        process.kill()
                     except OSError:
                         pass
                     break
                 if asyncio.get_running_loop().time() - started > 3600:
                     timed_out = True
                     try:
-                        process.terminate()
+                        process.kill()
                     except OSError:
                         pass
                     break
                 output = read_log_tail(log_path)
-                percentages = re.findall(r"(?<!\d)(\d{1,3})%", output)
-                if percentages:
-                    update_separation_state(request_id, progress=max(0, min(99, int(percentages[-1]))))
+                progress = extract_demucs_progress(output)
+                if progress is not None:
+                    update_separation_state(request_id, progress=max(0, min(99, progress)))
                 await asyncio.sleep(0.35)
 
             try:
-                await run_in_threadpool(process.wait, timeout=10)
+                await run_in_threadpool(process.wait, timeout=2)
             except subprocess.TimeoutExpired:
                 process.kill()
                 await run_in_threadpool(process.wait)

@@ -27,10 +27,12 @@ header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .language-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .language-button:hover:not(:disabled) { color: var(--lime); border-color: var(--lime); }
 .local { margin-left: 0; font: 12px Consolas, 'Courier New', monospace; }
-.autosave-status { max-width: 260px; margin-left: auto; overflow: hidden; color: #aeb995; font: 10px Consolas, 'Courier New', monospace; line-height: 1.4; text-overflow: ellipsis; }
-.autosave-status[data-state="saving"] { color: var(--lime); }
+.autosave-status { display: inline-flex; align-items: center; gap: 8px; max-width: 320px; margin-left: auto; padding: 7px 10px; overflow: hidden; color: #b6c18e; background: #171b15; border: 1px solid #38442b; border-radius: 999px; font: 10px Consolas, 'Courier New', monospace; line-height: 1.4; text-overflow: ellipsis; }
+.autosave-status::before { width: 7px; height: 7px; flex: 0 0 auto; background: currentColor; border-radius: 50%; content: ''; }
+.autosave-status[data-state="saving"], .autosave-status[data-state="dirty"] { color: var(--lime); background: #1c2015; border-color: #526638; }
 .autosave-status[data-state="saved"], .autosave-status[data-state="ready"] { color: #c7dc8a; }
-.autosave-status[data-state="error"] { color: #ff987f; }
+.autosave-status[data-state="error"] { color: #ff987f; background: #241a19; border-color: #70483f; }
+.autosave-status[data-state="waiting"] { color: #aeb6c5; background: #171a21; border-color: #3b414e; }
 .hero { padding: 68px 0 42px; }
 .eyebrow { margin-bottom: 12px; font: 500 11px Consolas, 'Courier New', monospace; letter-spacing: 1.5px; }
 .hero h2, .mixer h2 { font-size: clamp(35px, 6vw, 62px); line-height: 1.02; letter-spacing: -2.5px; }

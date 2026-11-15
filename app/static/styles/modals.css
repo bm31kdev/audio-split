@@ -191,3 +191,12 @@
   background: color-mix(in srgb, var(--orange) 9%, transparent);
   font-size: 0.86rem;
 }
+.library-recovery {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--lime) 35%, transparent);
+  border-radius: 10px;
+  color: #d8e6b2;
+  background: color-mix(in srgb, var(--lime) 7%, transparent);
+  font-size: 0.82rem;
+}

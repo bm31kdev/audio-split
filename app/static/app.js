@@ -1,16 +1,16 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.3.6.1';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.6.1';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.3.6.1';
-import { libraryLabels } from './js/library-text.js?v=1.3.6.1';
-import { mountButtonComponent } from './js/button-component.js?v=1.3.6.1';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.3.6.1';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.3.7.1';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.7.1';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.3.7.1';
+import { libraryLabels } from './js/library-text.js?v=1.3.7.1';
+import { mountButtonComponent } from './js/button-component.js?v=1.3.7.1';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.3.7.1';
 
 await mountButtonComponent($('#buttonComponentRoot'));
 
 let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
-let activeSeparationRequestId = null, separationPollTimer, separationPollBusy = false, separationCancelRequested = false;
+let activeSeparationRequestId = null, separationCancelRequested = false;
 function userFacingError(error, fallbackKey) {
   const message = String(error?.message || '').trim();
   if (error instanceof TypeError || !message || message.length > 240 || /failed to fetch|networkerror|load failed/i.test(message)) return t(fallbackKey);
@@ -19,7 +19,7 @@ function userFacingError(error, fallbackKey) {
 function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 window.addEventListener('audiosplit:project-dirty', () => {
   if (!activeProjectId && !currentJobId) return;
-  projectDirty = true; projectRevision += 1; autosaveNotice('dirty');
+  projectDirty = true; projectRevision += 1; autosaveNotice(activeProjectId ? 'dirty' : 'waiting');
 });
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -32,7 +32,9 @@ async function refreshLibrary() {
 function renderLibrary() {
   const labels = libraryLabels(), workspace = $('#libraryWorkspace'), select = $('#saveFolderSelect');
   const warnings = libraryData.warnings || [];
+  const recovery = libraryData.recovery || {};
   const warningHtml = warnings.length ? `<p class="library-warning" role="alert">${getLanguage() === 'en' ? `${warnings.length} local item${warnings.length === 1 ? '' : 's'} could not be read. A manifest backup was checked when available.` : `${warnings.length} élément${warnings.length === 1 ? '' : 's'} local${warnings.length === 1 ? '' : 'aux'} n’a pu être lu. Une sauvegarde de manifeste a été essayée lorsqu’elle était disponible.`}</p>` : '';
+  const recoveryHtml = recovery.restored ? `<p class="library-recovery" role="status">${t('library.recovered', { count: recovery.restored })}</p>` : recovery.discarded ? `<p class="library-recovery" role="status">${t('library.cleaned', { count: recovery.discarded })}</p>` : '';
   $('#libraryTitle').textContent = labels.title;
   $('#libraryDescription').textContent = labels.description;
   const closeButton = $('#libraryModal')?.querySelector('.changelog-close');
@@ -47,8 +49,8 @@ function renderLibrary() {
   $('#saveProjectPanel').classList.toggle('hidden', !Object.keys(tracks).length || (!currentJobId && !activeProjectId));
   select.innerHTML = libraryData.folders.length ? libraryData.folders.map(folder => `<option value="${folder.id}" ${folder.id === selectedFolderId ? 'selected' : ''}>${escapeHtml(folder.name)}</option>`).join('') : `<option value="">${labels.select}</option>`;
   const current = libraryData.folders.find(folder => folder.id === selectedFolderId);
-  if (!current) { workspace.innerHTML = `${warningHtml}<p class="library-empty">${labels.empty}</p>`; return; }
-  workspace.innerHTML = `${warningHtml}<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-button-variant="modal" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${escapeHtml(current.name)}</h3><div><button type="button" data-button-variant="modal" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-folder="${current.id}">${labels.remove}</button></div></div>${current.projects.length ? current.projects.map(project => `<article class="library-project"><div><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.sourceName || '')} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div><button type="button" data-button-variant="modal" data-open-project="${project.id}">${labels.open}</button><button type="button" data-button-variant="modal" data-export-project="${project.id}">${labels.exportArchive}</button><button type="button" data-button-variant="modal" data-rename-project="${project.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-project="${project.id}">${labels.remove}</button></div></article>`).join('') : `<p class="library-empty">${labels.noProjects}</p>`}</section>`;
+  if (!current) { workspace.innerHTML = `${warningHtml}${recoveryHtml}<p class="library-empty">${labels.empty}</p>`; return; }
+  workspace.innerHTML = `${warningHtml}${recoveryHtml}<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-button-variant="modal" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${escapeHtml(current.name)}</h3><div><button type="button" data-button-variant="modal" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-folder="${current.id}">${labels.remove}</button></div></div>${current.projects.length ? current.projects.map(project => `<article class="library-project"><div><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.sourceName || '')} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div><button type="button" data-button-variant="modal" data-open-project="${project.id}">${labels.open}</button><button type="button" data-button-variant="modal" data-export-project="${project.id}">${labels.exportArchive}</button><button type="button" data-button-variant="modal" data-rename-project="${project.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-project="${project.id}">${labels.remove}</button></div></article>`).join('') : `<p class="library-empty">${labels.noProjects}</p>`}</section>`;
   workspace.querySelectorAll('[data-folder]').forEach(button => button.onclick = () => { selectedFolderId = button.dataset.folder; renderLibrary(); });
   workspace.querySelectorAll('[data-rename-folder]').forEach(button => button.onclick = () => void renameLibraryItem(`/api/library/folders/${button.dataset.renameFolder}`, current.name));
   workspace.querySelectorAll('[data-delete-folder]').forEach(button => button.onclick = async () => {
@@ -137,7 +139,7 @@ async function saveCurrentProject({ automatic = false } = {}) {
   projectSaving = true;
   const savedRevision = projectRevision;
   const payload = savePayload();
-  if (activeProjectId) autosaveNotice('saving');
+  autosaveNotice('saving');
   try {
     let result;
     if (activeProjectId) result = await apiJson(`/api/library/projects/${activeProjectId}`, { method: 'PUT', body: JSON.stringify({ name, ...payload }) });
@@ -177,7 +179,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.6.1', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.7.1', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
@@ -397,12 +399,13 @@ async function initializeModalComponents() {
       form.append('file', file);
       $('#importProjectButton').disabled = true;
       try {
-        await apiJson(`/api/library/folders/${folderId}/projects/import`, { method: 'POST', body: form });
+        const imported = await apiJson(`/api/library/folders/${folderId}/projects/import`, { method: 'POST', body: form });
         selectedFolderId = folderId;
         await refreshLibrary();
-        status(libraryLabels().imported);
+        status(imported.renamed ? libraryLabels().importedDuplicate(imported.name) : libraryLabels().imported);
       } catch (error) {
-        status(userFacingError(error, 'status.actionError'), true);
+        console.error('Project archive import failed.', error);
+        status(libraryLabels().importError, true);
       } finally {
         $('#importProjectButton').disabled = false;
         event.target.value = '';

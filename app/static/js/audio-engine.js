@@ -1,23 +1,23 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.3.6.1';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.3.6.1';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.3.6.1';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.3.6.1';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.3.6.1';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.3.6.1';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.3.6.1';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.3.6.1';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.3.6.1';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.3.6.1';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.3.6.1';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.3.6.1';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.3.6.1';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.3.6.1';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.3.6.1';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.3.6.1';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.3.6.1';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.3.6.1';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.3.6.1';
-import { getLanguage, t } from './i18n.js?v=1.3.6.1';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.3.7.1';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.3.7.1';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.3.7.1';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.3.7.1';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.3.7.1';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.3.7.1';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.3.7.1';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.3.7.1';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.3.7.1';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.3.7.1';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.3.7.1';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.3.7.1';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.3.7.1';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.3.7.1';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.3.7.1';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.3.7.1';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.3.7.1';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.3.7.1';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.3.7.1';
+import { getLanguage, t } from './i18n.js?v=1.3.7.1';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -28,6 +28,10 @@ export const MAX_DECODED_STEM_BYTES = 1024 * 1024 * 1024;
 export const MAX_EXPORT_WORKING_BYTES = 2 * 1024 * 1024 * 1024;
 export const WAV_RIFF_MAX_BYTES = 0xffffffff;
 export const effectsByTrack = {};
+// Keep polling state inside this ES module; app.js has its own request state.
+let activeSeparationRequestId = null;
+let separationPollTimer = null;
+let separationPollBusy = false;
 export function setTrackTargets(hasBass, hasOther) { saturationTarget = hasBass ? 'bass' : 'accompaniment'; widthTarget = hasOther ? 'other' : 'accompaniment'; }
 export function getSaturationTarget() { return saturationTarget; }
 export function getWidthTarget() { return widthTarget; }
@@ -43,10 +47,11 @@ export function autosaveNotice(state, detail = '') {
     dirty: english ? 'Changes pending · autosave in 10 seconds' : 'Modifications en attente · sauvegarde auto sous 10 s',
     saving: english ? 'Saving project…' : 'Sauvegarde du projet…',
     saved: english ? `Project saved at ${detail}` : `Projet sauvegardé à ${detail}`,
-    error: english ? `Autosave failed: ${detail}` : `Échec de la sauvegarde auto : ${detail}`,
-    manualError: english ? `Could not save project: ${detail}` : `Impossible d’enregistrer le projet : ${detail}`,
+    error: english ? 'Autosave failed. Your changes are still pending; try Save again.' : 'Échec de la sauvegarde auto. Vos changements restent en attente ; réessayez d’enregistrer.',
+    manualError: english ? 'Could not save the project. Your changes are still pending; try again.' : 'Impossible d’enregistrer le projet. Vos changements restent en attente ; réessayez.',
   };
   notice.textContent = messages[state] || detail;
+  notice.title = notice.textContent;
   notice.dataset.state = state;
 }
 export function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
@@ -58,6 +63,7 @@ export function status(message, error = false) {
 }
 export function startSeparationProgressPolling(requestId) {
   if (separationPollTimer) clearInterval(separationPollTimer);
+  activeSeparationRequestId = requestId;
   separationPollTimer = setInterval(async () => {
     if (separationPollBusy || activeSeparationRequestId !== requestId) return;
     separationPollBusy = true;
@@ -65,7 +71,11 @@ export function startSeparationProgressPolling(requestId) {
       const progress = await apiJson(`/api/separations/${requestId}`);
       if (activeSeparationRequestId !== requestId) return;
       if (progress.status === 'canceling') status(t('status.canceling'));
-      else if (Number.isFinite(progress.progress) && progress.progress > 0 && progress.progress < 100) status(t('status.progress', { percent: progress.progress }));
+      else if (progress.status === 'cancelled') status(t('status.cancelled'));
+      else if (['preparing', 'queued', 'running', 'completed'].includes(progress.status) && Number.isFinite(progress.progress)) {
+        const percent = Math.max(0, Math.min(100, Math.round(progress.progress)));
+        status(t('status.progress', { percent }));
+      }
     } catch { /* The route becomes visible once the upload reaches the server handler. */ }
     finally { separationPollBusy = false; }
   }, 700);
@@ -73,6 +83,7 @@ export function startSeparationProgressPolling(requestId) {
 export function stopSeparationProgressPolling() {
   if (separationPollTimer) clearInterval(separationPollTimer);
   separationPollTimer = undefined;
+  activeSeparationRequestId = null;
   separationPollBusy = false;
 }
 export function ensureAudioContext() { if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext(); return audioCtx; }

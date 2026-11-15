@@ -78,7 +78,9 @@ def cancel_separation(request_id: str, lang: str = "fr"):
     process = active_processes.get(request_id)
     if process and process.poll() is None:
         try:
-            process.terminate()
+            # Demucs can be inside a long-running native Torch call that does
+            # not return promptly to Python; force-stop it on user cancel.
+            process.kill()
         except OSError:
             pass
     update_separation_state(request_id, status="canceling", progress=state.get("progress", 0))
