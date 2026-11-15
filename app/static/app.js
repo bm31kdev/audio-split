@@ -1,9 +1,9 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.3.7.1';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.7.1';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.3.7.1';
-import { libraryLabels } from './js/library-text.js?v=1.3.7.1';
-import { mountButtonComponent } from './js/button-component.js?v=1.3.7.1';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.3.7.1';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.3.8.2';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.8.2';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.3.8.2';
+import { libraryLabels } from './js/library-text.js?v=1.3.8.2';
+import { mountButtonComponent } from './js/button-component.js?v=1.3.8.2';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.3.8.2';
 
 await mountButtonComponent($('#buttonComponentRoot'));
 
@@ -178,11 +178,16 @@ function clearMixerForReplacement() {
   $('#tracks').replaceChildren();
   $('#exportButton').disabled = true;
 }
-function encodeWavInWorker(buffer) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.7.1', import.meta.url), { type: 'module' });
+function encodeWavInWorker(buffer, confirmPeak) {
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.8.2', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
+      if (Number.isFinite(data.peak)) {
+        try { worker.postMessage({ type: confirmPeak(data.peak) ? 'continue' : 'cancel' }); }
+        catch (error) { worker.terminate(); reject(error); }
+        return;
+      }
       worker.terminate();
       if (data.error) reject(new Error(data.error)); else resolve(data);
     };
@@ -217,7 +222,18 @@ async function exportMix() {
     }
     for (const [name, nodes] of offlineNodes) if (nodes.effects.deEsser) scheduleOfflineDeEsser(nodes.effects.deEsser, tracks[name], settings(name).effects.deEsser);
     for (const [name, nodes] of offlineNodes) if (nodes.effects.gate) scheduleOfflineNoiseGate(nodes.effects.gate, tracks[name], settings(name).effects.gate, offline);
-    status(t('status.rendering')); const rendered=await offline.startRendering(), result=await encodeWavInWorker(rendered), url=URL.createObjectURL(result.blob), link=document.createElement('a');link.href=url;link.download='audiosplit-mix-stereo.wav';link.click();setTimeout(() => URL.revokeObjectURL(url), 1000);status(result.normalized ? t('status.exportedNormalized') : t('status.exported'));
+    status(t('status.rendering'));
+    const rendered = await offline.startRendering();
+    const result = await encodeWavInWorker(rendered, peak => {
+      if (peak < 0.98) return true;
+      const peakDb = 20 * Math.log10(peak);
+      const formattedPeak = new Intl.NumberFormat(getLanguage() === 'en' ? 'en-US' : 'fr-FR', { maximumFractionDigits: 1 }).format(peakDb);
+      return window.confirm(t('status.exportPeakWarning', { peak: formattedPeak }));
+    });
+    if (result.cancelled) { status(t('status.exportCancelled')); return; }
+    const url = URL.createObjectURL(result.blob), link = document.createElement('a');
+    link.href = url; link.download = 'audiosplit-mix-stereo.wav'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status(result.normalized ? t('status.exportedNormalized') : t('status.exported'));
   } catch (error) {
     console.error('Audio export failed.', error);
     status(error.message === t('status.exportMemoryLimit') || error.message === t('status.exportTooLarge') ? error.message : t('status.exportError'), true);

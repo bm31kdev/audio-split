@@ -91,7 +91,7 @@ def validate_project_state(payload: dict) -> None:
     for track, values in settings.items():
         if track not in allowed_tracks or not isinstance(values, dict):
             raise HTTPException(400, "Project contains invalid track settings.")
-        if set(values) - {"volume", "pan", "muted"}:
+        if set(values) - {"volume", "pan", "muted", "solo"}:
             raise HTTPException(400, "Project contains unknown track settings.")
         for key, low, high in (("volume", 0, 150), ("pan", -100, 100)):
             value = values.get(key)
@@ -106,6 +106,8 @@ def validate_project_state(payload: dict) -> None:
                     raise HTTPException(400, f"Invalid {key} value in project settings.")
         if "muted" in values and not isinstance(values["muted"], bool):
             raise HTTPException(400, "Invalid mute value in project settings.")
+        if "solo" in values and not isinstance(values["solo"], bool):
+            raise HTTPException(400, "Invalid solo value in project settings.")
 
     effect_keys = {"saturation", "bassBoost", "compressor", "eqLow", "eqMid", "eqHigh", "reverb", "delay", "highPass", "lowPass", "width", "ducking", "chorus", "flanger", "phaser", "tremolo", "bitcrusher", "gate", "deEsser", "limiter", "exciter"}
     for track, values in effects.items():

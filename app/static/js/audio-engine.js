@@ -1,23 +1,23 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.3.7.1';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.3.7.1';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.3.7.1';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.3.7.1';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.3.7.1';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.3.7.1';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.3.7.1';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.3.7.1';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.3.7.1';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.3.7.1';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.3.7.1';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.3.7.1';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.3.7.1';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.3.7.1';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.3.7.1';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.3.7.1';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.3.7.1';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.3.7.1';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.3.7.1';
-import { getLanguage, t } from './i18n.js?v=1.3.7.1';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.3.8.2';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.3.8.2';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.3.8.2';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.3.8.2';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.3.8.2';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.3.8.2';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.3.8.2';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.3.8.2';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.3.8.2';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.3.8.2';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.3.8.2';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.3.8.2';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.3.8.2';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.3.8.2';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.3.8.2';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.3.8.2';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.3.8.2';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.3.8.2';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.3.8.2';
+import { getLanguage, t } from './i18n.js?v=1.3.8.2';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -92,7 +92,10 @@ export function settings(name) {
   // Read the native controls on demand so live playback and offline export agree.
   const volume = +document.querySelector(`[data-control="${name}"][data-param="volume"]`).value / 100;
   const pan = +document.querySelector(`[data-control="${name}"][data-param="pan"]`).value / 100;
-  return { volume, pan, muted: document.querySelector(`[data-mute="${name}"]`).getAttribute('aria-pressed') === 'true', effects: effectsByTrack[name] || { ...effectDefaults } };
+  const solo = document.querySelector(`[data-solo="${name}"]`)?.getAttribute('aria-pressed') === 'true';
+  const anySolo = document.querySelector('[data-solo][aria-pressed="true"]') !== null;
+  const muted = document.querySelector(`[data-mute="${name}"]`).getAttribute('aria-pressed') === 'true';
+  return { volume, pan, solo, muted: muted || (anySolo && !solo), effects: effectsByTrack[name] || { ...effectDefaults } };
 }
 export function updateLiveMix() {
   // Browser AudioParams are updated while the existing sources keep playing.
@@ -114,6 +117,35 @@ export function updateOutputs() {
     if (gauge) gauge.style.setProperty('--level', `${((value - +input.min) / (+input.max - +input.min)) * 100}%`);
   });
   updateLiveMix();
+}
+function meterElements(name) {
+  return {
+    bar: document.querySelector(`[data-track-meter-bar="${name}"]`),
+    value: document.querySelector(`[data-track-meter-value="${name}"]`),
+    meter: document.querySelector(`[data-track-meter="${name}"]`),
+  };
+}
+export function updateTrackMeters() {
+  for (const [name, nodes] of liveNodes) {
+    if (!nodes.meterAnalyser || !nodes.meterSamples) continue;
+    nodes.meterAnalyser.getFloatTimeDomainData(nodes.meterSamples);
+    let peak = 0;
+    for (const sample of nodes.meterSamples) peak = Math.max(peak, Math.abs(sample));
+    const db = peak > 0 ? Math.max(-60, 20 * Math.log10(peak)) : -60;
+    const { bar, value, meter } = meterElements(name);
+    if (!bar || !value || !meter) continue;
+    const level = Math.max(0, Math.min(100, ((db + 60) / 66) * 100));
+    bar.style.width = `${level}%`;
+    bar.classList.toggle('is-hot', db >= -1);
+    value.textContent = db <= -59.5 ? '−∞' : `${db.toFixed(1)} dB`;
+    meter.setAttribute('aria-valuenow', db.toFixed(1));
+    meter.setAttribute('aria-valuetext', value.textContent);
+  }
+}
+export function clearTrackMeters() {
+  document.querySelectorAll('[data-track-meter-bar]').forEach(bar => { bar.style.width = '0%'; bar.classList.remove('is-hot'); });
+  document.querySelectorAll('[data-track-meter-value]').forEach(value => { value.textContent = '−∞'; });
+  document.querySelectorAll('[data-track-meter]').forEach(meter => { meter.setAttribute('aria-valuenow', '-60'); meter.setAttribute('aria-valuetext', '−∞'); });
 }
 export function formatTime(seconds) { const m = Math.floor(seconds / 60), s = Math.floor(seconds % 60); return `${m}:${String(s).padStart(2, '0')}`; }
 export function tickStep(duration) { return duration <= 30 ? 5 : duration <= 90 ? 10 : duration <= 240 ? 30 : 60; }
@@ -140,6 +172,7 @@ export function getAutomationPan(name, time) {
 export function combinedPan(pointPan, cfg) { return Math.max(-1, Math.min(1, pointPan / 100 + cfg.pan)); }
 export function trackHasEffect(key, name) { return effectIsAvailable(effectCatalog.find(effect => effect.key === key), name, { saturation: saturationTarget, width: widthTarget }); }
 export function disposeTrackNodes(nodes) {
+  nodes?.meterAnalyser?.disconnect();
   Object.values(nodes?.effects || {}).forEach(effect => effect?.oscillators?.forEach(oscillator => { try { oscillator.stop(); } catch {} }));
   Object.values(nodes?.effects || {}).forEach(effect => {
     effect?.detector?.disconnect();
@@ -177,9 +210,12 @@ export function createTrackNodes(context, source, name, cfg, destination) {
   const reverb = trackHasEffect('reverb', name) ? createReverb(context, mainOutput, panner, cfg.effects.reverb) : null;
   const delay = trackHasEffect('delay', name) ? createDelay(context, mainOutput, panner, cfg.effects.delay) : null;
   const ducking = name !== 'vocals' ? createVoiceDucker(context, panner) : null;
-  (ducking?.gain || panner).connect(destination);
+  const meterAnalyser = context.createAnalyser();
+  meterAnalyser.fftSize = 2048;
+  (ducking?.gain || panner).connect(meterAnalyser);
+  meterAnalyser.connect(destination);
 
-  return { gain, panner, effects: { eq, filters, compressor, width, bassBoost, saturation, reverb, delay, ducking, ...modulationEffects } };
+  return { gain, panner, meterAnalyser, meterSamples: new Float32Array(meterAnalyser.fftSize), effects: { eq, filters, compressor, width, bassBoost, saturation, reverb, delay, ducking, ...modulationEffects } };
 }
 export function updateTrackEffects(nodes, values, context, voiceLevel = 0) {
   updateThreeBandEq(nodes.effects.eq, values, context, true);
@@ -437,6 +473,7 @@ export function animatePlayheads() {
   try {
     // Ducking shares the animation clock with the playhead to avoid another loop.
     const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
+    updateTrackMeters();
     for (const [name, nodes] of liveNodes) {
       if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, settings(name).effects.ducking, audioCtx, true);
       if (nodes.effects.deEsser) updateDeEsser(nodes.effects.deEsser, settings(name).effects.deEsser, audioCtx, true);
@@ -470,12 +507,13 @@ export function stop() {
   if (playheadFrame) cancelAnimationFrame(playheadFrame);
   playheadFrame = undefined;
   voiceMeter = undefined;
-  liveNodes.forEach(({ source, effects }) => {
-    source.onended = null;
-    try { source.stop(); } catch {}
-    disposeTrackNodes({ effects });
+  liveNodes.forEach(nodes => {
+    nodes.source.onended = null;
+    try { nodes.source.stop(); } catch {}
+    disposeTrackNodes(nodes);
   });
   liveNodes = new Map();
+  clearTrackMeters();
   liveMaster?.disconnect();
   liveMaster = undefined;
   playing = false;

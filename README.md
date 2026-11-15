@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.7
+# AudioSplit Studio — v1.3.8
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -40,11 +40,11 @@ Après l’installation, vous pouvez aussi lancer le serveur manuellement avec `
 | Faire un karaoké ou isoler le chant | **Voix + accompagnement** | Une piste voix et une piste musique sans voix |
 | Retoucher précisément un morceau | **Détaillée** | Voix, batterie/kicks, basse et autres instruments séparés |
 
-Pendant la lecture, les réglages de volume, panoramique, sourdine, automatisation et effets sont appliqués immédiatement. Chaque piste possède une forme d’onde avec repères temporels et points d’automatisation du panoramique.
+Pendant la lecture, les réglages de volume, panoramique, sourdine, Solo, automatisation et effets sont appliqués immédiatement. Chaque piste affiche son niveau de sortie, propose une remise à zéro de ses réglages et possède une forme d’onde avec repères temporels et points d’automatisation du panoramique. Un avertissement apparaît avant l’export si la crête approche du maximum numérique.
 
 ### Dossiers et projets locaux
 
-Ouvrez **Projets** dans l’en-tête pour créer des dossiers et y enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, effets et courbes) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes ; l’état apparaît en haut de la page. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque. Les sauvegardes inachevées sont récupérées au prochain démarrage lorsqu’elles contiennent un projet complet ; les sauvegardes ZIP importées qui portent déjà un nom reçoivent un suffixe (2), (3), etc.
+Ouvrez **Projets** dans l’en-tête pour créer des dossiers et y enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, Solo, effets et courbes) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes ; l’état apparaît en haut de la page. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque. Les sauvegardes inachevées sont récupérées au prochain démarrage lorsqu’elles contiennent un projet complet ; les sauvegardes ZIP importées qui portent déjà un nom reçoivent un suffixe (2), (3), etc.
 
 ## Changer la langue
 

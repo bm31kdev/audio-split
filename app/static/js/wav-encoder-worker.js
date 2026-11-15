@@ -1,6 +1,17 @@
 // Encoding a full mix can take long enough to freeze the page, so PCM work
 // happens in a dedicated worker while playback controls remain responsive.
+let pendingEncode = null;
+
 self.onmessage = ({ data }) => {
+  if (data?.type === 'cancel') { pendingEncode = null; self.postMessage({ cancelled: true }); return; }
+  if (data?.type === 'continue') {
+    if (!pendingEncode) { self.postMessage({ error: 'There is no pending WAV export.' }); return; }
+    const pending = pendingEncode;
+    pendingEncode = null;
+    encode(pending);
+    return;
+  }
+
   try {
     const { channels, sampleRate } = data;
     if (!Array.isArray(channels) || channels.length !== 2 || !Number.isFinite(sampleRate)) {
@@ -13,7 +24,17 @@ self.onmessage = ({ data }) => {
 
     let peak = 0;
     for (const channel of channels) for (let index = 0; index < sampleCount; index += 1) peak = Math.max(peak, Math.abs(channel[index]));
+    pendingEncode = { channels, sampleRate, sampleCount, peak };
+    self.postMessage({ peak });
+  } catch (error) {
+    self.postMessage({ error: error.message || String(error) });
+  }
+};
+
+function encode({ channels, sampleRate, sampleCount, peak }) {
+  try {
     const gain = peak > 0.98 ? 0.98 / peak : 1;
+    const dataBytes = sampleCount * channels.length * 2;
     const output = new ArrayBuffer(44 + dataBytes), view = new DataView(output);
     const write = (offset, text) => [...text].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
     write(0, 'RIFF'); view.setUint32(4, 36 + dataBytes, true); write(8, 'WAVE'); write(12, 'fmt ');
@@ -29,7 +50,5 @@ self.onmessage = ({ data }) => {
       }
     }
     self.postMessage({ blob: new Blob([output], { type: 'audio/wav' }), normalized: gain < 1 });
-  } catch (error) {
-    self.postMessage({ error: error.message || String(error) });
-  }
-};
+  } catch (error) { self.postMessage({ error: error.message || String(error) }); }
+}

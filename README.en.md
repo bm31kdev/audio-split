@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.7
+# AudioSplit Studio — v1.3.8
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -35,7 +35,7 @@ After setup, you can also start the server manually with `powershell -ExecutionP
 
 ### Local folders and projects
 
-Open **Projects** in the header to create folders and save each separation as a project. The suggested project name comes from the imported filename. Separated tracks and all mixer settings (volume, pan, mute, effects, and automation curves) are stored locally in `data/library/`, with no database. After the first save, changes are autosaved every 10 seconds; the status appears at the top of the page. You can reopen, rename, or delete projects and folders after restarting the app. The cache-clearing button does not delete this library. Complete saves interrupted by a shutdown are recovered on next startup; imported ZIP projects with a duplicate name get a suffix such as (2) or (3).
+Open **Projects** in the header to create folders and save each separation as a project. The suggested project name comes from the imported filename. Separated tracks and all mixer settings (volume, pan, mute, Solo, effects, and automation curves) are stored locally in `data/library/`, with no database. After the first save, changes are autosaved every 10 seconds; the status appears at the top of the page. You can reopen, rename, or delete projects and folders after restarting the app. The cache-clearing button does not delete this library. Complete saves interrupted by a shutdown are recovered on next startup; imported ZIP projects with a duplicate name get a suffix such as (2) or (3).
 
 ### Pick the right separation mode
 
@@ -44,7 +44,7 @@ Open **Projects** in the header to create folders and save each separation as a 
 | Make karaoke or isolate singing | **Vocals + accompaniment** | Vocal stem and music-without-vocals stem |
 | Edit a song precisely | **Detailed** | Vocals, drums/kicks, bass, and other instruments as separate tracks |
 
-During playback, volume, left/right pan, mute, automation, and effect changes are applied immediately. Every track includes a waveform with time markers and pan automation points.
+During playback, volume, pan, mute, Solo, automation, and effect changes apply immediately. Every track shows its output level, can reset its settings, and includes a waveform with time markers and pan automation points. An alert appears before export if the peak is close to the digital maximum.
 
 ## Language
 
