@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.4.0.5">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.4.0.5">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.4.1">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.4.1">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.4.0.5">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.4.0.5">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.4.0.5">
-  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.4.0.5">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.4.1">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.4.1">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.4.1">
+  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.4.1">
+  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.4.1">
 </head>
 <body>
   <main>
@@ -39,6 +40,25 @@
       <fieldset class="split-mode"><legend data-i18n="split.type">Type de séparation</legend><label><input type="radio" name="splitMode" value="simple" checked> <span data-i18n="split.simple">Voix + accompagnement</span></label><label><input type="radio" name="splitMode" value="detailed"> <span data-i18n="split.detailed">Détaillée : voix, batterie, basse, instruments</span></label></fieldset>
       <fieldset class="split-mode engine-mode"><legend data-i18n="speed.title">Vitesse de séparation</legend><label><input type="radio" name="engine" value="fast" checked> <span data-i18n="speed.fast">Rapide — recommandé sur CPU</span></label><label><input type="radio" name="engine" value="studio"> <span data-i18n="speed.studio">Studio — meilleure précision, plus lent</span></label></fieldset>
       <button data-button-variant="primary" id="chooseButton" data-i18n="file.choose">Choisir un fichier</button><strong id="fileName"></strong>
+      <section id="musicAnalysis" class="music-analysis hidden" aria-labelledby="analysisTitle" aria-live="polite">
+        <div class="analysis-heading"><div><h4 id="analysisTitle" data-i18n="analysis.title">Analyse musicale</h4><p data-i18n="analysis.description">Estimations locales ; modifiez le tempo ou la tonalité si nécessaire.</p></div><span id="analysisStatus" class="analysis-status" data-i18n="analysis.waiting">Analyse en attente</span></div>
+        <dl class="analysis-metadata">
+          <div><dt data-i18n="analysis.duration">Durée</dt><dd id="analysisDuration">—</dd></div>
+          <div><dt data-i18n="analysis.channels">Canaux</dt><dd id="analysisChannels">—</dd></div>
+          <div><dt data-i18n="analysis.sampleRate">Fréquence</dt><dd id="analysisSampleRate">—</dd></div>
+          <div><dt data-i18n="analysis.bitDepth">Profondeur</dt><dd id="analysisBitDepth">—</dd></div>
+          <div><dt data-i18n="analysis.peak">Crête</dt><dd id="analysisPeak">—</dd></div>
+          <div><dt data-i18n="analysis.rms">Niveau RMS</dt><dd id="analysisRms">—</dd></div>
+          <div><dt data-i18n="analysis.meter">Mesure probable</dt><dd id="analysisMeter">—</dd></div>
+        </dl>
+        <div class="analysis-editors">
+          <label><span data-i18n="analysis.bpm">Tempo (BPM)</span><input id="analysisBpm" type="number" min="40" max="240" step="0.1" inputmode="decimal" disabled></label>
+          <span id="analysisBpmOrigin" class="analysis-origin" data-i18n="analysis.estimated">Estimation</span>
+          <label><span data-i18n="analysis.key">Tonalité</span><select id="analysisKey" disabled><option value="" data-i18n="analysis.unknown">Indéterminée</option></select></label>
+          <span id="analysisKeyOrigin" class="analysis-origin" data-i18n="analysis.estimated">Estimation</span>
+        </div>
+        <p class="analysis-note" data-i18n="analysis.note">Ces valeurs décrivent le fichier ; leur correction n’applique pas encore de changement audio.</p>
+      </section>
       <button data-button-variant="secondary" id="separateButton" class="primary" disabled data-i18n="file.separate">Séparer la voix et l'accompagnement</button>
       <button data-button-variant="danger" id="cancelSeparationButton" class="cancel-separation hidden" type="button" disabled data-i18n="file.cancel">Annuler la séparation</button>
       <p id="status" class="status" aria-live="polite"></p>
@@ -55,11 +75,11 @@
   <button data-button-variant="danger" id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5m4-5v5"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
 
   <!-- The badge is always available; its dialog is loaded from a component file. -->
-  <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.4.0</strong></button>
+      <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.4.1</strong></button>
   <div id="modalRoot"></div>
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.4.0.5"></script>
+  <script type="module" src="/static/app.js?v=1.4.1"></script>
 </body>
 </html>

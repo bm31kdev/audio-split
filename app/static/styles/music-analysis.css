@@ -1,0 +1,24 @@
+/* Compact local analysis card stays within the import panel width. */
+.music-analysis { max-width: 760px; margin: 22px auto 8px; padding: 16px; text-align: left; background: #111319; border: 1px solid #343a45; border-radius: 12px; }
+.analysis-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.analysis-heading h4 { font-size: 14px; }
+.analysis-heading p, .analysis-note { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.analysis-status { flex: 0 0 auto; padding: 5px 8px; color: var(--lime); background: #1d2415; border: 1px solid #435232; border-radius: 999px; font: 10px Consolas, 'Courier New', monospace; }
+.analysis-status[data-state="error"], .analysis-status[data-state="uncertain"] { color: #ffc09f; background: #281d1b; border-color: #654239; }
+.analysis-metadata { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 15px 0 0; }
+.analysis-metadata > div { min-width: 0; padding: 8px 9px; background: #191c23; border: 1px solid #2b303a; border-radius: 7px; }
+.analysis-metadata dt { color: var(--muted); font-size: 9px; }
+.analysis-metadata dd { margin: 4px 0 0; color: #eef0f5; font: 11px Consolas, 'Courier New', monospace; overflow-wrap: anywhere; }
+.analysis-editors { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(85px, auto) minmax(120px, 1fr) minmax(85px, auto); align-items: end; gap: 8px; margin-top: 12px; }
+.analysis-editors label { display: grid; gap: 5px; color: #d7dbe3; font-size: 10px; }
+.analysis-editors input, .analysis-editors select { width: 100%; min-width: 0; height: 34px; padding: 0 9px; color: var(--text); background: #191c23; border: 1px solid #3b414e; border-radius: 7px; font: 11px Consolas, 'Courier New', monospace; }
+.analysis-editors input:focus, .analysis-editors select:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
+.analysis-editors :disabled { opacity: .55; }
+.analysis-origin { align-self: end; min-height: 34px; padding: 0 0 9px; color: var(--muted); font: 9px Consolas, 'Courier New', monospace; }
+.analysis-note { margin-top: 11px; }
+@media (max-width: 620px) {
+  .analysis-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analysis-editors { grid-template-columns: 1fr auto; }
+  .analysis-origin { min-height: 26px; padding-bottom: 7px; }
+  .analysis-heading { flex-direction: column; gap: 9px; }
+}

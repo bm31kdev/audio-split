@@ -1,17 +1,19 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.4.0.5';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.0.5';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.0.5';
-import { libraryLabels } from './js/library-text.js?v=1.4.0.5';
-import { mountButtonComponent } from './js/button-component.js?v=1.4.0.5';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.0.5';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.0.5';
-import { userFacingError } from './js/ui-errors.js?v=1.4.0.5';
-import { lucideIcon } from './js/lucide.js?v=1.4.0.5';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.4.1';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.1';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.1';
+import { libraryLabels } from './js/library-text.js?v=1.4.1';
+import { mountButtonComponent } from './js/button-component.js?v=1.4.1';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.1';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.1';
+import { userFacingError } from './js/ui-errors.js?v=1.4.1';
+import { lucideIcon } from './js/lucide.js?v=1.4.1';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.1';
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
+let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting';
 function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 window.addEventListener('audiosplit:project-dirty', () => {
   if (!activeProjectId && !currentJobId) return;
@@ -213,7 +215,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.0.5', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.1', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
@@ -276,10 +278,72 @@ async function exportMix() {
   }
 }
 $('#chooseButton').onclick = () => $('#fileInput').click();
-$('#fileInput').onchange = (event) => {
+const musicalKeys = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+function setupAnalysisKeyOptions() {
+  const select = $('#analysisKey'), current = select.value;
+  select.innerHTML = `<option value="">${t('analysis.unknown')}</option>${musicalKeys.flatMap(note => ['major', 'minor'].map(mode => `<option value="${note} ${mode}">${note} ${t(`analysis.${mode}`)}</option>`)).join('')}`;
+  if (current) select.value = current;
+}
+function setAnalysisStatus(key, state = '') {
+  currentAnalysisStatusKey = key;
+  const target = $('#analysisStatus');
+  target.textContent = t(key);
+  target.dataset.state = state;
+}
+function confidenceLabel(value) {
+  if (value >= 0.45) return t('analysis.confidenceHigh');
+  if (value >= 0.2) return t('analysis.confidenceMedium');
+  return t('analysis.confidenceLow');
+}
+function formatRate(value) { return `${(value / 1000).toFixed(value % 1000 ? 1 : 0)} kHz`; }
+function updateAnalysisOrigins() {
+  if (!currentMusicAnalysis) return;
+  const bpm = Number($('#analysisBpm').value);
+  const changedBpm = Number.isFinite(bpm) && bpm !== currentMusicAnalysis.bpm;
+  $('#analysisBpmOrigin').textContent = changedBpm ? t('analysis.corrected') : `${t('analysis.estimated')} · ${confidenceLabel(currentMusicAnalysis.confidence)}`;
+  const key = $('#analysisKey').value;
+  const changedKey = key !== (currentMusicAnalysis.key || '');
+  $('#analysisKeyOrigin').textContent = changedKey ? t('analysis.corrected') : `${t('analysis.estimated')} · ${confidenceLabel(currentMusicAnalysis.keyConfidence)}`;
+}
+function displayMusicAnalysis(result) {
+  currentMusicAnalysis = result;
+  $('#analysisDuration').textContent = formatDuration(result.duration);
+  $('#analysisChannels').textContent = result.channels === 1 ? t('analysis.mono') : `${result.channels} ${t('analysis.channelsShort')}`;
+  $('#analysisSampleRate').textContent = formatRate(result.sampleRate);
+  $('#analysisBitDepth').textContent = result.bitDepth ? `${result.bitDepth} bits` : t('analysis.notAvailable');
+  $('#analysisPeak').textContent = formatDbfs(result.peakDbfs);
+  $('#analysisRms').textContent = formatDbfs(result.rmsDbfs);
+  $('#analysisMeter').textContent = result.meter ? `${result.meter} · ${confidenceLabel(result.meterConfidence)}` : '—';
+  $('#analysisBpm').value = result.bpm ?? '';
+  $('#analysisBpm').disabled = false;
+  setupAnalysisKeyOptions();
+  $('#analysisKey').value = result.key || '';
+  $('#analysisKey').disabled = false;
+  updateAnalysisOrigins();
+  setAnalysisStatus(result.confidence >= 0.2 && result.keyConfidence >= 0.05 ? 'analysis.complete' : 'analysis.lowConfidence', result.confidence >= 0.2 && result.keyConfidence >= 0.05 ? '' : 'uncertain');
+}
+$('#analysisBpm').oninput = updateAnalysisOrigins;
+$('#analysisKey').onchange = updateAnalysisOrigins;
+$('#fileInput').onchange = async (event) => {
   const file = event.target.files[0];
+  const requestId = ++analysisRequestId;
+  currentMusicAnalysis = null;
   $('#fileName').textContent = file ? file.name : '';
   $('#separateButton').disabled = !file;
+  $('#musicAnalysis').classList.toggle('hidden', !file);
+  $('#analysisBpm').disabled = true;
+  $('#analysisKey').disabled = true;
+  if (file) {
+    $('#analysisDuration').textContent = $('#analysisChannels').textContent = $('#analysisSampleRate').textContent = $('#analysisBitDepth').textContent = $('#analysisPeak').textContent = $('#analysisRms').textContent = $('#analysisMeter').textContent = '—';
+    setAnalysisStatus('analysis.decoding');
+    try {
+      const result = await analyzeAudioFile(file, ensureAudioContext(), stage => setAnalysisStatus(stage === 'decoding' ? 'analysis.decoding' : 'analysis.calculating'));
+      if (requestId === analysisRequestId) displayMusicAnalysis(result);
+    } catch (error) {
+      console.warn('Local music analysis could not complete.', error);
+      if (requestId === analysisRequestId) setAnalysisStatus('analysis.error', 'error');
+    }
+  }
   status('');
 };
 
@@ -483,6 +547,9 @@ async function initializeModalComponents() {
 }
 onLanguageChange(() => {
   $('#libraryButton').textContent = getLanguage() === 'en' ? 'Projects' : 'Projets';
+  setAnalysisStatus(currentAnalysisStatusKey, $('#analysisStatus').dataset.state || '');
+  setupAnalysisKeyOptions();
+  updateAnalysisOrigins();
   if (activeProjectId) autosaveNotice(projectDirty ? 'dirty' : 'ready');
   else if (currentJobId) autosaveNotice('waiting');
   if ($('#libraryModal')) renderLibrary();
