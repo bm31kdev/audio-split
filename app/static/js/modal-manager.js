@@ -1,5 +1,5 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.3.8.2';
-import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.3.8.2';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.4.0.5';
+import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.4.0.5';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -146,7 +146,7 @@ export function createChangelogModal(trigger) {
   const animated = createAnimatedModal(modal, '.changelog-close', trigger);
   const list = modal.querySelector('.release-list');
   const releases = [...list.querySelectorAll('.release')];
-  const groups = new Map([['1.3', []], ['1.2', []], ['1.1', []], ['1.0', []]]);
+  const groups = new Map([['1.4', []], ['1.3', []], ['1.2', []], ['1.1', []], ['1.0', []]]);
   releases.forEach((release) => {
     const version = release.querySelector('h3')?.textContent.match(/\d+\.\d+/)?.[0];
     if (groups.has(version)) groups.get(version).push(release);

@@ -21,6 +21,8 @@ button.audio-button[data-button-variant] {
   transition: color .16s ease, background .16s ease, border-color .16s ease,
     transform .16s ease, box-shadow .16s ease;
 }
+svg.lucide,
+button.audio-button svg.lucide { display: block; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
 
 /* Primary stays neutral like Choose file and Projects. */
 button.audio-button[data-button-variant="primary"] { color: #dce1e9; background: #242833; border-color: #3c4350; }
@@ -59,7 +61,7 @@ button.audio-button[data-button-variant="modal"] svg { width: 17px; height: 17px
 button.audio-button[data-button-variant="primary"] svg,
 button.audio-button[data-button-variant="secondary"] svg,
 button.audio-button[data-button-variant="danger"] svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-button.audio-button.play svg { fill: currentColor; stroke: none; }
+button.audio-button.play svg { fill: none; stroke: currentColor; }
 
 @media (max-width: 540px) {
   button.audio-button[data-button-size="transport"] { width: 38px; height: 38px; min-height: 38px; }

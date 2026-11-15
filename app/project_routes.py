@@ -20,6 +20,7 @@ from starlette.concurrency import run_in_threadpool
 
 from .config import (
     ALLOWED, LIBRARY, MAX_LIBRARY_BYTES, MAX_PROJECT_ARCHIVE_BYTES, MIN_FREE_DISK_BYTES,
+    JOBS, UPLOADS, PRESETS,
 )
 from .state import job_sources, job_stems
 from .runtime import measure_tree_bytes, remove_temp_file, serialized_cache_operation
@@ -113,6 +114,7 @@ def list_library():
             warnings.append({"kind": "folder", "id": path.name})
             continue
         projects = []
+        folder_bytes = 0
         for project_dir in (path / "projects").glob("*/"):
             metadata = project_dir / "project.json"
             if metadata.is_file():
@@ -122,12 +124,18 @@ def list_library():
                     files = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav"}
                     if any(not (project_dir / "stems" / files[name]).is_file() for name in project["stems"]):
                         raise HTTPException(500, "Project audio files are missing.")
+                    project["sizeBytes"] = measure_tree_bytes(project_dir)
+                    folder_bytes += project["sizeBytes"]
                     projects.append(project)
                 except HTTPException:
                     warnings.append({"kind": "project", "id": project_dir.name, "folderId": folder["id"]})
         folder["projects"] = sorted(projects, key=lambda project: project.get("updatedAt", ""), reverse=True)
+        folder["sizeBytes"] = folder_bytes
         folders.append(folder)
-    return {"folders": sorted(folders, key=lambda folder: folder.get("createdAt", "")), "warnings": warnings, "recovery": dict(project_recovery_status)}
+    preset_bytes = measure_tree_bytes(PRESETS)
+    project_bytes = sum(folder["sizeBytes"] for folder in folders)
+    job_bytes, upload_bytes = measure_tree_bytes(JOBS), measure_tree_bytes(UPLOADS)
+    return {"folders": sorted(folders, key=lambda folder: folder.get("createdAt", "")), "warnings": warnings, "recovery": dict(project_recovery_status), "storage": {"libraryBytes": project_bytes + preset_bytes, "projectBytes": project_bytes, "presetBytes": preset_bytes, "jobBytes": job_bytes, "uploadBytes": upload_bytes, "temporaryBytes": job_bytes + upload_bytes, "libraryLimitBytes": MAX_LIBRARY_BYTES, "cacheLimitBytes": 10 * 1024**3, "freeBytes": shutil.disk_usage(LIBRARY).free}}
 
 
 @router.post("/api/library/folders")
@@ -383,6 +391,41 @@ def rename_project(project_id: str, payload: dict):
     metadata["updatedAt"] = datetime.now(timezone.utc).isoformat()
     write_json_atomic(path / "project.json", metadata)
     return metadata
+
+
+@router.post("/api/library/projects/{project_id}/duplicate")
+@serialized_cache_operation
+async def duplicate_project(project_id: str, payload: dict | None = None):
+    """Copy all project audio and mixer state into a new durable session."""
+    source_dir = project_path(project_id)
+    metadata = read_json(source_dir / "project.json")
+    size = measure_tree_bytes(source_dir)
+    if measure_tree_bytes(LIBRARY) + size > MAX_LIBRARY_BYTES:
+        raise HTTPException(507, "Duplicating this project would exceed the 20 GiB local project-library limit.")
+    if shutil.disk_usage(source_dir).free < size + MIN_FREE_DISK_BYTES:
+        raise HTTPException(507, "There is not enough free disk space to duplicate this project.")
+    folder_id = metadata["folderId"]
+    projects_dir = source_dir.parent
+    duplicate_id = uuid.uuid4().hex
+    staging = projects_dir / f".save-{duplicate_id}"
+    destination = projects_dir / duplicate_id
+    title = str((payload or {}).get("name") or f"{metadata['name']} (copie)").strip()
+    if not title or len(title) > 120:
+        raise HTTPException(400, "Project name must contain 1 to 120 characters.")
+    title, _ = unique_project_name(title, projects_dir)
+    try:
+        if any(path.is_symlink() for path in source_dir.rglob("*")):
+            raise HTTPException(400, "Projects containing symbolic links cannot be duplicated.")
+        await run_in_threadpool(shutil.copytree, source_dir, staging)
+        now = datetime.now(timezone.utc).isoformat()
+        duplicate = {**metadata, "id": duplicate_id, "folderId": folder_id, "name": title, "createdAt": now, "updatedAt": now}
+        validate_project_manifest(duplicate, Path(duplicate_id), folder_id)
+        write_json_atomic(staging / "project.json", duplicate, keep_backup=False)
+        os.replace(staging, destination)
+        return {**duplicate, "sizeBytes": size}
+    except BaseException:
+        await run_in_threadpool(shutil.rmtree, staging, ignore_errors=True)
+        raise
 
 
 @router.put("/api/library/projects/{project_id}")

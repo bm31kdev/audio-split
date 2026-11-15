@@ -1,23 +1,24 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.3.8.2';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.3.8.2';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.3.8.2';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.3.8.2';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.3.8.2';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.3.8.2';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.3.8.2';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.3.8.2';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.3.8.2';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.3.8.2';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.3.8.2';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.3.8.2';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.3.8.2';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.3.8.2';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.3.8.2';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.3.8.2';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.3.8.2';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.3.8.2';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.3.8.2';
-import { getLanguage, t } from './i18n.js?v=1.3.8.2';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.4.0.5';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.4.0.5';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.4.0.5';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.4.0.5';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.4.0.5';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.4.0.5';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.4.0.5';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.4.0.5';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.4.0.5';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.4.0.5';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.4.0.5';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.4.0.5';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.4.0.5';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.4.0.5';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.4.0.5';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.4.0.5';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.4.0.5';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.4.0.5';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.4.0.5';
+import { getLanguage, t } from './i18n.js?v=1.4.0.5';
+import { lucideIcon } from './lucide.js?v=1.4.0.5';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -283,12 +284,12 @@ export const stemInfo = {
   other: { titleKey: 'stem.other', detailKey: 'stem.otherDetail', icon: 'spark' },
 };
 export function icon(name) {
-  const paths = { mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0012 0M12 17v4M9 21h6"/>', wave: '<path d="M3 12h3l2-6 4 12 3-8 2 2h4"/>', drum: '<ellipse cx="12" cy="16" rx="7" ry="4"/><path d="M5 10v6M19 10v6M5 10c0-2 14-2 14 0M8 6l2 4m4-4-2 4"/>', bass: '<path d="M7 3v18M7 5h6l4 4-4 4H7M7 13h6l4 4-4 4H7"/>', spark: '<path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3z"/>' };
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
+  const names = { mic: 'mic', wave: 'audio-lines', drum: 'drum', bass: 'guitar', spark: 'sparkles' };
+  return lucideIcon(names[name] || name);
 }
-export function speakerIcon(muted = false) { return muted ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5zM17 10l4 4m0-4-4 4"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5zM17 9a4 4 0 010 6"/></svg>'; }
-export function playIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>'; }
-export function pauseIcon() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'; }
+export function speakerIcon(muted = false) { return lucideIcon(muted ? 'volume-x' : 'volume-2'); }
+export function playIcon() { return lucideIcon('play'); }
+export function pauseIcon() { return lucideIcon('pause'); }
 export function setTransportState(state = 'stopped') {
   const playButton = $('#playButton'), stopButton = $('#stopButton');
   const isPlaying = state === 'playing', isPaused = state === 'paused';

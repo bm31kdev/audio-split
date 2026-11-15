@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.3.8.2">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.3.8.2">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.4.0.5">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.4.0.5">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.3.8.2">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.3.8.2">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.3.8.2">
-  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.3.8.2">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.4.0.5">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.4.0.5">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.4.0.5">
+  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.4.0.5">
 </head>
 <body>
   <main>
@@ -21,20 +21,20 @@
       <div><h1>AudioSplit <span>Studio</span></h1><p data-i18n="app.tagline">Séparez. Mixez. Exportez.</p></div>
       <span id="autosaveStatus" class="autosave-status" aria-live="polite"></span>
       <button data-button-variant="primary" id="libraryButton" class="library-button" type="button" title="Projets enregistrés">Projets</button>
-      <button data-button-variant="primary" id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9S14.5 18.5 12 21M12 3c-2.5 2.5-3.5 5.5-3.5 9S9.5 18.5 12 21"/></svg><span data-i18n="language.trigger">FR</span></button>
+      <button data-button-variant="primary" id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg><span data-i18n="language.trigger">FR</span></button>
       <div class="local" data-i18n="app.local">● Traitement local</div>
     </header>
 
     <!-- Import settings stay in the shell because they are not mixer-specific. -->
     <section class="hero"><p class="eyebrow" data-i18n="hero.eyebrow">STUDIO DE STEMS</p><h2 data-i18n-html="hero.title">Redonnez de l’espace<br>à votre musique.</h2><p data-i18n="hero.description">Extrayez la voix, ajustez chaque piste et créez votre version stéréo.</p></section>
     <aside class="v2-teaser" aria-labelledby="v2TeaserTitle">
-      <div class="v2-teaser-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.8 14.1 9l6.1 2.1-6.1 2.1L12 19.4l-2.1-6.2L3.8 11l6.1-2.1L12 2.8Z"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/></svg></div>
+      <div class="v2-teaser-mark" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/><path d="m19 14 1.1 3.1L23 18l-2.9 1-1.1 3-1-3-3-1 3-.9L19 14Z"/></svg></div>
       <div class="v2-teaser-copy"><p class="v2-teaser-kicker" data-i18n="v2.eyebrow">PROCHAINEMENT</p><h3 id="v2TeaserTitle" data-i18n="v2.title">AudioSplit Studio V2 arrive bientôt</h3><p data-i18n="v2.description">Un nouveau chapitre pour séparer et mixer vos morceaux se prépare.</p></div>
       <span class="v2-teaser-version" aria-hidden="true">V2</span>
     </aside>
     <section id="importCard" class="card import-card">
       <input id="fileInput" type="file" accept="audio/mpeg,audio/wav,audio/flac,audio/mp4,audio/ogg,.mp3,.wav,.flac,.m4a,.ogg" hidden>
-      <div class="upload-icon" aria-hidden="true"><svg class="upload-arrow" viewBox="0 0 24 24" width="28" height="28"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4a1 1 0 001 1h12a1 1 0 001-1v-4"/></svg></div>
+      <div class="upload-icon" aria-hidden="true"><svg class="upload-arrow lucide" viewBox="0 0 24 24" width="28" height="28"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg></div>
       <h3 data-i18n="import.title">Importez votre morceau</h3><p data-i18n="import.formats">MP3, WAV, FLAC, M4A ou OGG</p>
       <fieldset class="split-mode"><legend data-i18n="split.type">Type de séparation</legend><label><input type="radio" name="splitMode" value="simple" checked> <span data-i18n="split.simple">Voix + accompagnement</span></label><label><input type="radio" name="splitMode" value="detailed"> <span data-i18n="split.detailed">Détaillée : voix, batterie, basse, instruments</span></label></fieldset>
       <fieldset class="split-mode engine-mode"><legend data-i18n="speed.title">Vitesse de séparation</legend><label><input type="radio" name="engine" value="fast" checked> <span data-i18n="speed.fast">Rapide — recommandé sur CPU</span></label><label><input type="radio" name="engine" value="studio"> <span data-i18n="speed.studio">Studio — meilleure précision, plus lent</span></label></fieldset>
@@ -46,20 +46,20 @@
 
     <!-- Dynamic stem tracks are rendered by app.js after Demucs completes. -->
     <section id="mixer" class="mixer hidden">
-      <div class="mixer-top"><div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div><div class="transport"><button data-button-variant="secondary" id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button><button data-button-variant="primary" id="stopButton" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z"/></svg></button></div></div>
+      <div class="mixer-top"><div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div><div class="transport"><button data-button-variant="secondary" id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8V4Z"/></svg></button><button data-button-variant="primary" id="stopButton" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"/></svg></button></div></div>
       <div id="tracks" class="tracks"></div>
-      <button data-button-variant="secondary" id="exportButton" class="export" disabled data-i18n="export">↓ Exporter le mixage WAV stéréo</button>
+      <button data-button-variant="secondary" id="exportButton" class="export" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg><span data-i18n="export">Exporter le mixage WAV stéréo</span></button>
     </section>
   </main>
 
-  <button data-button-variant="danger" id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M9 7l1-3h4l1 3M6 7l1 13h10l1-13"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
+  <button data-button-variant="danger" id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5m4-5v5"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
 
   <!-- The badge is always available; its dialog is loaded from a component file. -->
-  <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.3.8</strong></button>
+  <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.4.0</strong></button>
   <div id="modalRoot"></div>
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.3.8.2"></script>
+  <script type="module" src="/static/app.js?v=1.4.0.5"></script>
 </body>
 </html>

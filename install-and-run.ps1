@@ -1,5 +1,5 @@
 <#
-  AudioSplit Studio v1.3.8 - Windows installation and one-command startup.
+  AudioSplit Studio v1.4.0 - Windows installation and one-command startup.
   Execution: powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 #>
 [CmdletBinding()]
@@ -139,11 +139,15 @@ function Find-AudioSplitEndpoint {
     throw 'Ports 8000–8010 are in use. Close another application and run the launcher again.'
 }
 
+function Get-AudioSplitLaunchUrl([string]$url) {
+    return "$($url.TrimEnd('/'))/?launch=$([guid]::NewGuid().ToString('N'))"
+}
+
 $endpoint = Find-AudioSplitEndpoint
 $serverPort = $endpoint.Port
 if ($endpoint.Reuse) {
     Write-Host 'AudioSplit Studio is already running; opening the existing instance.' -ForegroundColor Yellow
-    Start-Process $endpoint.Url
+    Start-Process (Get-AudioSplitLaunchUrl $endpoint.Url)
     exit 0
 }
 
@@ -153,7 +157,7 @@ $browserJob = Start-Job -ArgumentList $endpoint.Url -ScriptBlock {
     for ($attempt = 0; $attempt -lt 60; $attempt++) {
         try {
             $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 1
-            if ($response.StatusCode -eq 200) { Start-Process $url; return }
+            if ($response.StatusCode -eq 200) { Start-Process "$($url.TrimEnd('/'))/?launch=$([guid]::NewGuid().ToString('N'))"; return }
         } catch { }
         Start-Sleep -Milliseconds 500
     }

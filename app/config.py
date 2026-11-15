@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parent.parent
 JOBS = ROOT / "data" / "jobs"
 UPLOADS = ROOT / "data" / "uploads"
 LIBRARY = ROOT / "data" / "library"
+PRESETS = LIBRARY / "presets"
 ALLOWED = {".mp3", ".wav", ".flac", ".m4a", ".ogg"}
 MAX_UPLOAD_BYTES = 512 * 1024 * 1024
 MAX_MANIFEST_BYTES = 4 * 1024 * 1024
@@ -16,7 +17,8 @@ MAX_CACHE_BYTES = 10 * 1024 * 1024 * 1024
 MAX_LIBRARY_BYTES = 20 * 1024 * 1024 * 1024
 MAX_PROJECT_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
 MIN_FREE_DISK_BYTES = 512 * 1024 * 1024
+MAX_PRESETS = 200
 STEM_DELIVERY_LEASE_SECONDS = 300
 
-for directory in (JOBS, UPLOADS, LIBRARY):
+for directory in (JOBS, UPLOADS, LIBRARY, PRESETS):
     directory.mkdir(parents=True, exist_ok=True)

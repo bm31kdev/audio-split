@@ -25,11 +25,15 @@ function Test-AudioSplitServer([int]$port) {
     } catch { return $false }
 }
 
+function Get-AudioSplitLaunchUrl([string]$url) {
+    return "$($url.TrimEnd('/'))/?launch=$([guid]::NewGuid().ToString('N'))"
+}
+
 $serverPort = $null
 foreach ($port in 8000..8010) {
     if (Test-AudioSplitServer $port) {
         Write-Host "AudioSplit Studio est déjà lancé sur http://127.0.0.1:$port" -ForegroundColor Yellow
-        Start-Process "http://127.0.0.1:$port"
+        Start-Process (Get-AudioSplitLaunchUrl "http://127.0.0.1:$port")
         exit 0
     }
     if (Test-PortAvailable $port) { $serverPort = $port; break }

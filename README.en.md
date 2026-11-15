@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.3.8
+# AudioSplit Studio — v1.4.0
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -36,6 +36,8 @@ After setup, you can also start the server manually with `powershell -ExecutionP
 ### Local folders and projects
 
 Open **Projects** in the header to create folders and save each separation as a project. The suggested project name comes from the imported filename. Separated tracks and all mixer settings (volume, pan, mute, Solo, effects, and automation curves) are stored locally in `data/library/`, with no database. After the first save, changes are autosaved every 10 seconds; the status appears at the top of the page. You can reopen, rename, or delete projects and folders after restarting the app. The cache-clearing button does not delete this library. Complete saves interrupted by a shutdown are recovered on next startup; imported ZIP projects with a duplicate name get a suffix such as (2) or (3).
+
+The library can also search and sort projects, show their size and available disk space, and **duplicate** a session before trying a different mix. Mix presets store only volume, pan, effects, and automation settings, without copying audio files. Presets can be exported as JSON and imported on this or another installation. Presets and projects share a **20 GiB** library limit; the temporary separation cache has a separate **10 GiB** limit.
 
 ### Pick the right separation mode
 

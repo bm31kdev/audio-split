@@ -1,5 +1,6 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.3.8.2';
-import { t } from './i18n.js?v=1.3.8.2';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.4.0.5';
+import { t } from './i18n.js?v=1.4.0.5';
+import { lucideIcon } from './lucide.js?v=1.4.0.5';
 
 export function snapshotTrackControls(names) {
   return Object.fromEntries(names.map((name) => {
@@ -35,14 +36,14 @@ export function renderTracks(names, savedControls = {}) {
     const volume = saved.volume ?? 100, pan = saved.pan ?? 0, muted = saved.muted ?? false, solo = saved.solo ?? false;
     const soloLabel = t(solo ? 'control.unsolo' : 'control.solo', { track: trackTitle });
     const muteLabel = t(muted ? 'control.unmute' : 'control.mute', { track: trackTitle });
-    const automation = `<div class="automation-tools"><span>${t('automation.pan', { track: trackTitle.toLowerCase() })}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="-100">${t('automation.left')}</button><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="0">${t('automation.center')}</button><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="100">${t('automation.right')}</button><button type="button" class="remove-point" data-button-variant="danger" data-automation-remove="${name}" title="${t('automation.remove')}">×</button></div>`;
+    const automation = `<div class="automation-tools"><span>${t('automation.pan', { track: trackTitle.toLowerCase() })}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="-100">${t('automation.left')}</button><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="0">${t('automation.center')}</button><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="100">${t('automation.right')}</button><button type="button" class="remove-point" data-button-variant="danger" data-automation-remove="${name}" title="${t('automation.remove')}" aria-label="${t('automation.remove')}">${lucideIcon('x', { size: 13 })}</button></div>`;
     return `<article class="track ${name}" data-track="${name}">
       <div class="track-icon">${icon(info.icon)}</div>
       <div class="track-title">
         <h3>${trackTitle}</h3><p>${trackDetail}</p>
         <div class="track-actions">
           <button type="button" class="track-solo" data-button-variant="primary" data-button-size="compact" data-solo="${name}" aria-pressed="${solo}" aria-label="${soloLabel}" title="${soloLabel}">${t('control.soloShort')}</button>
-          <button type="button" class="track-reset" data-button-variant="primary" data-button-size="small-icon" data-track-reset="${name}" aria-label="${t('control.reset', { track: trackTitle })}" title="${t('control.reset', { track: trackTitle })}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8m0-5v5h5"/></svg></button>
+          <button type="button" class="track-reset" data-button-variant="primary" data-button-size="small-icon" data-track-reset="${name}" aria-label="${t('control.reset', { track: trackTitle })}" title="${t('control.reset', { track: trackTitle })}">${lucideIcon('rotate-ccw', { size: 17 })}</button>
         </div>
         <div class="track-meter" data-track-meter="${name}" role="meter" aria-label="${t('control.level', { track: trackTitle })}" aria-valuemin="-60" aria-valuemax="6" aria-valuenow="-60" aria-valuetext="−∞">
           <span class="track-meter-label">${t('control.levelShort')}</span><span class="track-meter-bar"><i data-track-meter-bar="${name}"></i></span><output data-track-meter-value="${name}">−∞</output>

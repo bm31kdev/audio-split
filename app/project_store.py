@@ -149,7 +149,7 @@ def validate_project_state(payload: dict) -> None:
 
 
 def safe_id(value: str) -> bool:
-    return bool(re.fullmatch(r"[0-9a-f]{32}", value))
+    return isinstance(value, str) and bool(re.fullmatch(r"[0-9a-f]{32}", value))
 
 
 def validate_folder_manifest(payload: dict, folder_dir: Path) -> None:

@@ -181,9 +181,11 @@ from .runtime import (
 from .separation_routes import router as separation_router
 from . import project_routes
 from .project_routes import router as project_router
+from .preset_routes import router as preset_router
 
 app.include_router(separation_router)
 app.include_router(project_router)
+app.include_router(preset_router)
 
 
 @app.on_event("startup")

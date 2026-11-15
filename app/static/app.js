@@ -1,21 +1,17 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.3.8.2';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.3.8.2';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.3.8.2';
-import { libraryLabels } from './js/library-text.js?v=1.3.8.2';
-import { mountButtonComponent } from './js/button-component.js?v=1.3.8.2';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.3.8.2';
-
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.4.0.5';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.0.5';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.0.5';
+import { libraryLabels } from './js/library-text.js?v=1.4.0.5';
+import { mountButtonComponent } from './js/button-component.js?v=1.4.0.5';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.0.5';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.0.5';
+import { userFacingError } from './js/ui-errors.js?v=1.4.0.5';
+import { lucideIcon } from './js/lucide.js?v=1.4.0.5';
 await mountButtonComponent($('#buttonComponentRoot'));
-
 let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
-function userFacingError(error, fallbackKey) {
-  const message = String(error?.message || '').trim();
-  if (error instanceof TypeError || !message || message.length > 240 || /failed to fetch|networkerror|load failed/i.test(message)) return t(fallbackKey);
-  return message;
-}
 function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 window.addEventListener('audiosplit:project-dirty', () => {
   if (!activeProjectId && !currentJobId) return;
@@ -23,9 +19,16 @@ window.addEventListener('audiosplit:project-dirty', () => {
 });
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-let libraryData = { folders: [] }, selectedFolderId = null;
+function formatBytes(value) { let size = Number(value || 0), unit = 'B'; for (const next of ['KiB', 'MiB', 'GiB']) { if (size < 1024) break; size /= 1024; unit = next; } return `${size.toFixed(unit === 'B' ? 0 : 1)} ${unit}`; }
+function libraryActionIcon(action) {
+  const names = { open: 'folder-open', duplicate: 'copy', export: 'download', rename: 'pencil', delete: 'trash-2' };
+  return lucideIcon(names[action], { size: 17 });
+}
+let libraryData = { folders: [] }, presetData = [], selectedFolderId = null;
 async function refreshLibrary() {
   libraryData = await apiJson('/api/library');
+  const presetResult = await apiJson('/api/library/presets');
+  presetData = presetResult.presets || [];
   if (!libraryData.folders.some(folder => folder.id === selectedFolderId)) selectedFolderId = libraryData.folders[0]?.id || null;
   renderLibrary();
 }
@@ -47,10 +50,40 @@ function renderLibrary() {
   $('#projectNameInput').placeholder = labels.name;
   $('#saveProjectButton').textContent = activeProjectId ? labels.update : labels.save;
   $('#saveProjectPanel').classList.toggle('hidden', !Object.keys(tracks).length || (!currentJobId && !activeProjectId));
+  const storage = libraryData.storage || {};
+  const storageLabel = getLanguage() === 'en' ? 'Projects + presets' : 'Projets + préréglages';
+  $('#libraryStorage').innerHTML = `<span>${storageLabel} : <strong>${formatBytes(storage.libraryBytes)}</strong> / ${formatBytes(storage.libraryLimitBytes)}</span><span>${getLanguage() === 'en' ? 'Separations to clear' : 'Séparations temporaires'} : <strong>${formatBytes(storage.jobBytes)}</strong></span><span>${getLanguage() === 'en' ? 'Imported audio copies to clear' : 'Copies audio temporaires'} : <strong>${formatBytes(storage.uploadBytes)}</strong> / ${formatBytes(storage.cacheLimitBytes)} ${getLanguage() === 'en' ? 'cache limit total' : 'limite cache totale'}</span><span>${getLanguage() === 'en' ? 'Free disk space' : 'Espace disque libre'} : <strong>${formatBytes(storage.freeBytes)}</strong></span>`;
+  $('#projectSearchInput').placeholder = getLanguage() === 'en' ? 'Search projects…' : 'Rechercher un projet…';
+  const sortSelect = $('#projectSortSelect');
+  const previousSort = sortSelect.value;
+  sortSelect.setAttribute('aria-label', getLanguage() === 'en' ? 'Sort projects' : 'Trier les projets');
+  sortSelect.innerHTML = getLanguage() === 'en' ? '<option value="updated">Recently updated</option><option value="name">Name</option><option value="size">Size</option><option value="created">Created</option>' : '<option value="updated">Plus récents</option><option value="name">Nom</option><option value="size">Taille</option><option value="created">Date de création</option>';
+  sortSelect.value = previousSort || 'updated';
+  $('#presetHeading').textContent = getLanguage() === 'en' ? 'Mix presets' : 'Préréglages de mix';
+  $('#presetHint').textContent = getLanguage() === 'en' ? 'Reuse mixer settings without duplicating audio files.' : 'Réutilisez les réglages sans dupliquer les fichiers audio.';
+  $('#savePresetButton').textContent = getLanguage() === 'en' ? 'Save current mix as preset' : 'Enregistrer le mix comme préréglage';
+  $('#importPresetButton').textContent = getLanguage() === 'en' ? 'Import' : 'Importer';
+  renderPresets(presetData, { refreshLibrary, status, userFacingError });
   select.innerHTML = libraryData.folders.length ? libraryData.folders.map(folder => `<option value="${folder.id}" ${folder.id === selectedFolderId ? 'selected' : ''}>${escapeHtml(folder.name)}</option>`).join('') : `<option value="">${labels.select}</option>`;
   const current = libraryData.folders.find(folder => folder.id === selectedFolderId);
+  const query = $('#projectSearchInput').value.trim().toLocaleLowerCase();
+  const allProjects = libraryData.folders.flatMap(folder => folder.projects.map(project => ({ ...project, folderName: folder.name })));
+  const matches = allProjects.filter(project => !query || `${project.name} ${project.sourceName || ''} ${project.folderName}`.toLocaleLowerCase().includes(query));
+  const sortBy = sortSelect.value || 'updated';
+  matches.sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : sortBy === 'size' ? (b.sizeBytes || 0) - (a.sizeBytes || 0) : sortBy === 'created' ? String(b.createdAt).localeCompare(String(a.createdAt)) : String(b.updatedAt).localeCompare(String(a.updatedAt)));
   if (!current) { workspace.innerHTML = `${warningHtml}${recoveryHtml}<p class="library-empty">${labels.empty}</p>`; return; }
-  workspace.innerHTML = `${warningHtml}${recoveryHtml}<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-button-variant="modal" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${escapeHtml(current.name)}</h3><div><button type="button" data-button-variant="modal" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-folder="${current.id}">${labels.remove}</button></div></div>${current.projects.length ? current.projects.map(project => `<article class="library-project"><div><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.sourceName || '')} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div><button type="button" data-button-variant="modal" data-open-project="${project.id}">${labels.open}</button><button type="button" data-button-variant="modal" data-export-project="${project.id}">${labels.exportArchive}</button><button type="button" data-button-variant="modal" data-rename-project="${project.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-project="${project.id}">${labels.remove}</button></div></article>`).join('') : `<p class="library-empty">${labels.noProjects}</p>`}</section>`;
+  const projectCards = query ? [...matches] : [...current.projects];
+  projectCards.sort((a, b) => sortBy === 'name'
+    ? a.name.localeCompare(b.name)
+    : sortBy === 'size'
+      ? (b.sizeBytes || 0) - (a.sizeBytes || 0)
+      : sortBy === 'created'
+        ? String(b.createdAt).localeCompare(String(a.createdAt))
+        : String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  const projectsWithFolder = projectCards.map(project => ({ ...project, folderName: project.folderName || current.name }));
+  const actionButton = (projectId, action, label, variant = 'modal') => `<button type="button" class="library-action" data-button-size="library-action" data-button-variant="${variant}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}" data-${action}-project="${projectId}">${libraryActionIcon(action)}</button>`;
+  const projectHtml = projectsWithFolder.length ? projectsWithFolder.map(project => `<article class="library-project"><div class="library-project-info"><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.folderName)} · ${escapeHtml(project.sourceName || '')} · ${formatBytes(project.sizeBytes)} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div class="library-project-actions">${actionButton(project.id, 'open', labels.open)}${actionButton(project.id, 'duplicate', getLanguage() === 'en' ? 'Duplicate project' : 'Dupliquer le projet')}${actionButton(project.id, 'export', labels.exportArchive)}${actionButton(project.id, 'rename', labels.rename)}${actionButton(project.id, 'delete', labels.remove, 'danger')}</div></article>`).join('') : `<p class="library-empty">${query ? (getLanguage() === 'en' ? 'No projects match your search.' : 'Aucun projet ne correspond à cette recherche.') : labels.noProjects}</p>`;
+  workspace.innerHTML = `${warningHtml}${recoveryHtml}<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-button-variant="modal" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${query ? (getLanguage() === 'en' ? 'Search results' : 'Résultats de recherche') : escapeHtml(current.name)}</h3><div>${!query ? `<button type="button" data-button-variant="modal" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-folder="${current.id}">${labels.remove}</button>` : ''}</div></div>${projectHtml}</section>`;
   workspace.querySelectorAll('[data-folder]').forEach(button => button.onclick = () => { selectedFolderId = button.dataset.folder; renderLibrary(); });
   workspace.querySelectorAll('[data-rename-folder]').forEach(button => button.onclick = () => void renameLibraryItem(`/api/library/folders/${button.dataset.renameFolder}`, current.name));
   workspace.querySelectorAll('[data-delete-folder]').forEach(button => button.onclick = async () => {
@@ -65,9 +98,10 @@ function renderLibrary() {
   });
   workspace.querySelectorAll('[data-open-project]').forEach(button => button.onclick = () => void openSavedProject(button.dataset.openProject));
   workspace.querySelectorAll('[data-export-project]').forEach(button => button.onclick = () => { window.location.href = `/api/library/projects/${button.dataset.exportProject}/archive`; });
-  workspace.querySelectorAll('[data-rename-project]').forEach(button => button.onclick = () => { const project = current.projects.find(item => item.id === button.dataset.renameProject); void renameLibraryItem(`/api/library/projects/${project.id}`, project.name); });
+  workspace.querySelectorAll('[data-rename-project]').forEach(button => button.onclick = () => { const project = allProjects.find(item => item.id === button.dataset.renameProject); void renameLibraryItem(`/api/library/projects/${project.id}`, project.name); });
+  workspace.querySelectorAll('[data-duplicate-project]').forEach(button => button.onclick = async () => { try { if (activeProjectId === button.dataset.duplicateProject && projectDirty && !(await saveCurrentProject())) return; const copy = await apiJson(`/api/library/projects/${button.dataset.duplicateProject}/duplicate`, { method: 'POST', body: '{}' }); selectedFolderId = copy.folderId; await refreshLibrary(); status(getLanguage() === 'en' ? 'Project duplicated.' : 'Projet dupliqué.'); } catch (error) { status(userFacingError(error, 'status.actionError'), true); } });
   workspace.querySelectorAll('[data-delete-project]').forEach(button => button.onclick = async () => {
-    const project = current.projects.find(item => item.id === button.dataset.deleteProject);
+    const project = allProjects.find(item => item.id === button.dataset.deleteProject);
     if (!project) return;
     const confirmation = window.prompt(labels.confirmProject);
     if (confirmation !== project.name) return;
@@ -179,7 +213,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.3.8.2', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.0.5', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
@@ -364,8 +398,16 @@ async function clearAudioSplitCache() {
 }
 
 $('#separateButton').onclick = () => { void separateAudio(); };
-$('#clearCacheButton').onclick = () => {
-  if (window.confirm(t('cache.confirm'))) void clearAudioSplitCache();
+$('#clearCacheButton').onclick = async () => {
+  let confirmationText = t('cache.confirm');
+  try {
+    const { storage = {} } = await apiJson('/api/library');
+    const details = getLanguage() === 'en'
+      ? `\n\nCurrent AudioSplit temporary data:\n• Previous separations: ${formatBytes(storage.jobBytes)}\n• Temporary imported audio copies: ${formatBytes(storage.uploadBytes)}\n• Total cache limit: ${formatBytes(storage.cacheLimitBytes)}\n\nSaved projects and mix presets (${formatBytes(storage.libraryBytes)}) will be kept.`
+      : `\n\nDonnées temporaires AudioSplit actuelles :\n• Séparations déjà calculées : ${formatBytes(storage.jobBytes)}\n• Copies temporaires des musiques importées : ${formatBytes(storage.uploadBytes)}\n• Limite totale du cache : ${formatBytes(storage.cacheLimitBytes)}\n\nLes projets et préréglages enregistrés (${formatBytes(storage.libraryBytes)}) seront conservés.`;
+    confirmationText += details;
+  } catch (error) { console.warn('Could not read cache size before confirmation.', error); }
+  if (window.confirm(confirmationText)) void clearAudioSplitCache();
 };
 $('#playButton').onclick = () => { void playMix(); };
 $('#stopButton').onclick = stop;
@@ -429,6 +471,9 @@ async function initializeModalComponents() {
     };
     $('#saveProjectButton').onclick = () => void saveCurrentProject();
     $('#saveFolderSelect').onchange = event => { selectedFolderId = event.target.value || null; };
+    $('#projectSearchInput').oninput = () => renderLibrary();
+    $('#projectSortSelect').onchange = () => renderLibrary();
+    bindPresetControls({ refreshLibrary, status, userFacingError });
     bindFxButtons();
   } catch (error) {
     // A missing component should not block audio separation or mixing.
