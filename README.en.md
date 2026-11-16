@@ -1,11 +1,9 @@
-# AudioSplit Studio — v1.4.2
+# AudioSplit Studio — v1.4.3
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
 > [Lire ce guide en français →](README.md)
 >
-> [Roadmap to V2 (French) →](ROADMAP_V2.md)
-
 ## Start the application
 
 Download or clone this repository, open PowerShell inside the project folder, then run this single command:
@@ -37,7 +35,7 @@ After setup, you can also start the server manually with `powershell -ExecutionP
 
 As soon as you choose a file, AudioSplit analyzes it locally in the browser: tempo (BPM), key, and likely meter are estimated from the first 90 seconds. Duration, channel count, and sample rate describe the whole file; peak/RMS levels are measured from the analyzed excerpt. Bit depth is shown for WAV files when available in the file header. Estimates include a confidence indicator, and BPM/key fields can be corrected.
 
-After separation, the **Tempo and key** panel lets you enter an original BPM and target BPM, plus a transposition from −12 to +12 semitones. Preview renders every stem with the same settings; **Apply to mix** saves them in the project settings and WAV export. Original stems remain intact. This feature uses FFmpeg's Rubber Band filter and reports an explicit error if the installed FFmpeg build does not include it. Target tempo is limited to 50–200% of the original BPM.
+After separation, the **Tempo and key** panel lets you enter an original BPM and target BPM, plus a transposition from −12 to +12 semitones. Preview renders every stem with the same settings; **Apply to mix** saves them in the project settings and WAV export. Before/after values, a quality warning for large changes, and reset to the original make adjustments easier. Automation curves and the playhead stay aligned after transformation. Original stems remain intact. This feature uses FFmpeg's Rubber Band filter and reports an explicit error if the installed FFmpeg build does not include it. Target tempo is limited to 50–200% of the original BPM.
 
 ### Local folders and projects
 

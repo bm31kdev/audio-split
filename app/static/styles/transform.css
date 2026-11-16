@@ -11,6 +11,13 @@
 .transform-controls input:invalid { border-color: var(--orange); }
 .transform-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .transform-actions button { min-height: 36px; padding: 0 10px; font-size: 10px; }
+.transform-comparison { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 12px; padding: 11px 13px; background: #101218; border: 1px solid #303640; border-radius: 9px; }
+.transform-comparison > div { display: grid; gap: 4px; min-width: 0; }
+.transform-comparison span { color: var(--muted); font-size: 10px; }
+.transform-comparison strong { color: var(--text); font: 12px Consolas, 'Courier New', monospace; overflow-wrap: anywhere; }
+.transform-comparison > div:last-child strong { color: var(--lime); }
+.transform-comparison-arrow { width: 18px; height: 18px; fill: none; stroke: var(--lime); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.transform-warning { margin: 10px 0 0; padding: 9px 11px; color: #ffcf85; background: #332718; border: 1px solid #75512b; border-radius: 8px; font-size: 11px; line-height: 1.5; }
 .transform-status[data-state="error"] { color: var(--orange); }
 .transform-status[data-state="preview"] { color: #b9a5ff; }
 .transform-hint { margin-top: 10px; }
@@ -24,4 +31,6 @@
   .transform-controls { grid-template-columns: 1fr 1fr; gap: 8px; }
   .transform-actions { grid-template-columns: 1fr; display: grid; }
   .transform-actions button { min-height: 38px; }
+  .transform-comparison { gap: 8px; padding: 9px; }
+  .transform-comparison strong { font-size: 10px; }
 }

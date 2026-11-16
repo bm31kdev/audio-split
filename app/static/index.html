@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.4.2">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.4.2">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.4.3">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.4.3">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.4.2">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.4.2">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.4.2">
-  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.4.2">
-  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.4.2">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.4.2">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.4.3">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.4.3">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.4.3">
+  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.4.3">
+  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.4.3">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.4.3">
 </head>
 <body>
   <main>
@@ -76,6 +76,12 @@
           <label><span data-i18n="transform.pitch">Transposition</span><select id="transformSemitones"><option value="-12">−12</option><option value="-11">−11</option><option value="-10">−10</option><option value="-9">−9</option><option value="-8">−8</option><option value="-7">−7</option><option value="-6">−6</option><option value="-5">−5</option><option value="-4">−4</option><option value="-3">−3</option><option value="-2">−2</option><option value="-1">−1</option><option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option><option value="11">+11</option><option value="12">+12</option></select></label>
           <div class="transform-actions"><button type="button" data-button-variant="primary" id="previewTransformButton" data-i18n="transform.preview">Préécouter</button><button type="button" data-button-variant="secondary" id="applyTransformButton" data-i18n="transform.apply">Appliquer au mix</button><button type="button" data-button-variant="modal" id="resetTransformButton" data-i18n="transform.reset">Réinitialiser</button></div>
         </div>
+        <div class="transform-comparison" aria-live="polite">
+          <div><span data-i18n="transform.original">Origine</span><strong id="transformOriginalSummary">—</strong></div>
+          <svg class="lucide transform-comparison-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+          <div><span data-i18n="transform.result">Résultat</span><strong id="transformResultSummary">—</strong></div>
+        </div>
+        <p id="transformQualityWarning" class="transform-warning hidden" role="status"></p>
         <p id="transformHint" class="transform-hint" data-i18n="transform.hint">Les pistes originales restent intactes. L’application conserve ces réglages dans le projet.</p>
       </section>
       <div id="tracks" class="tracks"></div>
@@ -86,11 +92,11 @@
   <button data-button-variant="danger" id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5m4-5v5"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
 
   <!-- The badge is always available; its dialog is loaded from a component file. -->
-      <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.4.2</strong></button>
+      <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.4.3</strong></button>
   <div id="modalRoot"></div>
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.4.2.2"></script>
+  <script type="module" src="/static/app.js?v=1.4.3"></script>
 </body>
 </html>

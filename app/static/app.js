@@ -1,16 +1,16 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.4.2';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.2';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.2';
-import { libraryLabels } from './js/library-text.js?v=1.4.2';
-import { mountButtonComponent } from './js/button-component.js?v=1.4.2';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.2';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.2';
-import { userFacingError } from './js/ui-errors.js?v=1.4.2';
-import { lucideIcon } from './js/lucide.js?v=1.4.2';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.4.2';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.4.2';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.4.2';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.2';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.4.3';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.3';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.3';
+import { libraryLabels } from './js/library-text.js?v=1.4.3';
+import { mountButtonComponent } from './js/button-component.js?v=1.4.3';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.3';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.3';
+import { userFacingError } from './js/ui-errors.js?v=1.4.3';
+import { lucideIcon } from './js/lucide.js?v=1.4.3';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.4.3';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.4.3';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.4.3';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.3';
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
@@ -167,7 +167,8 @@ async function openSavedProject(projectId) {
       tracks[name] = buffer; effectsByTrack[name] = { ...effectDefaults, ...(project.effects?.[name] || {}) };
       const curve = project.automation?.[name] || { points: [{ time: 0, pan: 0 }, { time: buffer.duration, pan: 0 }], selected: 0 };
       const ratio = Number(currentMixTransform.tempoRatio) || 1;
-      automationByTrack[name] = { ...curve, points: curve.points.map(point => ({ ...point, time: point.time / ratio })) };
+      // Saved automation points use the transformed timeline; restore source time before rendering it again.
+      automationByTrack[name] = { ...curve, points: curve.points.map(point => ({ ...point, time: point.time * ratio })) };
     });
     renderedTransform = { ...currentMixTransform, tempoRatio: 1, pitchSemitones: 0 };
     setTransformInputs(currentMixTransform);
@@ -258,7 +259,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.2', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.3', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
@@ -381,6 +382,21 @@ function sameTransform(a, b) {
   return sameRenderParameters(a, b) && (a.sourceBpm ?? null) === (b.sourceBpm ?? null)
     && (a.targetBpm ?? null) === (b.targetBpm ?? null);
 }
+function updateTransformSummary(transform) {
+  const originalBpm = transform?.sourceBpm;
+  const targetBpm = transform?.targetBpm ?? originalBpm;
+  const pitch = Number(transform?.pitchSemitones || 0);
+  const locale = getLanguage() === 'en' ? 'en-US' : 'fr-FR';
+  const formatBpm = value => Number.isFinite(value) ? `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)} BPM` : `— BPM`;
+  const signedPitch = pitch > 0 ? `+${pitch}` : String(pitch);
+  $('#transformOriginalSummary').textContent = `${formatBpm(originalBpm)} · ${t('transform.semitonesValue', { value: 0 })}`;
+  $('#transformResultSummary').textContent = `${formatBpm(targetBpm)} · ${t('transform.semitonesValue', { value: signedPitch })}`;
+  const warning = $('#transformQualityWarning');
+  const tempoChange = Math.abs(Number(transform?.tempoRatio || 1) - 1);
+  const qualityMayDrop = Math.abs(pitch) >= 5 || tempoChange >= 0.1;
+  warning.textContent = qualityMayDrop ? t('transform.qualityWarning') : '';
+  warning.classList.toggle('hidden', !qualityMayDrop);
+}
 function syncTransformUi() {
   const panel = $('#transformPanel');
   if (!panel) return;
@@ -388,13 +404,17 @@ function syncTransformUi() {
   panel.classList.toggle('hidden', !available);
   const mismatch = !sameRenderParameters(renderedTransform, currentMixTransform);
   $('#exportButton').disabled = !Object.keys(tracks).length || mismatch;
-  if (transformBusy) return;
   try {
     const selected = readTransformInputs();
+    updateTransformSummary(selected);
+    if (transformBusy) return;
     if (sameTransform(selected, currentMixTransform) && !mismatch) setTransformStatus('transform.applied');
     else if (sameTransform(selected, renderedTransform)) setTransformStatus('transform.previewReady', 'preview');
     else setTransformStatus('transform.pending');
-  } catch (error) { setTransformStatus(error.message, 'error'); }
+  } catch (error) {
+    updateTransformSummary(null);
+    if (!transformBusy) setTransformStatus(error.message, 'error');
+  }
 }
 function decodedMemoryBytes(buffers) {
   return Object.values(buffers).reduce((total, buffer) => total + buffer.numberOfChannels * buffer.length * 4, 0);
@@ -441,6 +461,8 @@ async function renderTransform(transform, { startPreview = false } = {}) {
       rendered[name] = await getAudioContext().decodeAudioData(bytes);
     }
     const controls = snapshotTrackControls(Object.keys(tracks));
+    const currentOffset = playing && !paused && audioCtx ? Math.max(0, audioCtx.currentTime - playStartedAt) : playheadOffset;
+    const alignedOffset = currentOffset * (Number(renderedTransform.tempoRatio) || 1) / (Number(transform.tempoRatio) || 1);
     stop();
     Object.keys(rendered).forEach(name => {
       const oldDuration = tracks[name]?.duration || rendered[name].duration;
@@ -452,6 +474,7 @@ async function renderTransform(transform, { startPreview = false } = {}) {
     Object.entries(rendered).forEach(([name, buffer]) => { tracks[name] = buffer; });
     renderedTransform = { ...transform };
     renderTracks(names, controls);
+    seekMix(alignedOffset, false);
     setTransportState();
     requestAnimationFrame(() => {
       names.forEach(name => drawWaveform(name, tracks[name]));
@@ -515,7 +538,7 @@ function displayMusicAnalysis(result) {
   setAnalysisStatus(result.confidence >= 0.2 && result.keyConfidence >= 0.05 ? 'analysis.complete' : 'analysis.lowConfidence', result.confidence >= 0.2 && result.keyConfidence >= 0.05 ? '' : 'uncertain');
 }
 $('#analysisBpm').oninput = updateAnalysisOrigins;
-$('#analysisKey').onchange = updateAnalysisOrigins;
+$('#analysisKey').onchange = () => { updateAnalysisOrigins(); syncTransformUi(); };
 $('#fileInput').onchange = async (event) => {
   const file = event.target.files[0];
   const requestId = ++analysisRequestId;
