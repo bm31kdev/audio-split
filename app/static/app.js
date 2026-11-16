@@ -1,19 +1,24 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.4.1';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.1';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.1';
-import { libraryLabels } from './js/library-text.js?v=1.4.1';
-import { mountButtonComponent } from './js/button-component.js?v=1.4.1';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.1';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.1';
-import { userFacingError } from './js/ui-errors.js?v=1.4.1';
-import { lucideIcon } from './js/lucide.js?v=1.4.1';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.1';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, apiJson } from './js/audio-engine.js?v=1.4.2';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.2';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.2';
+import { libraryLabels } from './js/library-text.js?v=1.4.2';
+import { mountButtonComponent } from './js/button-component.js?v=1.4.2';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.2';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.2';
+import { userFacingError } from './js/ui-errors.js?v=1.4.2';
+import { lucideIcon } from './js/lucide.js?v=1.4.2';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.4.2';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.4.2';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.4.2';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.2';
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
 let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting';
+let currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
+let renderedTransform = { ...currentMixTransform }, transformBusy = false;
 function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 window.addEventListener('audiosplit:project-dirty', () => {
   if (!activeProjectId && !currentJobId) return;
@@ -121,6 +126,10 @@ async function renameLibraryItem(url, oldName) {
   catch (error) { status(userFacingError(error, 'status.actionError'), true); }
 }
 async function confirmCurrentMixReplacement() {
+  if (transformBusy) {
+    status(getLanguage() === 'en' ? 'Wait for the tempo/pitch render to finish before replacing the current mix.' : 'Attendez la fin du rendu tempo/tonalité avant de remplacer le mix actuel.', true);
+    return false;
+  }
   if (activeProjectId) {
     if (!projectDirty) return true;
     if (projectSaving) {
@@ -153,7 +162,15 @@ async function openSavedProject(projectId) {
       const bytes = await response.arrayBuffer();
       decoded.push([name, await getAudioContext().decodeAudioData(bytes)]);
     }
-    decoded.forEach(([name, buffer]) => { tracks[name] = buffer; effectsByTrack[name] = { ...effectDefaults, ...(project.effects?.[name] || {}) }; automationByTrack[name] = project.automation?.[name] || { points: [{ time: 0, pan: 0 }, { time: buffer.duration, pan: 0 }], selected: 0 }; });
+    currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null, ...(project.transform || {}) };
+    decoded.forEach(([name, buffer]) => {
+      tracks[name] = buffer; effectsByTrack[name] = { ...effectDefaults, ...(project.effects?.[name] || {}) };
+      const curve = project.automation?.[name] || { points: [{ time: 0, pan: 0 }, { time: buffer.duration, pan: 0 }], selected: 0 };
+      const ratio = Number(currentMixTransform.tempoRatio) || 1;
+      automationByTrack[name] = { ...curve, points: curve.points.map(point => ({ ...point, time: point.time / ratio })) };
+    });
+    renderedTransform = { ...currentMixTransform, tempoRatio: 1, pitchSemitones: 0 };
+    setTransformInputs(currentMixTransform);
     currentSourceName = project.sourceName || project.name;
     currentMode = project.mode || 'simple'; currentEngine = project.engine || 'fast';
     document.querySelector(`input[name="splitMode"][value="${currentMode}"]`).checked = true;
@@ -164,17 +181,39 @@ async function openSavedProject(projectId) {
     renderTracks(project.stems, project.settings || {});
     $('#mixer').classList.remove('hidden'); $('#exportButton').disabled = false;
     setTransportState();
+    syncTransformUi();
+    if (!sameRenderParameters(currentMixTransform, renderedTransform)) {
+      status(getLanguage() === 'en' ? 'Restoring saved tempo and pitch settings…' : 'Restauration du tempo et de la tonalité du projet…');
+      try { await renderTransform(currentMixTransform); }
+      catch (error) {
+        const detail = error.message || t('transform.error');
+        currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: currentMixTransform.sourceBpm, targetBpm: currentMixTransform.sourceBpm };
+        renderedTransform = { ...currentMixTransform };
+        setTransformInputs(currentMixTransform);
+        syncTransformUi();
+        status(getLanguage() === 'en' ? `Saved tempo/pitch settings could not be restored: ${detail}. The original project audio is loaded.` : `Les réglages de tempo/tonalité n’ont pas pu être restaurés : ${detail}. L’audio original du projet est chargé.`, true);
+      }
+    }
     autosaveNotice('ready');
-    requestAnimationFrame(() => { decoded.forEach(([name, buffer]) => drawWaveform(name, buffer)); project.stems.forEach(refreshAutomation); });
+    requestAnimationFrame(() => { project.stems.forEach(name => drawWaveform(name, tracks[name])); project.stems.forEach(refreshAutomation); });
     libraryModal.close(); status(getLanguage() === 'en' ? 'Project loaded from local storage.' : 'Projet chargé depuis le stockage local.');
   } catch (error) { console.error('Could not load local project.', error); status(userFacingError(error, 'status.actionError'), true); }
 }
 async function saveCurrentProject({ automatic = false } = {}) {
+  if (transformBusy) {
+    status(getLanguage() === 'en' ? 'Wait for the tempo/pitch render to finish before saving.' : 'Attendez la fin du rendu tempo/tonalité avant d’enregistrer.', true);
+    return false;
+  }
+  if (!sameRenderParameters(renderedTransform, currentMixTransform)) {
+    status(getLanguage() === 'en' ? 'Apply the current tempo/pitch preview before saving this project.' : 'Appliquez la préécoute de tempo/tonalité avant d’enregistrer le projet.', true);
+    return false;
+  }
   const labels = libraryLabels(), name = $('#projectNameInput').value.trim() || currentSourceName.replace(/\.[^.]+$/, '') || 'AudioSplit project';
   if (projectSaving || !Object.keys(tracks).length) return false;
   projectSaving = true;
   const savedRevision = projectRevision;
   const payload = savePayload();
+  payload.transform = { ...currentMixTransform };
   autosaveNotice('saving');
   try {
     let result;
@@ -210,12 +249,16 @@ function clearMixerForReplacement() {
   currentJobId = null;
   activeProjectId = null;
   projectDirty = false;
+  currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
+  renderedTransform = { ...currentMixTransform };
+  setTransformInputs(currentMixTransform);
   $('#mixer').classList.add('hidden');
+  $('#transformPanel').classList.add('hidden');
   $('#tracks').replaceChildren();
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.1', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.2', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
@@ -305,6 +348,155 @@ function updateAnalysisOrigins() {
   const changedKey = key !== (currentMusicAnalysis.key || '');
   $('#analysisKeyOrigin').textContent = changedKey ? t('analysis.corrected') : `${t('analysis.estimated')} · ${confidenceLabel(currentMusicAnalysis.keyConfidence)}`;
 }
+function setTransformStatus(key, state = '') {
+  const target = $('#transformStatus');
+  target.textContent = key ? t(key) : '';
+  target.dataset.state = state;
+}
+function setTransformInputs(transform) {
+  $('#transformSourceBpm').value = transform.sourceBpm ?? '';
+  $('#transformTargetBpm').value = transform.targetBpm ?? transform.sourceBpm ?? '';
+  $('#transformSemitones').value = String(transform.pitchSemitones ?? 0);
+  syncTransformUi();
+}
+function readTransformInputs() {
+  const sourceText = $('#transformSourceBpm').value.trim();
+  const targetText = $('#transformTargetBpm').value.trim();
+  const sourceBpm = sourceText ? Number(sourceText) : null;
+  const targetBpm = targetText ? Number(targetText) : sourceBpm;
+  const pitchSemitones = Number($('#transformSemitones').value);
+  if (sourceBpm !== null && (!Number.isFinite(sourceBpm) || sourceBpm < 40 || sourceBpm > 240)) throw new Error(t('transform.sourceBpmMissing'));
+  if (targetText && (!Number.isFinite(targetBpm) || targetBpm < 40 || targetBpm > 240)) throw new Error(t('transform.tempoRangeError'));
+  if (sourceBpm === null && targetBpm !== null) throw new Error(t('transform.sourceBpmMissing'));
+  const tempoRatio = sourceBpm !== null && targetBpm !== null ? targetBpm / sourceBpm : 1;
+  if (tempoRatio < 0.5 || tempoRatio > 2) throw new Error(t('transform.tempoRangeError'));
+  if (!Number.isInteger(pitchSemitones) || pitchSemitones < -12 || pitchSemitones > 12) throw new Error(t('transform.pitchRangeError'));
+  return { tempoRatio, pitchSemitones, sourceBpm, targetBpm };
+}
+function sameRenderParameters(a, b) {
+  return Math.abs(Number(a.tempoRatio || 1) - Number(b.tempoRatio || 1)) < 0.0001
+    && Number(a.pitchSemitones || 0) === Number(b.pitchSemitones || 0);
+}
+function sameTransform(a, b) {
+  return sameRenderParameters(a, b) && (a.sourceBpm ?? null) === (b.sourceBpm ?? null)
+    && (a.targetBpm ?? null) === (b.targetBpm ?? null);
+}
+function syncTransformUi() {
+  const panel = $('#transformPanel');
+  if (!panel) return;
+  const available = Object.keys(tracks).length > 0 && Boolean(currentJobId || activeProjectId);
+  panel.classList.toggle('hidden', !available);
+  const mismatch = !sameRenderParameters(renderedTransform, currentMixTransform);
+  $('#exportButton').disabled = !Object.keys(tracks).length || mismatch;
+  if (transformBusy) return;
+  try {
+    const selected = readTransformInputs();
+    if (sameTransform(selected, currentMixTransform) && !mismatch) setTransformStatus('transform.applied');
+    else if (sameTransform(selected, renderedTransform)) setTransformStatus('transform.previewReady', 'preview');
+    else setTransformStatus('transform.pending');
+  } catch (error) { setTransformStatus(error.message, 'error'); }
+}
+function decodedMemoryBytes(buffers) {
+  return Object.values(buffers).reduce((total, buffer) => total + buffer.numberOfChannels * buffer.length * 4, 0);
+}
+async function renderTransform(transform, { startPreview = false } = {}) {
+  if (transformBusy) return false;
+  if (!currentJobId && !activeProjectId) throw new Error(t('transform.noSource'));
+  transformBusy = true;
+  setTransformStatus('transform.rendering');
+  $('#previewTransformButton').disabled = true;
+  $('#applyTransformButton').disabled = true;
+  $('#resetTransformButton').disabled = true;
+  const requestId = window.crypto?.randomUUID
+    ? window.crypto.randomUUID().replaceAll('-', '')
+    : Array.from(window.crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
+  let progressTimer;
+  const refreshProgress = async () => {
+    try {
+      const response = await fetch(`/api/transforms/progress/${requestId}`);
+      if (!response.ok) return;
+      const progress = await response.json();
+      if (progress.status === 'rendering' && progress.total) {
+        const target = $('#transformStatus');
+        target.textContent = `${t('transform.rendering')} ${progress.completed}/${progress.total}`;
+        target.dataset.state = '';
+      }
+    } catch { /* Progress is helpful but must never interrupt the render. */ }
+  };
+  try {
+    const request = { tempoRatio: transform.tempoRatio, pitchSemitones: transform.pitchSemitones, language: getLanguage(), requestId };
+    if (activeProjectId) request.projectId = activeProjectId; else request.jobId = currentJobId;
+    progressTimer = window.setInterval(refreshProgress, 500);
+    void refreshProgress();
+    const result = await apiJson('/api/transforms', { method: 'POST', body: JSON.stringify(request) });
+    if (!result.cacheHit) setTransformStatus('transform.decoding');
+    const names = Object.keys(result.stems);
+    const oldMemory = decodedMemoryBytes(tracks);
+    const rendered = {};
+    for (const name of names) {
+      const response = await fetch(result.stems[name]);
+      if (!response.ok) throw new Error(t('transform.noSource'));
+      const bytes = await response.arrayBuffer();
+      if (oldMemory + decodedMemoryBytes(rendered) + bytes.byteLength * 2 > MAX_DECODED_STEM_BYTES) throw new Error(t('transform.memoryLimit'));
+      rendered[name] = await getAudioContext().decodeAudioData(bytes);
+    }
+    const controls = snapshotTrackControls(Object.keys(tracks));
+    stop();
+    Object.keys(rendered).forEach(name => {
+      const oldDuration = tracks[name]?.duration || rendered[name].duration;
+      const scale = rendered[name].duration / oldDuration;
+      const curve = automationByTrack[name];
+      if (curve?.points?.length) curve.points = curve.points.map(point => ({ ...point, time: point.time * scale }));
+    });
+    Object.keys(tracks).forEach(name => delete tracks[name]);
+    Object.entries(rendered).forEach(([name, buffer]) => { tracks[name] = buffer; });
+    renderedTransform = { ...transform };
+    renderTracks(names, controls);
+    setTransportState();
+    requestAnimationFrame(() => {
+      names.forEach(name => drawWaveform(name, tracks[name]));
+      names.forEach(refreshAutomation);
+    });
+    syncTransformUi();
+    if (startPreview) {
+      setTransformStatus('transform.previewReady', 'preview');
+      await playMix();
+    }
+    return true;
+  } finally {
+    if (progressTimer) window.clearInterval(progressTimer);
+    transformBusy = false;
+    $('#previewTransformButton').disabled = false;
+    $('#applyTransformButton').disabled = false;
+    $('#resetTransformButton').disabled = false;
+    syncTransformUi();
+  }
+}
+async function previewTransform() {
+  try { await renderTransform(readTransformInputs(), { startPreview: true }); }
+  catch (error) { console.error('Audio preview transform failed.', error); setTransformStatus(error.message || t('transform.error'), 'error'); status(error.message || t('transform.error'), true); }
+}
+async function applyTransform() {
+  try {
+    const selected = readTransformInputs();
+    if (!sameRenderParameters(selected, renderedTransform)) await renderTransform(selected);
+    currentMixTransform = { ...selected };
+    syncTransformUi();
+    markProjectDirty();
+    status(getLanguage() === 'en' ? 'Tempo and pitch changes applied to every track.' : 'Changements de tempo et de tonalité appliqués à toutes les pistes.');
+  } catch (error) { console.error('Audio transform failed.', error); setTransformStatus(error.message || t('transform.error'), 'error'); status(error.message || t('transform.error'), true); }
+}
+$('#transformSourceBpm').oninput = syncTransformUi;
+$('#transformTargetBpm').oninput = syncTransformUi;
+$('#transformSemitones').onchange = syncTransformUi;
+$('#previewTransformButton').onclick = () => void previewTransform();
+$('#applyTransformButton').onclick = () => void applyTransform();
+$('#resetTransformButton').onclick = () => {
+  const sourceBpm = Number($('#transformSourceBpm').value) || null;
+  $('#transformTargetBpm').value = sourceBpm ?? '';
+  $('#transformSemitones').value = '0';
+  void applyTransform();
+};
 function displayMusicAnalysis(result) {
   currentMusicAnalysis = result;
   $('#analysisDuration').textContent = formatDuration(result.duration);
@@ -403,6 +595,11 @@ async function separateAudio() {
     currentEngine = engine;
     activeProjectId = null;
     projectDirty = false;
+    const detectedBpm = Number($('#analysisBpm').value);
+    const sourceBpm = Number.isFinite(detectedBpm) && detectedBpm >= 40 && detectedBpm <= 240 ? detectedBpm : null;
+    currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm, targetBpm: sourceBpm };
+    renderedTransform = { ...currentMixTransform };
+    setTransformInputs(currentMixTransform);
     if ($('#projectNameInput')) $('#projectNameInput').value = file.name.replace(/\.[^.]+$/, '');
     decoded.forEach(([name, buffer]) => {
       tracks[name] = buffer;
@@ -411,6 +608,7 @@ async function separateAudio() {
     renderTracks(names);
     setTransportState();
     $('#mixer').classList.remove('hidden');
+    syncTransformUi();
     requestAnimationFrame(() => {
       decoded.forEach(([name, buffer]) => drawWaveform(name, buffer));
       names.forEach(refreshAutomation);
@@ -548,6 +746,7 @@ async function initializeModalComponents() {
 onLanguageChange(() => {
   $('#libraryButton').textContent = getLanguage() === 'en' ? 'Projects' : 'Projets';
   setAnalysisStatus(currentAnalysisStatusKey, $('#analysisStatus').dataset.state || '');
+  syncTransformUi();
   setupAnalysisKeyOptions();
   updateAnalysisOrigins();
   if (activeProjectId) autosaveNotice(projectDirty ? 'dirty' : 'ready');

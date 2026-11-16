@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.4.1
+# AudioSplit Studio — v1.4.2
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -35,7 +35,9 @@ Après l’installation, vous pouvez aussi lancer le serveur manuellement avec `
 
 ### Analyse musicale
 
-Dès qu’un fichier est choisi, AudioSplit l’analyse localement dans le navigateur : tempo (BPM), tonalité et mesure probable sont estimés sur les 90 premières secondes. La durée, le nombre de canaux et la fréquence d’échantillonnage décrivent le fichier entier ; les niveaux crête/RMS sont mesurés sur l’extrait analysé. La profondeur en bits est indiquée pour les WAV lorsque leur en-tête la fournit. Les estimations affichent leur niveau de confiance et les champs BPM/tonalité sont corrigeables. Cette version garde les corrections comme annotations ; elle ne modifie pas encore la vitesse ni la hauteur du son.
+Dès qu’un fichier est choisi, AudioSplit l’analyse localement dans le navigateur : tempo (BPM), tonalité et mesure probable sont estimés sur les 90 premières secondes. La durée, le nombre de canaux et la fréquence d’échantillonnage décrivent le fichier entier ; les niveaux crête/RMS sont mesurés sur l’extrait analysé. La profondeur en bits est indiquée pour les WAV lorsque leur en-tête la fournit. Les estimations affichent leur niveau de confiance et les champs BPM/tonalité sont corrigeables.
+
+Après séparation, le panneau **Tempo et tonalité** permet de saisir le BPM d’origine et une cible, ainsi qu’une transposition de −12 à +12 demi-tons. La préécoute applique le même rendu à toutes les pistes ; **Appliquer au mix** conserve les réglages dans le projet et dans l’export WAV. Les stems sources restent intacts. Cette fonction utilise le filtre Rubber Band de FFmpeg ; elle affiche une erreur explicite si le build FFmpeg n’intègre pas ce filtre. Un changement de BPM accepté reste limité à 50–200 % du tempo d’origine.
 
 ### Choisir le bon type de séparation
 

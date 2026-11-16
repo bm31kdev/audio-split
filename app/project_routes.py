@@ -27,7 +27,7 @@ from .runtime import measure_tree_bytes, remove_temp_file, serialized_cache_oper
 
 from .project_store import (
     clear_directory_children, folder_path, localized, project_path, read_json,
-    safe_id, validate_folder_manifest, validate_project_manifest, validate_project_state,
+    safe_id, validate_folder_manifest, validate_project_manifest, validate_project_state, validate_mix_transform,
     write_json_atomic,
 )
 
@@ -194,6 +194,7 @@ async def save_project(folder_id: str, payload: dict):
     if len(source_name) > 1024:
         raise HTTPException(400, "Project source filename is too long.")
     validate_project_state(payload)
+    transform = validate_mix_transform(payload.get("transform", {}))
     available = ["vocals", "accompaniment"] if mode == "simple" else ["vocals", "drums", "bass", "other"]
     files = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav"}
     if any(not (stems / files[name]).is_file() for name in available):
@@ -216,7 +217,7 @@ async def save_project(folder_id: str, payload: dict):
                 shutil.copy2(stems / files[name], staging / "stems" / files[name])
         await run_in_threadpool(copy_project_audio)
         now = datetime.now(timezone.utc).isoformat()
-        metadata = {"schemaVersion": 1, "id": project_id, "folderId": folder_id, "name": title, "sourceName": source_name, "mode": mode, "engine": engine, "stems": available, "settings": payload.get("settings", {}), "automation": payload.get("automation", {}), "effects": payload.get("effects", {}), "createdAt": now, "updatedAt": now}
+        metadata = {"schemaVersion": 1, "id": project_id, "folderId": folder_id, "name": title, "sourceName": source_name, "mode": mode, "engine": engine, "stems": available, "settings": payload.get("settings", {}), "automation": payload.get("automation", {}), "effects": payload.get("effects", {}), "transform": transform, "createdAt": now, "updatedAt": now}
         validate_project_manifest(metadata, Path(project_id), folder_id)
         write_json_atomic(staging / "project.json", metadata)
         os.replace(staging, destination)
@@ -439,8 +440,9 @@ def update_project(project_id: str, payload: dict):
         "settings": payload.get("settings", metadata.get("settings", {})),
         "effects": payload.get("effects", metadata.get("effects", {})),
         "automation": payload.get("automation", metadata.get("automation", {})),
+        "transform": validate_mix_transform(payload.get("transform", metadata.get("transform", {}))),
     }
-    validate_project_state(state)
+    validate_project_state({key: state[key] for key in ("settings", "effects", "automation")})
     metadata["name"] = name
     metadata.update(state)
     metadata["schemaVersion"] = 1

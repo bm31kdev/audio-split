@@ -83,6 +83,18 @@ def find_ffprobe() -> str | None:
     return None
 
 
+def find_ffmpeg() -> str | None:
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    package_root = Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft" / "WinGet" / "Packages"
+    if package_root.is_dir():
+        for candidate in package_root.glob("Gyan.FFmpeg.*/*/bin/ffmpeg.exe"):
+            if candidate.is_file():
+                return str(candidate)
+    return None
+
+
 def probe_duration(path: Path, language: str) -> float:
     executable = find_ffprobe()
     if not executable:

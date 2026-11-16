@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import shutil
@@ -148,6 +149,26 @@ def validate_project_state(payload: dict) -> None:
             raise HTTPException(400, "Project contains an invalid automation selection.")
 
 
+def validate_mix_transform(payload: dict | None) -> dict:
+    """Validate persisted tempo and pitch settings independently of audio files."""
+    if payload is None:
+        payload = {}
+    if not isinstance(payload, dict) or set(payload) - {"tempoRatio", "pitchSemitones", "sourceBpm", "targetBpm"}:
+        raise HTTPException(400, "Project contains invalid tempo or pitch settings.")
+    values = {}
+    for key, default, low, high in (("tempoRatio", 1, 0.5, 2), ("pitchSemitones", 0, -12, 12)):
+        value = payload.get(key, default)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not low <= value <= high:
+            raise HTTPException(400, f"Project contains an invalid {key} value.")
+        values[key] = float(value) if key == "tempoRatio" else int(value)
+    for key in ("sourceBpm", "targetBpm"):
+        value = payload.get(key)
+        if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 40 <= value <= 240):
+            raise HTTPException(400, f"Project contains an invalid {key} value.")
+        values[key] = float(value) if value is not None else None
+    return values
+
+
 def safe_id(value: str) -> bool:
     return isinstance(value, str) and bool(re.fullmatch(r"[0-9a-f]{32}", value))
 
@@ -187,6 +208,7 @@ def validate_project_manifest(payload: dict, project_dir: Path, folder_id: str) 
         raise HTTPException(500, "Local project metadata uses an unsupported schema version.")
     try:
         validate_project_state({key: payload.get(key, {}) for key in ("settings", "effects", "automation")})
+        validate_mix_transform(payload.get("transform", {}))
     except HTTPException as exc:
         raise HTTPException(500, "Local project mixer settings are invalid.") from exc
 

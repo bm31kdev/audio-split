@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.4.1
+# AudioSplit Studio — v1.4.2
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -35,7 +35,9 @@ After setup, you can also start the server manually with `powershell -ExecutionP
 
 ### Music analysis
 
-As soon as you choose a file, AudioSplit analyzes it locally in the browser: tempo (BPM), key, and likely meter are estimated from the first 90 seconds. Duration, channel count, and sample rate describe the whole file; peak/RMS levels are measured from the analyzed excerpt. Bit depth is shown for WAV files when available in the file header. Estimates include a confidence indicator, and BPM/key fields can be corrected. In this version, corrections are annotations; they do not yet change playback speed or pitch.
+As soon as you choose a file, AudioSplit analyzes it locally in the browser: tempo (BPM), key, and likely meter are estimated from the first 90 seconds. Duration, channel count, and sample rate describe the whole file; peak/RMS levels are measured from the analyzed excerpt. Bit depth is shown for WAV files when available in the file header. Estimates include a confidence indicator, and BPM/key fields can be corrected.
+
+After separation, the **Tempo and key** panel lets you enter an original BPM and target BPM, plus a transposition from −12 to +12 semitones. Preview renders every stem with the same settings; **Apply to mix** saves them in the project settings and WAV export. Original stems remain intact. This feature uses FFmpeg's Rubber Band filter and reports an explicit error if the installed FFmpeg build does not include it. Target tempo is limited to 50–200% of the original BPM.
 
 ### Local folders and projects
 
