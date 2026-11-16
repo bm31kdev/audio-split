@@ -1,5 +1,5 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.4.3';
-import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.4.3';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.4.4';
+import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.4.4';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -21,13 +21,14 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
     loadComponent('library-modal.html'),
+    loadComponent('interaction-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}`;
 }
 
 /**
@@ -76,6 +77,88 @@ function bindModalFocusTrap(modal) {
 }
 
 export function bindModalAccessibility(modal) { bindModalFocusTrap(modal); }
+
+/** Create a reusable, localized replacement for native confirm and prompt dialogs. */
+export function createInteractionModal() {
+  const modal = document.querySelector('#interactionModal');
+  const animated = createAnimatedModal(modal, '.interaction-close');
+  const title = modal.querySelector('#interactionTitle');
+  const description = modal.querySelector('#interactionDescription');
+  const message = modal.querySelector('#interactionMessage');
+  const inputGroup = modal.querySelector('#interactionInputGroup');
+  const inputLabel = modal.querySelector('#interactionInputLabel');
+  const input = modal.querySelector('#interactionInput');
+  const exactHint = modal.querySelector('#interactionExactHint');
+  const cancelButton = modal.querySelector('#interactionCancel');
+  const acceptButton = modal.querySelector('#interactionAccept');
+  let pendingResolve = null;
+  let mode = 'confirm';
+  let expectedValue = null;
+
+  const finish = (value) => {
+    if (!pendingResolve) return;
+    const resolve = pendingResolve;
+    pendingResolve = null;
+    animated.close();
+    resolve(value);
+  };
+  const updateInputState = () => {
+    const value = input.value.trim();
+    const exactMatch = expectedValue === null || value === expectedValue;
+    acceptButton.disabled = mode === 'prompt' && (!value || !exactMatch);
+    exactHint.classList.toggle('hidden', expectedValue === null || exactMatch);
+  };
+
+  const show = (options = {}) => new Promise(resolve => {
+    if (pendingResolve) finish(mode === 'confirm' ? false : null);
+    pendingResolve = resolve;
+    mode = options.mode || 'confirm';
+    expectedValue = typeof options.expectedValue === 'string' ? options.expectedValue : null;
+    title.textContent = options.title || (getLanguage() === 'en' ? 'Confirm action' : 'Confirmer l’action');
+    description.textContent = options.description || '';
+    message.textContent = options.message || '';
+    message.classList.toggle('hidden', !options.message);
+    message.classList.toggle('has-preserved-lines', Boolean(options.preserveLines));
+    inputGroup.classList.toggle('hidden', mode !== 'prompt');
+    inputLabel.textContent = options.inputLabel || '';
+    input.value = options.value || '';
+    input.placeholder = options.placeholder || '';
+    input.maxLength = Number(options.maxLength) || 120;
+    exactHint.textContent = options.exactHint || t('interaction.exactHint');
+    exactHint.classList.toggle('hidden', expectedValue === null);
+    cancelButton.textContent = options.cancelLabel || t('interaction.cancel');
+    cancelButton.classList.toggle('hidden', mode === 'alert');
+    acceptButton.textContent = options.acceptLabel || (mode === 'alert' ? t('interaction.close') : t('interaction.confirm'));
+    acceptButton.dataset.buttonVariant = options.danger ? 'danger' : 'primary';
+    expectedValue = typeof options.expectedValue === 'string' ? options.expectedValue : null;
+    acceptButton.onclick = () => finish(mode === 'prompt' ? input.value.trim() : true);
+    cancelButton.onclick = () => finish(mode === 'confirm' ? false : null);
+    updateInputState();
+    input.oninput = updateInputState;
+    animated.show();
+    if (mode === 'prompt') requestAnimationFrame(() => { input.focus(); input.select(); });
+  });
+
+  modal.querySelectorAll('[data-interaction-cancel], .interaction-close').forEach(button => {
+    button.onclick = () => finish(mode === 'confirm' ? false : null);
+  });
+  modal.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && pendingResolve) {
+      event.preventDefault();
+      finish(mode === 'confirm' ? false : null);
+    } else if (event.key === 'Enter' && mode === 'prompt' && !acceptButton.disabled && document.activeElement === input) {
+      event.preventDefault();
+      finish(input.value.trim());
+    }
+  });
+
+  return {
+    confirm: options => show({ ...options, mode: 'confirm' }).then(value => value === true),
+    prompt: options => show({ ...options, mode: 'prompt' }).then(value => typeof value === 'string' ? value : null),
+    alert: options => show({ ...options, mode: 'alert' }).then(() => undefined),
+    close: () => finish(mode === 'confirm' ? false : null),
+  };
+}
 
 // Render a compact control: its accessible name remains available without a visible label.
 function controlMarkup(key, labelKey, value, min, max, step = 1) {

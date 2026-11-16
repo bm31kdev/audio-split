@@ -89,6 +89,19 @@
 .release-tag { padding: 3px 6px; color: #d7ff54; font: 9px Consolas, 'Courier New', monospace; text-transform: uppercase; border: 1px solid #465035; border-radius: 999px; }
 .release p { margin-top: 4px; color: #b1b7c2; font-size: 11px; line-height: 1.35; }
 
+/* Confirmations and text prompts use the same framed dialog as version history. */
+.interaction-dialog { width: min(540px, calc(100vw - 40px)); }
+.interaction-content { padding: 20px 24px 8px; }
+.interaction-message { margin: 0; color: #d3d7df; font-size: 12px; line-height: 1.65; }
+.interaction-message.has-preserved-lines { white-space: pre-line; }
+.interaction-input-group { display: grid; gap: 7px; margin-top: 4px; color: #d3d7df; font-size: 11px; }
+.interaction-input-group input { width: 100%; min-width: 0; padding: 10px 12px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 13px Segoe UI, Arial, sans-serif; }
+.interaction-input-group input:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
+.interaction-exact-hint { margin-top: 8px; color: var(--orange); font-size: 10px; }
+.interaction-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px 22px; }
+.interaction-actions button { min-height: 36px; padding: 0 14px; font-size: 11px; }
+.interaction-actions button:disabled { cursor: not-allowed; opacity: .45; }
+
 /* The library keeps its heading fixed while the folder and project list scroll. */
 .library-dialog { width: min(760px, calc(100vw - 40px)); }
 .library-content { min-height: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
@@ -164,6 +177,8 @@
   .fx-done { margin: 0 18px 16px; }
   .language-options { padding: 0 18px 18px; }
   .release-list { gap: 5px; padding: 12px; }
+  .interaction-content { padding: 16px 18px 6px; }
+  .interaction-actions { padding: 10px 18px 18px; }
   .release { padding: 8px 9px 8px 12px; }
   .release h3 { font-size: 11px; }
   .release p { font-size: 10px; }
@@ -219,4 +234,9 @@
   color: #d8e6b2;
   background: color-mix(in srgb, var(--lime) 7%, transparent);
   font-size: 0.82rem;
+}
+
+.changelog-dialog.interaction-dialog {
+  width: min(540px, calc(100vw - 40px));
+  max-width: min(540px, calc(100vw - 40px));
 }

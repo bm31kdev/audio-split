@@ -1,11 +1,11 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, updateOutputs, updateLiveMix, refreshAutomation, markProjectDirty, apiJson } from './audio-engine.js?v=1.4.3';
-import { savePayload, renderTracks } from './track-state.js?v=1.4.3';
-import { getLanguage } from './i18n.js?v=1.4.3';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, updateOutputs, updateLiveMix, refreshAutomation, markProjectDirty, apiJson } from './audio-engine.js?v=1.4.4';
+import { savePayload, renderTracks } from './track-state.js?v=1.4.4';
+import { getLanguage, t } from './i18n.js?v=1.4.4';
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
 // Render local mix presets and bind their actions independently from project management.
-export function renderPresets(presetData, { refreshLibrary, status, userFacingError }) {
+export function renderPresets(presetData, { refreshLibrary, status, userFacingError, interactionModal }) {
   const workspace = $('#presetWorkspace');
   if (!workspace) return;
   workspace.innerHTML = presetData.length ? presetData.map(preset => `<article class="preset-card"><div><h4>${escapeHtml(preset.name)}</h4><p>${Object.keys(preset.settings || {}).length} ${getLanguage() === 'en' ? 'tracks · mixer settings only' : 'pistes · réglages du mix uniquement'}</p></div><div><button data-button-variant="modal" data-apply-preset="${preset.id}" type="button">${getLanguage() === 'en' ? 'Apply' : 'Appliquer'}</button><button data-button-variant="modal" data-export-preset="${preset.id}" type="button">${getLanguage() === 'en' ? 'Export' : 'Exporter'}</button><button data-button-variant="modal" data-rename-preset="${preset.id}" type="button">${getLanguage() === 'en' ? 'Rename' : 'Renommer'}</button><button data-button-variant="danger" data-delete-preset="${preset.id}" type="button">${getLanguage() === 'en' ? 'Delete' : 'Supprimer'}</button></div></article>`).join('') : `<p class="library-empty">${getLanguage() === 'en' ? 'No mix presets saved yet.' : 'Aucun préréglage de mix enregistré.'}</p>`;
@@ -19,14 +19,16 @@ export function renderPresets(presetData, { refreshLibrary, status, userFacingEr
       setTimeout(() => URL.revokeObjectURL(link.href), 1000);
     } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
   });
-  workspace.querySelectorAll('[data-rename-preset]').forEach(button => button.onclick = () => {
+  workspace.querySelectorAll('[data-rename-preset]').forEach(button => button.onclick = async () => {
     const preset = presetData.find(item => item.id === button.dataset.renamePreset);
-    const name = window.prompt(getLanguage() === 'en' ? 'New name:' : 'Nouveau nom :', preset.name);
+    if (!preset) return;
+    const name = await interactionModal.prompt({ title: t('interaction.renameTitle'), description: t('interaction.renameDescription'), inputLabel: t('interaction.newName'), value: preset.name, acceptLabel: t('interaction.rename') });
     if (name?.trim()) void apiJson(`/api/library/presets/${preset.id}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim() }) }).then(refreshLibrary).catch(error => status(userFacingError(error, 'status.actionError'), true));
   });
   workspace.querySelectorAll('[data-delete-preset]').forEach(button => button.onclick = async () => {
     const preset = presetData.find(item => item.id === button.dataset.deletePreset);
-    const confirmation = window.prompt(getLanguage() === 'en' ? 'Type the exact preset name to permanently delete it:' : 'Tapez le nom exact du préréglage pour le supprimer définitivement :');
+    if (!preset) return;
+    const confirmation = await interactionModal.prompt({ title: t('interaction.deletePresetTitle'), description: t('interaction.deletePresetDescription'), inputLabel: t('interaction.presetExact'), expectedValue: preset.name, exactHint: t('interaction.exactHint'), danger: true, acceptLabel: getLanguage() === 'en' ? 'Delete' : 'Supprimer' });
     if (confirmation !== preset.name) return;
     try { await apiJson(`/api/library/presets/${preset.id}`, { method: 'DELETE', body: JSON.stringify({ confirmation }) }); await refreshLibrary(); }
     catch (error) { status(userFacingError(error, 'status.actionError'), true); }
@@ -55,10 +57,10 @@ async function applyMixPreset(presetData, presetId, status) {
 }
 
 // Connect create/import actions once after the project-library dialog is mounted.
-export function bindPresetControls({ refreshLibrary, status, userFacingError }) {
+export function bindPresetControls({ refreshLibrary, status, userFacingError, interactionModal }) {
   $('#savePresetButton').onclick = async () => {
     if (!Object.keys(tracks).length) { status(getLanguage() === 'en' ? 'Load or separate a track before saving a mix preset.' : 'Chargez ou séparez un morceau avant d’enregistrer un préréglage.', true); return; }
-    const name = window.prompt(getLanguage() === 'en' ? 'Preset name:' : 'Nom du préréglage :');
+    const name = await interactionModal.prompt({ title: t('interaction.savePresetTitle'), description: t('interaction.savePresetDescription'), inputLabel: t('interaction.presetName'), acceptLabel: t('interaction.save') });
     if (!name?.trim()) return;
     const payload = savePayload();
     payload.name = name.trim(); payload.durations = Object.fromEntries(Object.entries(tracks).map(([stem, buffer]) => [stem, buffer.duration]));

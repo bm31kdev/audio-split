@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.4.3
+# AudioSplit Studio — v1.4.4
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -30,6 +30,8 @@ After setup, you can also start the server manually with `powershell -ExecutionP
 2. Import an `MP3`, `WAV`, `FLAC`, `M4A`, or `OGG` file.
 3. Start local separation and wait for it to finish.
 4. Play the result, adjust tracks and effects, then export a stereo WAV mix.
+
+Confirmations, deletions, and name entry use dialogs styled as part of AudioSplit Studio instead of native browser pop-ups.
 
 ### Music analysis
 

@@ -1,0 +1,28 @@
+<!-- Shared confirmation and text-entry dialog; no native browser prompt is needed. -->
+<div id="interactionModal" class="changelog-modal interaction-modal" aria-hidden="true">
+  <div class="changelog-backdrop" data-interaction-cancel></div>
+  <section class="changelog-dialog interaction-dialog" role="dialog" aria-modal="true" aria-labelledby="interactionTitle" aria-describedby="interactionDescription">
+    <header class="changelog-header">
+      <div>
+        <p class="eyebrow">AUDIO SPLIT STUDIO</p>
+        <h2 id="interactionTitle">Confirmation</h2>
+        <p id="interactionDescription"></p>
+      </div>
+      <button type="button" data-button-variant="modal" class="changelog-close interaction-close" aria-label="Fermer" title="Fermer">
+        <svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
+      </button>
+    </header>
+    <div class="interaction-content">
+      <p id="interactionMessage" class="interaction-message hidden"></p>
+      <label id="interactionInputGroup" class="interaction-input-group hidden">
+        <span id="interactionInputLabel"></span>
+        <input id="interactionInput" type="text" autocomplete="off" maxlength="120">
+      </label>
+      <p id="interactionExactHint" class="interaction-exact-hint hidden"></p>
+    </div>
+    <footer class="interaction-actions">
+      <button type="button" data-button-variant="modal" id="interactionCancel">Annuler</button>
+      <button type="button" data-button-variant="primary" id="interactionAccept">Confirmer</button>
+    </footer>
+  </section>
+</div>

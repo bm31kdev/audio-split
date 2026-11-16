@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.4.3
+# AudioSplit Studio — v1.4.4
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -30,6 +30,8 @@ Après l’installation, vous pouvez aussi lancer le serveur manuellement avec `
 2. Importez un fichier `MP3`, `WAV`, `FLAC`, `M4A` ou `OGG`.
 3. Lancez la séparation locale et attendez sa fin.
 4. Écoutez le résultat, réglez les pistes et les effets, puis exportez un WAV stéréo.
+
+Les confirmations, suppressions et saisies de nom utilisent des modaux AudioSplit intégrés à l’interface, au lieu des fenêtres natives du navigateur.
 
 ### Analyse musicale
 

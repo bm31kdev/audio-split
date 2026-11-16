@@ -1,18 +1,21 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.4.3';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.3';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.3';
-import { libraryLabels } from './js/library-text.js?v=1.4.3';
-import { mountButtonComponent } from './js/button-component.js?v=1.4.3';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.3';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.3';
-import { userFacingError } from './js/ui-errors.js?v=1.4.3';
-import { lucideIcon } from './js/lucide.js?v=1.4.3';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.4.3';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.4.3';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.4.3';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.3';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.4.4';
+import { bindModalAccessibility, createChangelogModal, createFxModal, createInteractionModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.4';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.4';
+import { libraryLabels } from './js/library-text.js?v=1.4.4';
+import { mountButtonComponent } from './js/button-component.js?v=1.4.4';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.4';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.4';
+import { userFacingError } from './js/ui-errors.js?v=1.4.4';
+import { lucideIcon } from './js/lucide.js?v=1.4.4';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.4.4';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.4.4';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.4.4';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.4';
 await mountButtonComponent($('#buttonComponentRoot'));
-let fxModal, changelogModal, languageModal;
+let fxModal, changelogModal, languageModal, interactionModal;
+let resolveInteractionModalReady;
+const interactionModalReady = new Promise(resolve => { resolveInteractionModalReady = resolve; });
+const getInteractionModal = () => interactionModal ? Promise.resolve(interactionModal) : interactionModalReady;
 let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
@@ -70,7 +73,7 @@ function renderLibrary() {
   $('#presetHint').textContent = getLanguage() === 'en' ? 'Reuse mixer settings without duplicating audio files.' : 'Réutilisez les réglages sans dupliquer les fichiers audio.';
   $('#savePresetButton').textContent = getLanguage() === 'en' ? 'Save current mix as preset' : 'Enregistrer le mix comme préréglage';
   $('#importPresetButton').textContent = getLanguage() === 'en' ? 'Import' : 'Importer';
-  renderPresets(presetData, { refreshLibrary, status, userFacingError });
+  renderPresets(presetData, { refreshLibrary, status, userFacingError, interactionModal });
   select.innerHTML = libraryData.folders.length ? libraryData.folders.map(folder => `<option value="${folder.id}" ${folder.id === selectedFolderId ? 'selected' : ''}>${escapeHtml(folder.name)}</option>`).join('') : `<option value="">${labels.select}</option>`;
   const current = libraryData.folders.find(folder => folder.id === selectedFolderId);
   const query = $('#projectSearchInput').value.trim().toLocaleLowerCase();
@@ -94,7 +97,8 @@ function renderLibrary() {
   workspace.querySelectorAll('[data-folder]').forEach(button => button.onclick = () => { selectedFolderId = button.dataset.folder; renderLibrary(); });
   workspace.querySelectorAll('[data-rename-folder]').forEach(button => button.onclick = () => void renameLibraryItem(`/api/library/folders/${button.dataset.renameFolder}`, current.name));
   workspace.querySelectorAll('[data-delete-folder]').forEach(button => button.onclick = async () => {
-    const confirmation = window.prompt(labels.confirmFolder);
+    const dialogs = await getInteractionModal();
+    const confirmation = await dialogs.prompt({ title: labels.remove, description: labels.confirmFolder, inputLabel: t('interaction.folderExact'), expectedValue: current.name, exactHint: t('interaction.exactHint'), danger: true, acceptLabel: labels.remove });
     if (confirmation !== current.name) return;
     try {
       await apiJson(`/api/library/folders/${button.dataset.deleteFolder}`, { method: 'DELETE', body: JSON.stringify({ confirmation }) });
@@ -110,7 +114,8 @@ function renderLibrary() {
   workspace.querySelectorAll('[data-delete-project]').forEach(button => button.onclick = async () => {
     const project = allProjects.find(item => item.id === button.dataset.deleteProject);
     if (!project) return;
-    const confirmation = window.prompt(labels.confirmProject);
+    const dialogs = await getInteractionModal();
+    const confirmation = await dialogs.prompt({ title: labels.remove, description: labels.confirmProject, inputLabel: t('interaction.projectExact'), expectedValue: project.name, exactHint: t('interaction.exactHint'), danger: true, acceptLabel: labels.remove });
     if (confirmation !== project.name) return;
     try {
       await apiJson(`/api/library/projects/${project.id}`, { method: 'DELETE', body: JSON.stringify({ confirmation }) });
@@ -120,7 +125,8 @@ function renderLibrary() {
   });
 }
 async function renameLibraryItem(url, oldName) {
-  const value = prompt(getLanguage() === 'en' ? 'New name:' : 'Nouveau nom :', oldName);
+  const dialogs = await getInteractionModal();
+  const value = await dialogs.prompt({ title: t('interaction.renameTitle'), description: t('interaction.renameDescription'), inputLabel: t('interaction.newName'), value: oldName, acceptLabel: t('interaction.rename') });
   if (!value?.trim()) return;
   try { await apiJson(url, { method: 'PATCH', body: JSON.stringify({ name: value.trim() }) }); await refreshLibrary(); }
   catch (error) { status(userFacingError(error, 'status.actionError'), true); }
@@ -139,9 +145,8 @@ async function confirmCurrentMixReplacement() {
     return saveCurrentProject({ automatic: true });
   }
   if (currentJobId) {
-    return window.confirm(getLanguage() === 'en'
-      ? 'The current separation has not been saved as a project. Replace it and its mix settings?'
-      : 'La séparation actuelle n’est pas enregistrée comme projet. La remplacer ainsi que ses réglages de mixage ?');
+    const dialogs = await getInteractionModal();
+    return dialogs.confirm({ title: t('interaction.replaceTitle'), description: t('interaction.replaceMessage') });
   }
   return true;
 }
@@ -259,12 +264,12 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.3', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.4', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
-    worker.onmessage = ({ data }) => {
+    worker.onmessage = async ({ data }) => {
       if (Number.isFinite(data.peak)) {
-        try { worker.postMessage({ type: confirmPeak(data.peak) ? 'continue' : 'cancel' }); }
+        try { worker.postMessage({ type: await confirmPeak(data.peak) ? 'continue' : 'cancel' }); }
         catch (error) { worker.terminate(); reject(error); }
         return;
       }
@@ -304,11 +309,12 @@ async function exportMix() {
     for (const [name, nodes] of offlineNodes) if (nodes.effects.gate) scheduleOfflineNoiseGate(nodes.effects.gate, tracks[name], settings(name).effects.gate, offline);
     status(t('status.rendering'));
     const rendered = await offline.startRendering();
-    const result = await encodeWavInWorker(rendered, peak => {
+    const result = await encodeWavInWorker(rendered, async peak => {
       if (peak < 0.98) return true;
       const peakDb = 20 * Math.log10(peak);
       const formattedPeak = new Intl.NumberFormat(getLanguage() === 'en' ? 'en-US' : 'fr-FR', { maximumFractionDigits: 1 }).format(peakDb);
-      return window.confirm(t('status.exportPeakWarning', { peak: formattedPeak }));
+      const dialogs = await getInteractionModal();
+      return dialogs.confirm({ title: t('interaction.exportWarningTitle'), description: t('status.exportPeakWarning', { peak: formattedPeak }), acceptLabel: t('interaction.exportAnyway'), cancelLabel: t('interaction.cancel') });
     });
     if (result.cancelled) { status(t('status.exportCancelled')); return; }
     const url = URL.createObjectURL(result.blob), link = document.createElement('a');
@@ -684,7 +690,7 @@ async function clearAudioSplitCache() {
 
 $('#separateButton').onclick = () => { void separateAudio(); };
 $('#clearCacheButton').onclick = async () => {
-  let confirmationText = t('cache.confirm');
+  let confirmationText = t('cache.confirm').split('\n\n').slice(1).join('\n\n');
   try {
     const { storage = {} } = await apiJson('/api/library');
     const details = getLanguage() === 'en'
@@ -692,7 +698,8 @@ $('#clearCacheButton').onclick = async () => {
       : `\n\nDonnées temporaires AudioSplit actuelles :\n• Séparations déjà calculées : ${formatBytes(storage.jobBytes)}\n• Copies temporaires des musiques importées : ${formatBytes(storage.uploadBytes)}\n• Limite totale du cache : ${formatBytes(storage.cacheLimitBytes)}\n\nLes projets et préréglages enregistrés (${formatBytes(storage.libraryBytes)}) seront conservés.`;
     confirmationText += details;
   } catch (error) { console.warn('Could not read cache size before confirmation.', error); }
-  if (window.confirm(confirmationText)) void clearAudioSplitCache();
+  const dialogs = await getInteractionModal();
+  if (await dialogs.confirm({ title: t('cache.clear'), description: t('interaction.cacheDescription'), message: confirmationText, preserveLines: true, danger: true, acceptLabel: t('cache.clear') })) void clearAudioSplitCache();
 };
 $('#playButton').onclick = () => { void playMix(); };
 $('#stopButton').onclick = stop;
@@ -714,6 +721,8 @@ async function initializeModalComponents() {
     setFxModal(fxModal);
     changelogModal = createChangelogModal($('#versionButton'));
     languageModal = createLanguageModal($('#languageButton'));
+    interactionModal = createInteractionModal();
+    resolveInteractionModalReady(interactionModal);
     const libraryElement = $('#libraryModal'), libraryTrigger = $('#libraryButton');
     bindModalAccessibility(libraryElement);
     const closeLibrary = () => { libraryElement.classList.remove('is-open'); setTimeout(() => { libraryElement.setAttribute('aria-hidden', 'true'); libraryTrigger.focus(); }, 240); };
@@ -758,7 +767,7 @@ async function initializeModalComponents() {
     $('#saveFolderSelect').onchange = event => { selectedFolderId = event.target.value || null; };
     $('#projectSearchInput').oninput = () => renderLibrary();
     $('#projectSortSelect').onchange = () => renderLibrary();
-    bindPresetControls({ refreshLibrary, status, userFacingError });
+    bindPresetControls({ refreshLibrary, status, userFacingError, interactionModal });
     bindFxButtons();
   } catch (error) {
     // A missing component should not block audio separation or mixing.
@@ -798,5 +807,5 @@ window.addEventListener('beforeunload', (event) => {
     event.returnValue = '';
   }
 });
-document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); libraryModal?.close(); } });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); libraryModal?.close(); interactionModal?.close(); } });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));
