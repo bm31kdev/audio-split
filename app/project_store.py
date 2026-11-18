@@ -111,6 +111,7 @@ def validate_project_state(payload: dict) -> None:
             raise HTTPException(400, "Invalid solo value in project settings.")
 
     effect_keys = {"saturation", "bassBoost", "compressor", "eqLow", "eqMid", "eqHigh", "reverb", "delay", "highPass", "lowPass", "width", "ducking", "chorus", "flanger", "phaser", "tremolo", "bitcrusher", "gate", "deEsser", "limiter", "exciter"}
+    automation_effects = {"eq", "filters", "compressor", "reverb", "delay", "width", "ducking", "saturation", "bassBoost", "chorus", "flanger", "phaser", "tremolo", "bitcrusher", "gate", "deEsser", "limiter", "exciter"}
     for track, values in effects.items():
         if track not in allowed_tracks or not isinstance(values, dict):
             raise HTTPException(400, "Project contains invalid track effects.")
@@ -124,8 +125,14 @@ def validate_project_state(payload: dict) -> None:
     for track, state in automation.items():
         if track not in allowed_tracks or not isinstance(state, dict) or not isinstance(state.get("points", []), list):
             raise HTTPException(400, "Project contains invalid pan automation.")
-        if set(state) - {"points", "selected"}:
+        if set(state) - {"points", "selected", "lanes", "activeLane", "activeEffects"}:
             raise HTTPException(400, "Project contains unknown pan automation settings.")
+        active_lane = state.get("activeLane", "pan")
+        if not isinstance(active_lane, str) or active_lane not in {"pan", "volume", *effect_keys}:
+            raise HTTPException(400, "Project contains an invalid active automation lane.")
+        active_effects = state.get("activeEffects", [])
+        if not isinstance(active_effects, list) or any(not isinstance(effect, str) or effect not in automation_effects for effect in active_effects) or len(active_effects) != len(set(active_effects)):
+            raise HTTPException(400, "Project contains invalid active automation effects.")
         points = state.get("points", [])
         if len(points) > 10_000:
             raise HTTPException(400, "Project contains too many automation points.")
@@ -147,13 +154,49 @@ def validate_project_state(payload: dict) -> None:
         selected = state.get("selected", 0)
         if isinstance(selected, bool) or not isinstance(selected, int) or (points and not 0 <= selected < len(points)) or (not points and selected != 0):
             raise HTTPException(400, "Project contains an invalid automation selection.")
+        lanes = state.get("lanes", {})
+        lane_keys = {"volume", *effect_keys}
+        if not isinstance(lanes, dict) or set(lanes) - lane_keys:
+            raise HTTPException(400, "Project contains invalid parameter automation.")
+        for parameter, lane_points in lanes.items():
+            if not isinstance(lane_points, list) or len(lane_points) > 10_000:
+                raise HTTPException(400, "Project contains too many parameter automation points.")
+            low, high = (0, 150) if parameter == "volume" else (-12, 12) if parameter in {"eqLow", "eqMid", "eqHigh"} else (0, 200) if parameter == "width" else (0, 100)
+            previous_time = None
+            for point in lane_points:
+                if not isinstance(point, dict) or set(point) != {"time", "value"} or isinstance(point.get("time"), bool) or isinstance(point.get("value"), bool):
+                    raise HTTPException(400, "Project contains an invalid parameter automation point.")
+                try:
+                    time_value, value = float(point["time"]), float(point["value"])
+                except (KeyError, TypeError, ValueError):
+                    raise HTTPException(400, "Project contains an invalid parameter automation point.") from None
+                if not (0 <= time_value < float("inf") and low <= value <= high):
+                    raise HTTPException(400, "Project contains an out-of-range parameter automation point.")
+                if previous_time is not None and time_value <= previous_time:
+                    raise HTTPException(400, "Parameter automation points must be ordered by time.")
+                previous_time = time_value
+
+
+def strip_transient_automation_fields(payload: dict) -> dict:
+    """Drop UI-only automation metadata before persisting project state."""
+    if not isinstance(payload, dict):
+        return payload
+    automation = payload.get("automation")
+    if not isinstance(automation, dict):
+        return payload
+    allowed = {"points", "selected", "lanes", "activeLane", "activeEffects"}
+    cleaned = {
+        track: ({key: value for key, value in state.items() if key in allowed} if isinstance(state, dict) else state)
+        for track, state in automation.items()
+    }
+    return {**payload, "automation": cleaned}
 
 
 def validate_mix_transform(payload: dict | None) -> dict:
     """Validate persisted tempo and pitch settings independently of audio files."""
     if payload is None:
         payload = {}
-    if not isinstance(payload, dict) or set(payload) - {"tempoRatio", "pitchSemitones", "sourceBpm", "targetBpm"}:
+    if not isinstance(payload, dict) or set(payload) - {"tempoRatio", "pitchSemitones", "sourceBpm", "targetBpm", "sourceKey", "targetKey"}:
         raise HTTPException(400, "Project contains invalid tempo or pitch settings.")
     values = {}
     for key, default, low, high in (("tempoRatio", 1, 0.5, 2), ("pitchSemitones", 0, -12, 12)):
@@ -166,6 +209,12 @@ def validate_mix_transform(payload: dict | None) -> dict:
         if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 40 <= value <= 240):
             raise HTTPException(400, f"Project contains an invalid {key} value.")
         values[key] = float(value) if value is not None else None
+    valid_keys = {f"{note} {mode}" for note in ("C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B") for mode in ("major", "minor")}
+    for key in ("sourceKey", "targetKey"):
+        value = payload.get(key)
+        if value is not None and (not isinstance(value, str) or value not in valid_keys):
+            raise HTTPException(400, f"Project contains an invalid {key} value.")
+        values[key] = value
     return values
 
 

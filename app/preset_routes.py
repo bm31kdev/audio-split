@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 
 from .config import LIBRARY, MAX_LIBRARY_BYTES, MAX_PRESETS, MIN_FREE_DISK_BYTES, PRESETS
-from .project_store import read_json, safe_id, validate_project_state, write_json_atomic
+from .project_store import read_json, safe_id, strip_transient_automation_fields, validate_project_state, write_json_atomic
 from .runtime import measure_tree_bytes, serialized_cache_operation
 
 router = APIRouter()
@@ -40,7 +40,7 @@ def validate_payload(payload: dict, *, importing: bool = False) -> dict:
     name = str(payload.get("name", "")).strip()
     if not name or len(name) > 80:
         raise HTTPException(400, "Preset name must contain 1 to 80 characters.")
-    state = {key: payload.get(key, {}) for key in ("settings", "effects", "automation")}
+    state = strip_transient_automation_fields({key: payload.get(key, {}) for key in ("settings", "effects", "automation")})
     validate_project_state(state)
     durations = payload.get("durations", {})
     if not isinstance(durations, dict) or set(durations) - TRACKS:

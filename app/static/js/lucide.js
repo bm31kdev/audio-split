@@ -19,6 +19,7 @@ const icons = {
   'volume-2': '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>',
   'volume-x': '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>',
   'rotate-ccw': '<path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.1-6.2L3 13"/>',
+  'sliders-horizontal': '<path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3"/><path d="M2 14h4m4-6h4m4 8h4"/>',
 };
 
 export function lucideIcon(name, { className = '', size = 24 } = {}) {

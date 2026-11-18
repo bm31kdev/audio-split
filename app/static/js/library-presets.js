@@ -1,6 +1,6 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, updateOutputs, updateLiveMix, refreshAutomation, markProjectDirty, apiJson } from './audio-engine.js?v=1.4.4';
-import { savePayload, renderTracks } from './track-state.js?v=1.4.4';
-import { getLanguage, t } from './i18n.js?v=1.4.4';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, updateOutputs, updateLiveMix, refreshAutomation, markProjectDirty, apiJson } from './audio-engine.js?v=1.5.0.17';
+import { savePayload, renderTracks } from './track-state.js?v=1.5.0.17';
+import { getLanguage, t } from './i18n.js?v=1.5.0.17';
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
@@ -44,12 +44,11 @@ async function applyMixPreset(presetData, presetId, status) {
   names.forEach(name => {
     effectsByTrack[name] = { ...effectDefaults, ...(preset.effects?.[name] || {}) };
     const saved = preset.automation?.[name];
-    if (saved?.points?.length) {
-      const duration = tracks[name].duration;
-      const originalDuration = Number(preset.durations?.[name] || duration);
-      const points = saved.points.map(point => ({ time: Math.max(0, Math.min(duration, point.time * duration / originalDuration)), pan: point.pan })).sort((a, b) => a.time - b.time);
-      automationByTrack[name] = { points, selected: Math.min(saved.selected || 0, points.length - 1) };
-    }
+    const duration = tracks[name].duration;
+    const originalDuration = Number(preset.durations?.[name] || duration);
+    const points = (saved?.points || [{ time: 0, pan: 0 }, { time: duration, pan: 0 }]).map(point => ({ time: Math.max(0, Math.min(duration, point.time * duration / originalDuration)), pan: point.pan })).sort((a, b) => a.time - b.time);
+    const lanes = Object.fromEntries(Object.entries(saved?.lanes || {}).map(([parameter, lanePoints]) => [parameter, lanePoints.map(point => ({ time: Math.max(0, Math.min(duration, point.time * duration / originalDuration)), value: point.value })).sort((a, b) => a.time - b.time)]));
+    automationByTrack[name] = { points, selected: Math.min(saved?.selected || 0, Math.max(0, points.length - 1)), lanes };
   });
   renderTracks(names, state); requestAnimationFrame(() => names.forEach(name => refreshAutomation(name)));
   updateOutputs(); updateLiveMix(); markProjectDirty();

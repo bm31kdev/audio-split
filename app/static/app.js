@@ -1,27 +1,61 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, trackHasEffect, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.4.4';
-import { bindModalAccessibility, createChangelogModal, createFxModal, createInteractionModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.4.4';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.4.4';
-import { libraryLabels } from './js/library-text.js?v=1.4.4';
-import { mountButtonComponent } from './js/button-component.js?v=1.4.4';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.4.4';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.4.4';
-import { userFacingError } from './js/ui-errors.js?v=1.4.4';
-import { lucideIcon } from './js/lucide.js?v=1.4.4';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.4.4';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.4.4';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.4.4';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.4.4';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.5.0.17';
+import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.17';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.17';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.17';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.17';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.17';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.17';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.17';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.17';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.17';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.17';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.17';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.17';
 await mountButtonComponent($('#buttonComponentRoot'));
-let fxModal, changelogModal, languageModal, interactionModal;
+let fxModal, changelogModal, languageModal, interactionModal, keyModal;
 let resolveInteractionModalReady;
 const interactionModalReady = new Promise(resolve => { resolveInteractionModalReady = resolve; });
 const getInteractionModal = () => interactionModal ? Promise.resolve(interactionModal) : interactionModalReady;
-let libraryModal, currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
+let currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
 let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting';
 let currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
 let renderedTransform = { ...currentMixTransform }, transformBusy = false;
+function showAppPage(page, { updateHash = true } = {}) {
+  const requested = ['home', 'projects', 'studio'].includes(page) ? page : 'projects';
+  // Audio buffers only live in memory. After a browser reload, never reveal an empty studio shell.
+  const emptyStudio = requested === 'studio' && !Object.keys(tracks).length;
+  const target = emptyStudio ? 'projects' : requested;
+  $('#homePage')?.classList.toggle('hidden', target !== 'home');
+  $('#studioPage')?.classList.toggle('hidden', target !== 'studio');
+  $('#libraryModal')?.classList.toggle('hidden', target !== 'projects');
+  document.querySelectorAll('[data-page]').forEach(button => {
+    const active = button.dataset.page === target;
+    button.classList.toggle('is-current', active);
+    button.setAttribute('aria-current', active ? 'page' : 'false');
+  });
+  if (updateHash || emptyStudio) history.replaceState(null, '', `#${target}`);
+  if (emptyStudio) {
+    requestAnimationFrame(() => status(getLanguage() === 'en'
+      ? 'The studio session was cleared when the page reloaded. Reopen a saved project from Projects.'
+      : 'La session du studio a été réinitialisée au rechargement. Rouvrez un projet enregistré depuis Projets.'));
+  }
+}
+document.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', async () => {
+  const page = button.dataset.page;
+  if (page === 'studio' && !Object.keys(tracks).length) {
+    showAppPage('home');
+    status(getLanguage() === 'en' ? 'Open a project or separate a track to enter the studio.' : 'Ouvrez un projet ou séparez un morceau pour accéder au studio.', true);
+    return;
+  }
+  if (page === 'projects') {
+    showAppPage('projects');
+    try { await refreshLibrary(); } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
+    return;
+  }
+  showAppPage(page);
+}));
 function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 window.addEventListener('audiosplit:project-dirty', () => {
   if (!activeProjectId && !currentJobId) return;
@@ -50,8 +84,6 @@ function renderLibrary() {
   const recoveryHtml = recovery.restored ? `<p class="library-recovery" role="status">${t('library.recovered', { count: recovery.restored })}</p>` : recovery.discarded ? `<p class="library-recovery" role="status">${t('library.cleaned', { count: recovery.discarded })}</p>` : '';
   $('#libraryTitle').textContent = labels.title;
   $('#libraryDescription').textContent = labels.description;
-  const closeButton = $('#libraryModal')?.querySelector('.changelog-close');
-  if (closeButton) { const closeLabel = getLanguage() === 'en' ? 'Close' : 'Fermer'; closeButton.title = closeLabel; closeButton.setAttribute('aria-label', closeLabel); }
   $('#newFolderName').placeholder = labels.folder;
   $('#createFolderButton').textContent = labels.create;
   $('#importProjectButton').textContent = labels.importArchive;
@@ -173,11 +205,13 @@ async function openSavedProject(projectId) {
       const curve = project.automation?.[name] || { points: [{ time: 0, pan: 0 }, { time: buffer.duration, pan: 0 }], selected: 0 };
       const ratio = Number(currentMixTransform.tempoRatio) || 1;
       // Saved automation points use the transformed timeline; restore source time before rendering it again.
-      automationByTrack[name] = { ...curve, points: curve.points.map(point => ({ ...point, time: point.time * ratio })) };
+      const automationScale = time => time * ratio;
+      automationByTrack[name] = { ...curve, points: curve.points.map(point => ({ ...point, time: automationScale(point.time) })), lanes: Object.fromEntries(Object.entries(curve.lanes || {}).map(([parameter, points]) => [parameter, points.map(point => ({ ...point, time: automationScale(point.time) }))])) };
     });
     renderedTransform = { ...currentMixTransform, tempoRatio: 1, pitchSemitones: 0 };
     setTransformInputs(currentMixTransform);
     currentSourceName = project.sourceName || project.name;
+    setPlaybackLabel(project.name || currentSourceName);
     currentMode = project.mode || 'simple'; currentEngine = project.engine || 'fast';
     document.querySelector(`input[name="splitMode"][value="${currentMode}"]`).checked = true;
     document.querySelector(`input[name="engine"][value="${currentEngine}"]`).checked = true;
@@ -202,7 +236,7 @@ async function openSavedProject(projectId) {
     }
     autosaveNotice('ready');
     requestAnimationFrame(() => { project.stems.forEach(name => drawWaveform(name, tracks[name])); project.stems.forEach(refreshAutomation); });
-    libraryModal.close(); status(getLanguage() === 'en' ? 'Project loaded from local storage.' : 'Projet chargé depuis le stockage local.');
+    showAppPage('studio'); status(getLanguage() === 'en' ? 'Project loaded from local storage.' : 'Projet chargé depuis le stockage local.');
   } catch (error) { console.error('Could not load local project.', error); status(userFacingError(error, 'status.actionError'), true); }
 }
 async function saveCurrentProject({ automatic = false } = {}) {
@@ -232,9 +266,9 @@ async function saveCurrentProject({ automatic = false } = {}) {
       activeProjectId = result.id;
     }
     $('#projectNameInput').value = result.name || name;
+    setPlaybackLabel(result.name || name);
     if (projectRevision === savedRevision) projectDirty = false;
     await refreshLibrary();
-    status(labels.saved);
     if (projectDirty) autosaveNotice('dirty'); else autosaveNotice('saved', clockTime());
     return true;
   } catch (error) {
@@ -264,7 +298,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.4.4', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.17', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {
@@ -296,17 +330,35 @@ async function exportMix() {
     if (wavBytes - 44 + 36 > WAV_RIFF_MAX_BYTES) throw new Error(t('status.exportTooLarge'));
     const offline = new OfflineAudioContext(2, renderLength, rate), master = createMasterLimiter(offline);
     const offlineNodes = new Map();
-    for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name),nodes=createTrackNodes(offline,source,name,cfg,master); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0,0,buffer.duration);source.start();offlineNodes.set(name,nodes); }
+    for (const [name, buffer] of Object.entries(tracks)) { const source=offline.createBufferSource(),cfg=settings(name, 0),nodes=createTrackNodes(offline,source,name,cfg,master); source.buffer=buffer;schedulePan(nodes.panner,name,cfg,0,0,buffer.duration);source.start();offlineNodes.set(name,nodes); }
     // Offline rendering has no animation frame, so schedule the vocal envelope in advance.
     if (tracks.vocals) {
-      const vocalSettings = settings('vocals');
+      const vocalSettings = settings('vocals', 0);
       const vocalGain = vocalSettings.muted ? 0 : vocalSettings.volume;
       for (const [name, nodes] of offlineNodes) {
-        if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name).effects.ducking, offline, vocalGain);
+        if (nodes.effects.ducking) scheduleOfflineVoiceDucking(nodes.effects.ducking, tracks.vocals, settings(name, 0).effects.ducking, offline, vocalGain);
       }
     }
-    for (const [name, nodes] of offlineNodes) if (nodes.effects.deEsser) scheduleOfflineDeEsser(nodes.effects.deEsser, tracks[name], settings(name).effects.deEsser);
-    for (const [name, nodes] of offlineNodes) if (nodes.effects.gate) scheduleOfflineNoiseGate(nodes.effects.gate, tracks[name], settings(name).effects.gate, offline);
+    for (const [name, nodes] of offlineNodes) if (nodes.effects.deEsser) scheduleOfflineDeEsser(nodes.effects.deEsser, tracks[name], settings(name, 0).effects.deEsser);
+    for (const [name, nodes] of offlineNodes) if (nodes.effects.gate) scheduleOfflineNoiseGate(nodes.effects.gate, tracks[name], settings(name, 0).effects.gate, offline);
+    // Schedule keyframed faders and processors on the same offline timeline as playback.
+    for (const [name, nodes] of offlineNodes) {
+      const lanes = automationByTrack[name]?.lanes || {};
+      if (lanes.volume?.length && bufferDuration(tracks[name]) > 0.02) {
+        const trackDuration = tracks[name].duration;
+        const sampleCount = Math.min(120_001, Math.max(2, Math.ceil(trackDuration * 60) + 1));
+        const curve = new Float32Array(sampleCount);
+        const base = settings(name, 0);
+        for (let index = 0; index < sampleCount; index += 1) {
+          const time = trackDuration * index / (sampleCount - 1);
+          curve[index] = base.muted ? 0 : settings(name, time).volume;
+        }
+        nodes.gain.gain.cancelScheduledValues(0);
+        nodes.gain.gain.setValueCurveAtTime(curve, 0, trackDuration);
+      }
+      const keyframeTimes = [...new Set(Object.entries(lanes).filter(([key]) => key !== 'volume').flatMap(([, points]) => points.map(point => Math.max(0, Math.min(tracks[name].duration, point.time)))))].sort((a, b) => a - b);
+      for (const time of keyframeTimes) updateTrackEffects(nodes, settings(name, time).effects, { currentTime: time }, 0);
+    }
     status(t('status.rendering'));
     const rendered = await offline.startRendering();
     const result = await encodeWavInWorker(rendered, async peak => {
@@ -327,6 +379,7 @@ async function exportMix() {
     button.disabled = !Object.keys(tracks).length;
   }
 }
+function bufferDuration(buffer) { return Number(buffer?.duration) || 0; }
 $('#chooseButton').onclick = () => $('#fileInput').click();
 const musicalKeys = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 function setupAnalysisKeyOptions() {
@@ -364,6 +417,7 @@ function setTransformInputs(transform) {
   $('#transformSourceBpm').value = transform.sourceBpm ?? '';
   $('#transformTargetBpm').value = transform.targetBpm ?? transform.sourceBpm ?? '';
   $('#transformSemitones').value = String(transform.pitchSemitones ?? 0);
+  $('#chooseKeyButton').textContent = `${t('transform.chooseKey')}${transform.targetKey ? ` · ${transform.targetKey}` : ''}`;
   syncTransformUi();
 }
 function readTransformInputs() {
@@ -378,7 +432,8 @@ function readTransformInputs() {
   const tempoRatio = sourceBpm !== null && targetBpm !== null ? targetBpm / sourceBpm : 1;
   if (tempoRatio < 0.5 || tempoRatio > 2) throw new Error(t('transform.tempoRangeError'));
   if (!Number.isInteger(pitchSemitones) || pitchSemitones < -12 || pitchSemitones > 12) throw new Error(t('transform.pitchRangeError'));
-  return { tempoRatio, pitchSemitones, sourceBpm, targetBpm };
+  const sourceKey = currentMixTransform.sourceKey || (currentJobId ? $('#analysisKey').value || currentMusicAnalysis?.key : null) || null;
+  return { tempoRatio, pitchSemitones, sourceBpm, targetBpm, sourceKey, targetKey: currentMixTransform.targetKey || null };
 }
 function sameRenderParameters(a, b) {
   return Math.abs(Number(a.tempoRatio || 1) - Number(b.tempoRatio || 1)) < 0.0001
@@ -395,8 +450,13 @@ function updateTransformSummary(transform) {
   const locale = getLanguage() === 'en' ? 'en-US' : 'fr-FR';
   const formatBpm = value => Number.isFinite(value) ? `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)} BPM` : `— BPM`;
   const signedPitch = pitch > 0 ? `+${pitch}` : String(pitch);
-  $('#transformOriginalSummary').textContent = `${formatBpm(originalBpm)} · ${t('transform.semitonesValue', { value: 0 })}`;
-  $('#transformResultSummary').textContent = `${formatBpm(targetBpm)} · ${t('transform.semitonesValue', { value: signedPitch })}`;
+  const sourceTonic = transform?.sourceKey ? ` · ${transform.sourceKey}` : '';
+  const targetTonic = transform?.targetKey ? ` · ${transform.targetKey}` : '';
+  const baseDuration = timelineDuration() / (Number(renderedTransform.tempoRatio) || 1);
+  const resultDuration = Number.isFinite(baseDuration) ? baseDuration * (Number(transform?.tempoRatio) || 1) : 0;
+  const durationLabel = seconds => seconds > 0 ? ` · ${formatTime(seconds)}` : '';
+  $('#transformOriginalSummary').textContent = `${formatBpm(originalBpm)}${sourceTonic}${durationLabel(baseDuration)} · ${t('transform.semitonesValue', { value: 0 })}`;
+  $('#transformResultSummary').textContent = `${formatBpm(targetBpm)}${targetTonic}${durationLabel(resultDuration)} · ${t('transform.semitonesValue', { value: signedPitch })}`;
   const warning = $('#transformQualityWarning');
   const tempoChange = Math.abs(Number(transform?.tempoRatio || 1) - 1);
   const qualityMayDrop = Math.abs(pitch) >= 5 || tempoChange >= 0.1;
@@ -451,6 +511,7 @@ async function renderTransform(transform, { startPreview = false } = {}) {
   };
   try {
     const request = { tempoRatio: transform.tempoRatio, pitchSemitones: transform.pitchSemitones, language: getLanguage(), requestId };
+    if (transform.pitchSemitones) request.pitchTargets = Object.keys(tracks).filter(name => !['vocals', 'drums'].includes(name));
     if (activeProjectId) request.projectId = activeProjectId; else request.jobId = currentJobId;
     progressTimer = window.setInterval(refreshProgress, 500);
     void refreshProgress();
@@ -475,6 +536,7 @@ async function renderTransform(transform, { startPreview = false } = {}) {
       const scale = rendered[name].duration / oldDuration;
       const curve = automationByTrack[name];
       if (curve?.points?.length) curve.points = curve.points.map(point => ({ ...point, time: point.time * scale }));
+      if (curve?.lanes) Object.values(curve.lanes).forEach(points => points.forEach(point => { point.time *= scale; }));
     });
     Object.keys(tracks).forEach(name => delete tracks[name]);
     Object.entries(rendered).forEach(([name, buffer]) => { tracks[name] = buffer; });
@@ -517,13 +579,42 @@ async function applyTransform() {
 }
 $('#transformSourceBpm').oninput = syncTransformUi;
 $('#transformTargetBpm').oninput = syncTransformUi;
+document.querySelectorAll('[data-tempo-factor]').forEach(button => button.onclick = () => {
+  const source = Number($('#transformSourceBpm').value);
+  if (!Number.isFinite(source) || source < 40 || source > 240) { setTransformStatus('transform.sourceBpmMissing', 'error'); $('#transformSourceBpm').focus(); return; }
+  $('#transformTargetBpm').value = (source * Number(button.dataset.tempoFactor)).toFixed(1).replace(/\.0$/, '');
+  syncTransformUi();
+});
 $('#transformSemitones').onchange = syncTransformUi;
+function normalizedKey(value) { return String(value || '').replace('♯', '#').trim(); }
+function keySemitone(value) {
+  const note = normalizedKey(value).split(/\s+/)[0];
+  const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  return notes.indexOf(note);
+}
+function chooseTargetKey(value) {
+  if (!Object.keys(tracks).some(name => !['vocals', 'drums'].includes(name))) { status(t('key.noInstrumentTracks'), true); return false; }
+  const sourceKey = currentMixTransform.sourceKey || (currentJobId ? $('#analysisKey').value || currentMusicAnalysis?.key : null);
+  const sourceMode = String(sourceKey || '').toLowerCase().endsWith('minor') ? 'minor' : 'major';
+  if (!String(value).toLowerCase().endsWith(sourceMode)) { status(t('key.modeMismatch'), true); return false; }
+  const from = keySemitone(sourceKey), to = keySemitone(value);
+  if (from < 0 || to < 0) { status(t('key.sourceMissing'), true); return false; }
+  let shift = (to - from + 12) % 12;
+  if (shift > 6) shift -= 12;
+  currentMixTransform = { ...currentMixTransform, pitchSemitones: shift, sourceKey, targetKey: value };
+  $('#transformSemitones').value = String(shift);
+  setTransformInputs(currentMixTransform);
+  void applyTransform();
+  return true;
+}
 $('#previewTransformButton').onclick = () => void previewTransform();
 $('#applyTransformButton').onclick = () => void applyTransform();
 $('#resetTransformButton').onclick = () => {
   const sourceBpm = Number($('#transformSourceBpm').value) || null;
   $('#transformTargetBpm').value = sourceBpm ?? '';
   $('#transformSemitones').value = '0';
+  currentMixTransform = { ...currentMixTransform, tempoRatio: 1, pitchSemitones: 0, targetBpm: sourceBpm, targetKey: currentMixTransform.sourceKey || null };
+  setTransformInputs(currentMixTransform);
   void applyTransform();
 };
 function displayMusicAnalysis(result) {
@@ -549,6 +640,8 @@ $('#fileInput').onchange = async (event) => {
   const file = event.target.files[0];
   const requestId = ++analysisRequestId;
   currentMusicAnalysis = null;
+  $('#analysisBpm').value = '';
+  $('#analysisKey').value = '';
   $('#fileName').textContent = file ? file.name : '';
   $('#separateButton').disabled = !file;
   $('#musicAnalysis').classList.toggle('hidden', !file);
@@ -591,7 +684,7 @@ async function separateAudio() {
   cancelButton.disabled = false;
   cancelButton.classList.remove('hidden');
   startSeparationProgressPolling(requestId);
-  status(engine === 'fast' ? t('status.fast') : t('status.studio'));
+  status(engine === 'fast' ? t('status.fast') : t('status.studio'), false, true);
   const form = new FormData();
   form.append('file', file);
   form.append('mode', mode);
@@ -608,7 +701,7 @@ async function separateAudio() {
     // Decoding completes before the mixer is rendered, preventing a half-ready UI.
     ensureAudioContext();
     clearMixerForReplacement();
-    status(getLanguage() === 'en' ? 'Loading separated tracks…' : 'Chargement des pistes séparées…');
+    status(getLanguage() === 'en' ? 'Loading separated tracks…' : 'Chargement des pistes séparées…', false, true);
     const names = Object.keys(data.stems);
     const decoded = [];
     for (const name of names) {
@@ -620,13 +713,15 @@ async function separateAudio() {
 
     currentJobId = data.jobId;
     currentSourceName = file.name;
+    setPlaybackLabel(file.name.replace(/\.[^.]+$/, ''));
     currentMode = mode;
     currentEngine = engine;
     activeProjectId = null;
     projectDirty = false;
     const detectedBpm = Number($('#analysisBpm').value);
     const sourceBpm = Number.isFinite(detectedBpm) && detectedBpm >= 40 && detectedBpm <= 240 ? detectedBpm : null;
-    currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm, targetBpm: sourceBpm };
+    const sourceKey = $('#analysisKey').value || currentMusicAnalysis?.key || null;
+    currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm, targetBpm: sourceBpm, sourceKey, targetKey: sourceKey };
     renderedTransform = { ...currentMixTransform };
     setTransformInputs(currentMixTransform);
     if ($('#projectNameInput')) $('#projectNameInput').value = file.name.replace(/\.[^.]+$/, '');
@@ -637,6 +732,7 @@ async function separateAudio() {
     renderTracks(names);
     setTransportState();
     $('#mixer').classList.remove('hidden');
+    showAppPage('studio');
     syncTransformUi();
     requestAnimationFrame(() => {
       decoded.forEach(([name, buffer]) => drawWaveform(name, buffer));
@@ -665,7 +761,7 @@ $('#cancelSeparationButton').onclick = async () => {
   try {
     await apiJson(`/api/separations/${requestId}/cancel?lang=${getLanguage()}`, { method: 'POST' });
     separationCancelRequested = true;
-    status(t('status.canceling'));
+    status(t('status.canceling'), false, true);
   } catch (error) {
     console.error('Could not cancel separation.', error);
     button.disabled = false;
@@ -704,6 +800,28 @@ $('#clearCacheButton').onclick = async () => {
 $('#playButton').onclick = () => { void playMix(); };
 $('#stopButton').onclick = stop;
 $('#exportButton').onclick = exportMix;
+document.addEventListener('keydown', event => {
+  if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || event.key === 'Escape') return;
+  const target = event.target instanceof HTMLElement ? event.target : null;
+  if (target?.closest('input, textarea, select, button, a, [contenteditable="true"], [role="slider"]')) return;
+  if (document.querySelector('.fx-modal[aria-hidden="false"], .language-modal[aria-hidden="false"], .changelog-modal[aria-hidden="false"], .interaction-modal[aria-hidden="false"], .key-modal[aria-hidden="false"]')) return;
+  if ($('#studioPage')?.classList.contains('hidden') || $('#mixer')?.classList.contains('hidden') || !Object.keys(tracks).length) return;
+
+  if (event.code === 'Space') {
+    event.preventDefault();
+    void playMix();
+  } else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+    event.preventDefault();
+    const step = event.shiftKey ? 30 : 10;
+    seekMix(playheadOffset + (event.key === 'ArrowRight' ? step : -step));
+  } else if (event.key === 'Home') {
+    event.preventDefault();
+    seekMix(0);
+  } else if (event.key === 'End') {
+    event.preventDefault();
+    seekMix(timelineDuration());
+  }
+});
 applyTranslations();
 setTransportState();
 // Modal HTML is loaded separately so individual dialogs can evolve independently.
@@ -715,27 +833,32 @@ async function initializeModalComponents() {
       stemInfo,
       getSaturationTarget,
       getWidthTarget,
-      getValues: (name) => effectsByTrack[name] || { ...effectDefaults },
-      setValue: (name, key, value) => { effectsByTrack[name][key] = value; updateLiveMix(); markProjectDirty(); },
+      getActiveEffects: (name) => automationByTrack[name]?.activeEffects || [],
     });
     setFxModal(fxModal);
+    keyModal = createKeyModal($('#chooseKeyButton'), {
+      getKeys: sourceKey => {
+        const mode = String(sourceKey || '').toLowerCase().endsWith('minor') ? 'minor' : 'major';
+        return musicalKeys.flatMap(note => ['major', 'minor'].map(keyMode => ({ value: `${note} ${keyMode}`, label: `${note} ${t(`analysis.${keyMode}`)}`, disabled: !sourceKey || keyMode !== mode })));
+      },
+      getAllKeys: () => musicalKeys.flatMap(note => ['major', 'minor'].map(mode => ({ value: `${note} ${mode}`, label: `${note} ${t(`analysis.${mode}`)}` }))),
+      getSourceKey: () => currentMixTransform.sourceKey || (currentJobId ? $('#analysisKey').value || currentMusicAnalysis?.key : null),
+      onSourceChoose: sourceKey => { currentMixTransform = { ...currentMixTransform, sourceKey, targetKey: sourceKey, pitchSemitones: 0 }; $('#transformSemitones').value = '0'; setTransformInputs(currentMixTransform); markProjectDirty(); },
+      getCurrentKey: () => currentMixTransform.targetKey,
+      onChoose: chooseTargetKey,
+    });
     changelogModal = createChangelogModal($('#versionButton'));
     languageModal = createLanguageModal($('#languageButton'));
     interactionModal = createInteractionModal();
     resolveInteractionModalReady(interactionModal);
-    const libraryElement = $('#libraryModal'), libraryTrigger = $('#libraryButton');
-    bindModalAccessibility(libraryElement);
-    const closeLibrary = () => { libraryElement.classList.remove('is-open'); setTimeout(() => { libraryElement.setAttribute('aria-hidden', 'true'); libraryTrigger.focus(); }, 240); };
-    libraryElement.querySelectorAll('[data-library-close]').forEach(button => button.onclick = closeLibrary);
-    libraryTrigger.onclick = async () => {
-      try { await refreshLibrary(); } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
-      libraryElement.setAttribute('aria-hidden', 'false'); requestAnimationFrame(() => libraryElement.classList.add('is-open'));
-      libraryElement.querySelector('.changelog-close').focus();
-    };
-    libraryModal = { close: closeLibrary };
     $('#libraryButton').textContent = getLanguage() === 'en' ? 'Projects' : 'Projets';
+    $('#projectsBackButton').onclick = () => showAppPage('home');
+    $('#projectsBackButton').onclick = () => showAppPage('home');
     $('#projectNameInput').value = currentSourceName.replace(/\.[^.]+$/, '');
-    $('#projectNameInput').oninput = markProjectDirty;
+    $('#projectNameInput').oninput = () => {
+      markProjectDirty();
+      setPlaybackLabel($('#projectNameInput').value.trim() || currentSourceName.replace(/\.[^.]+$/, ''));
+    };
     $('#createFolderButton').onclick = async () => {
       const input = $('#newFolderName'), name = input.value.trim();
       if (!name) { input.focus(); return; }
@@ -769,6 +892,8 @@ async function initializeModalComponents() {
     $('#projectSortSelect').onchange = () => renderLibrary();
     bindPresetControls({ refreshLibrary, status, userFacingError, interactionModal });
     bindFxButtons();
+    try { await refreshLibrary(); } catch (error) { console.info('Local project library is not available yet.', error); }
+    showAppPage(location.hash.slice(1) || 'projects');
   } catch (error) {
     // A missing component should not block audio separation or mixing.
     console.error('Modal components could not be loaded.', error);
@@ -798,6 +923,8 @@ onLanguageChange(() => {
   setTransportState(playing ? (paused ? 'paused' : 'playing') : 'stopped');
 });
 initializeModalComponents();
+window.addEventListener('hashchange', () => showAppPage(location.hash.slice(1), { updateHash: false }));
+window.addEventListener('load', () => showAppPage(location.hash.slice(1) || 'projects'));
 setInterval(() => {
   if (activeProjectId && projectDirty && !projectSaving) void saveCurrentProject({ automatic: true });
 }, 10000);
@@ -807,5 +934,5 @@ window.addEventListener('beforeunload', (event) => {
     event.returnValue = '';
   }
 });
-document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); libraryModal?.close(); interactionModal?.close(); } });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); keyModal?.close(); interactionModal?.close(); } });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));

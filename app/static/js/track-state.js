@@ -1,6 +1,6 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.4.4';
-import { t } from './i18n.js?v=1.4.4';
-import { lucideIcon } from './lucide.js?v=1.4.4';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.17';
+import { t } from './i18n.js?v=1.5.0.17';
+import { lucideIcon } from './lucide.js?v=1.5.0.17';
 
 export function snapshotTrackControls(names) {
   return Object.fromEntries(names.map((name) => {
@@ -13,10 +13,32 @@ export function snapshotTrackControls(names) {
 }
 export function savePayload() {
   const names = Object.keys(tracks);
+  const automation = Object.fromEntries(names.map(name => {
+    const state = automationByTrack[name] || {};
+    const points = Array.isArray(state.points)
+      ? state.points.map(point => ({ time: Number(point.time), pan: Number(point.pan) }))
+      : [];
+    const lanes = Object.fromEntries(Object.entries(state.lanes || {}).map(([parameter, lanePoints]) => [
+      parameter,
+      Array.isArray(lanePoints)
+        ? lanePoints.map(point => ({ time: Number(point.time), value: Number(point.value) }))
+        : [],
+    ]));
+    const selected = Number.isInteger(state.selected) && state.selected >= 0 && state.selected < points.length
+      ? state.selected
+      : 0;
+    return [name, {
+      points,
+      selected,
+      lanes,
+      activeLane: typeof state.activeLane === 'string' ? state.activeLane : 'pan',
+      activeEffects: Array.isArray(state.activeEffects) ? [...new Set(state.activeEffects.filter(value => typeof value === 'string'))] : [],
+    }];
+  }));
   return {
     settings: snapshotTrackControls(names),
     effects: Object.fromEntries(names.map(name => [name, effectsByTrack[name] || { ...effectDefaults }])),
-    automation: Object.fromEntries(names.map(name => [name, automationByTrack[name] || { points: [], selected: 0 }])),
+    automation,
   };
 }
 function syncSoloTrackStyles() {
@@ -36,7 +58,7 @@ export function renderTracks(names, savedControls = {}) {
     const volume = saved.volume ?? 100, pan = saved.pan ?? 0, muted = saved.muted ?? false, solo = saved.solo ?? false;
     const soloLabel = t(solo ? 'control.unsolo' : 'control.solo', { track: trackTitle });
     const muteLabel = t(muted ? 'control.unmute' : 'control.mute', { track: trackTitle });
-    const automation = `<div class="automation-tools"><span>${t('automation.pan', { track: trackTitle.toLowerCase() })}</span><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="-100">${t('automation.left')}</button><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="0">${t('automation.center')}</button><button type="button" data-button-variant="primary" data-automation-pan="${name}" data-pan="100">${t('automation.right')}</button><button type="button" class="remove-point" data-button-variant="danger" data-automation-remove="${name}" title="${t('automation.remove')}" aria-label="${t('automation.remove')}">${lucideIcon('x', { size: 13 })}</button></div>`;
+    const automation = `<div class="automation-tools"><div class="automation-lanes" data-automation-lanes="${name}"></div><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}" aria-label="${t('automation.remove')}">${lucideIcon('x', { size: 13 })}</button></div>`;
     return `<article class="track ${name}" data-track="${name}">
       <div class="track-icon">${icon(info.icon)}</div>
       <div class="track-title">
@@ -51,7 +73,7 @@ export function renderTracks(names, savedControls = {}) {
       </div>
       <button type="button" class="fx-button" data-button-variant="primary" data-button-size="fx" data-fx="${name}" aria-label="${t('fx.open', { track: trackTitle })}" title="${t('fx.open', { track: trackTitle })}">Fx</button>
       <div class="pan-fader" title="${t('control.panTitle')}"><span class="pan-letter">L</span><div class="gauge pan-gauge"><i></i><input aria-label="${t('control.pan', { track: trackTitle })}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="${pan}"></div><output id="${name}PanOut">${pan}</output><span class="pan-letter">R</span></div>
-      <div class="wave-area"><canvas class="waveform" data-waveform="${name}" aria-label="${trackTitle}"></canvas><span class="playhead" data-playhead="${name}" role="slider" tabindex="0" aria-label="${t('playhead.label', { track: trackTitle })}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00"></span>${automation}</div>
+      <div class="wave-area" title="${t('timeline.zoomHint')}"><div class="wave-content" data-wave-content="${name}"><canvas class="waveform" data-waveform="${name}" aria-label="${trackTitle}"></canvas><span class="playhead" data-playhead="${name}" role="slider" tabindex="0" aria-label="${t('playhead.label', { track: trackTitle })}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00"></span>${automation}</div></div>
       <div class="volume-stack"><button class="mute" data-button-variant="primary" data-button-size="mute" data-mute="${name}" aria-pressed="${muted}" aria-label="${muteLabel}" title="${muteLabel}">${speakerIcon(muted)}</button><div class="volume-fader" title="${t('control.volumeTitle')}"><div class="gauge volume-gauge"><i></i><input aria-label="${t('control.volume', { track: trackTitle })}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="${volume}"></div><output id="${name}VolumeOut">${volume}</output></div></div>
     </article>`;
   }).join('');
@@ -84,7 +106,9 @@ export function renderTracks(names, savedControls = {}) {
     updateOutputs(); refreshAutomation(name); markProjectDirty();
   });
   bindAutomation();
+  names.forEach(refreshAutomation);
   bindPlayheadSeeking();
+  bindTrackTimelineZoom();
   bindFxButtons();
   updateOutputs();
   syncSoloTrackStyles();

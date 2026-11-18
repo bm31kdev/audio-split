@@ -28,7 +28,7 @@ from .runtime import measure_tree_bytes, remove_temp_file, serialized_cache_oper
 from .project_store import (
     clear_directory_children, folder_path, localized, project_path, read_json,
     safe_id, validate_folder_manifest, validate_project_manifest, validate_project_state, validate_mix_transform,
-    write_json_atomic,
+    strip_transient_automation_fields, write_json_atomic,
 )
 
 router = APIRouter()
@@ -177,6 +177,7 @@ async def delete_folder(folder_id: str, payload: dict):
 @router.post("/api/library/folders/{folder_id}/projects")
 @serialized_cache_operation
 async def save_project(folder_id: str, payload: dict):
+    payload = strip_transient_automation_fields(payload)
     parent = folder_path(folder_id)
     job_id = str(payload.get("jobId", ""))
     source = job_sources.get(job_id)
@@ -431,6 +432,7 @@ async def duplicate_project(project_id: str, payload: dict | None = None):
 
 @router.put("/api/library/projects/{project_id}")
 def update_project(project_id: str, payload: dict):
+    payload = strip_transient_automation_fields(payload)
     path = project_path(project_id)
     metadata = read_json(path / "project.json")
     name = str(payload.get("name", metadata.get("name", ""))).strip()

@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.4.4
+# AudioSplit Studio — v1.5
 
 AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
 
@@ -37,7 +37,7 @@ Les confirmations, suppressions et saisies de nom utilisent des modaux AudioSpli
 
 Dès qu’un fichier est choisi, AudioSplit l’analyse localement dans le navigateur : tempo (BPM), tonalité et mesure probable sont estimés sur les 90 premières secondes. La durée, le nombre de canaux et la fréquence d’échantillonnage décrivent le fichier entier ; les niveaux crête/RMS sont mesurés sur l’extrait analysé. La profondeur en bits est indiquée pour les WAV lorsque leur en-tête la fournit. Les estimations affichent leur niveau de confiance et les champs BPM/tonalité sont corrigeables.
 
-Après séparation, le panneau **Tempo et tonalité** permet de saisir le BPM d’origine et une cible, ainsi qu’une transposition de −12 à +12 demi-tons. La préécoute applique le même rendu à toutes les pistes ; **Appliquer au mix** conserve les réglages dans le projet et dans l’export WAV. La comparaison avant/après, l’avertissement de qualité pour les variations importantes et la remise à zéro vers l’original facilitent les ajustements. Les courbes d’automation et le curseur restent alignés après transformation. Les stems sources restent intacts. Cette fonction utilise le filtre Rubber Band de FFmpeg ; elle affiche une erreur explicite si le build FFmpeg n’intègre pas ce filtre. Un changement de BPM accepté reste limité à 50–200 % du tempo d’origine.
+Après séparation, le panneau **Tempo et tonalité** permet de saisir le BPM d’origine et une cible, ou de choisir un ratio rapide (½× à 1½×). Le tempo est appliqué à toutes les pistes. Le sélecteur de tonalité propose les 24 tonalités majeures et mineures ; il transpose les pistes instrumentales et préserve la voix ainsi que la batterie séparée. **Préécouter** lance un rendu synchronisé, puis **Appliquer au mix** conserve le résultat dans le projet et dans l’export WAV. Les stems sources restent intacts. La transformation utilise le filtre Rubber Band de FFmpeg et limite le tempo à 50–200 % du BPM d’origine.
 
 ### Choisir le bon type de séparation
 
@@ -46,11 +46,11 @@ Après séparation, le panneau **Tempo et tonalité** permet de saisir le BPM d�
 | Faire un karaoké ou isoler le chant | **Voix + accompagnement** | Une piste voix et une piste musique sans voix |
 | Retoucher précisément un morceau | **Détaillée** | Voix, batterie/kicks, basse et autres instruments séparés |
 
-Pendant la lecture, les réglages de volume, panoramique, sourdine, Solo, automatisation et effets sont appliqués immédiatement. Chaque piste affiche son niveau de sortie, propose une remise à zéro de ses réglages et possède une forme d’onde avec repères temporels et points d’automatisation du panoramique. Un avertissement apparaît avant l’export si la crête approche du maximum numérique.
+Pendant la lecture, les réglages de volume, panoramique, sourdine, Solo, automatisation et effets sont appliqués immédiatement. Ouvrez le bouton d’automatisation d’une piste, choisissez **Volume** ou un effet, puis ajoutez un point à la position de lecture. La courbe interpolée se modifie à la souris ; les mêmes changements sont inclus dans l’export WAV et sauvegardés dans le projet. Chaque piste affiche son niveau et garde aussi les points de panoramique directement sur sa forme d’onde.
 
 ### Dossiers et projets locaux
 
-Ouvrez **Projets** dans l’en-tête pour créer des dossiers et y enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, Solo, effets et courbes) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes ; l’état apparaît en haut de la page. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque. Les sauvegardes inachevées sont récupérées au prochain démarrage lorsqu’elles contiennent un projet complet ; les sauvegardes ZIP importées qui portent déjà un nom reçoivent un suffixe (2), (3), etc.
+L’application présente trois pages **Projets**, **Accueil** et **Studio**. Elle s’ouvre sur la bibliothèque Projets ; Accueil sert à importer une musique et Studio au mixage. Ouvrez **Projets** pour créer des dossiers et enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, Solo, effets et automation) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque.
 
 La bibliothèque permet aussi de rechercher et trier les projets, d’afficher leur taille et l’espace disque disponible, et de **dupliquer** une session avant d’essayer un autre mix. Les préréglages stockent uniquement les volumes, panoramiques, effets et courbes, sans recopier les fichiers audio. Ils peuvent être exportés en JSON puis importés sur cette installation ou une autre. Les préréglages et projets partagent la limite de bibliothèque de **20 Gio** ; le cache temporaire des séparations a une limite distincte de **10 Gio**.
 

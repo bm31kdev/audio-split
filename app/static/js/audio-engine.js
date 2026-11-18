@@ -1,24 +1,24 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.4.4';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.4.4';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.4.4';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.4.4';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.4.4';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.4.4';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.4.4';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.4.4';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.4.4';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.4.4';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.4.4';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.4.4';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.4.4';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.4.4';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.4.4';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.4.4';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.4.4';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.4.4';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.4.4';
-import { getLanguage, t } from './i18n.js?v=1.4.4';
-import { lucideIcon } from './lucide.js?v=1.4.4';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.17';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.17';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.17';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.17';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.17';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.17';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.17';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.17';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.17';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.17';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.17';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.17';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.17';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.17';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.17';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.17';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.17';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.17';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.17';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.17';
+import { lucideIcon } from './lucide.js?v=1.5.0.17';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -39,8 +39,6 @@ export function getWidthTarget() { return widthTarget; }
 export let audioCtx, liveNodes = new Map(), liveMaster, playing = false, paused = false, playStartedAt = 0, playheadOffset = 0, playheadDragging = false, playheadWasPlaying = false, automationDragging = false, playheadFrame, playbackEndTimer, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
 
 export function autosaveNotice(state, detail = '') {
-  const notice = $('#autosaveStatus');
-  if (!notice) return;
   const english = getLanguage() === 'en';
   const messages = {
     ready: english ? 'Autosave active · every 10 seconds' : 'Sauvegarde auto active · toutes les 10 s',
@@ -51,16 +49,166 @@ export function autosaveNotice(state, detail = '') {
     error: english ? 'Autosave failed. Your changes are still pending; try Save again.' : 'Échec de la sauvegarde auto. Vos changements restent en attente ; réessayez d’enregistrer.',
     manualError: english ? 'Could not save the project. Your changes are still pending; try again.' : 'Impossible d’enregistrer le projet. Vos changements restent en attente ; réessayez.',
   };
-  notice.textContent = messages[state] || detail;
-  notice.title = notice.textContent;
-  notice.dataset.state = state;
+  const message = messages[state] || detail;
+  if (state === 'ready') return updateTaskNotice('autosave', '');
+  const completed = state === 'saved';
+  updateTaskNotice('autosave', message, {
+    state: state === 'saving' ? 'saving' : state === 'dirty' ? 'dirty' : state === 'waiting' ? 'waiting' : completed ? 'complete' : 'error',
+    duration: completed ? 4500 : ['error', 'manualError'].includes(state) ? 7000 : 0,
+  });
 }
 export function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 export function clockTime() { return new Intl.DateTimeFormat(getLanguage() === 'en' ? 'en-US' : 'fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date()); }
 
-export function status(message, error = false) {
-  // The import card is the single place where asynchronous work reports status.
-  const target = $('#status'); target.textContent = message; target.style.color = error ? '#ff987f' : '';
+const islandTasks = new Map();
+const islandTaskTimers = new Map();
+let islandExpanded = false;
+let playbackLabel = '';
+let playbackIslandTimer = null;
+const islandStateLabel = state => {
+  const english = getLanguage() === 'en';
+  return ({
+    progress: english ? 'In progress' : 'En cours',
+    saving: english ? 'Saving' : 'En cours',
+    dirty: english ? 'Pending' : 'En attente',
+    waiting: english ? 'Waiting' : 'En attente',
+    complete: english ? 'Complete' : 'Terminé',
+    error: english ? 'Failed' : 'Échec',
+    playing: english ? 'Playing' : 'Lecture',
+    paused: english ? 'Paused' : 'En pause',
+  })[state] || (english ? 'Notice' : 'Info');
+};
+function renderTaskIsland() {
+  const island = $('#status'), message = $('#statusText'), more = $('#statusMoreButton');
+  if (!island || !message || !more) return;
+  const tasks = [...islandTasks.values()].sort((a, b) => b.priority - a.priority || b.updatedAt - a.updatedAt);
+  const primary = tasks[0];
+  const english = getLanguage() === 'en';
+  message.textContent = primary?.message || '';
+  island.setAttribute('aria-label', primary?.message || (english ? 'AudioSplit Studio is ready' : 'AudioSplit Studio est prêt'));
+  island.classList.toggle('is-idle', !primary);
+  island.classList.toggle('is-active', Boolean(primary));
+  island.classList.toggle('is-expanded', islandExpanded && tasks.length > 1);
+  island.classList.toggle('is-progress', primary?.state === 'progress' || primary?.state === 'dirty');
+  island.classList.toggle('is-saving', primary?.state === 'saving');
+  island.classList.toggle('is-error', primary?.state === 'error');
+  island.classList.toggle('is-complete', primary?.state === 'complete');
+  island.classList.toggle('is-playing', primary?.state === 'playing');
+  island.classList.toggle('is-paused', primary?.state === 'paused');
+  island.title = primary?.message || (english ? 'AudioSplit Studio is ready' : 'AudioSplit Studio est prêt');
+  const progressBar = $('#statusProgressBar');
+  if (progressBar) {
+    const match = primary?.message.match(/(\d+(?:[.,]\d+)?)\s*%/);
+    const messageProgress = match ? Number(match[1].replace(',', '.')) : null;
+    const progress = Number.isFinite(primary?.progress) ? primary.progress : messageProgress;
+    progressBar.style.width = progress === null ? '14%' : `${Math.max(0, Math.min(100, progress))}%`;
+    island.classList.toggle('is-indeterminate', Boolean(primary?.state === 'progress' && progress === null));
+  }
+
+  more.hidden = tasks.length < 2;
+  more.classList.toggle('has-complete', tasks.some(task => task.state === 'complete'));
+  more.classList.toggle('has-error', tasks.some(task => task.state === 'error'));
+  $('#statusTaskCount').textContent = String(Math.min(tasks.length, 9));
+  more.setAttribute('aria-label', english ? `Show ${tasks.length} studio tasks` : `Afficher les ${tasks.length} tâches du studio`);
+  more.setAttribute('aria-expanded', String(islandExpanded && tasks.length > 1));
+  const details = $('#statusDetails'), list = $('#statusTaskList'), title = $('#statusDetailsTitle');
+  if (details && list && title) {
+    title.textContent = english ? 'Studio activity' : 'Activité du studio';
+    details.setAttribute('aria-label', title.textContent);
+    const detailsOpen = islandExpanded && tasks.length > 1;
+    details.classList.toggle('is-open', detailsOpen);
+    details.setAttribute('aria-hidden', String(!detailsOpen));
+    details.inert = !detailsOpen;
+    const existingRows = new Map([...list.children].map(row => [row.dataset.taskId, row]));
+    for (const task of tasks) {
+      let row = existingRows.get(task.id);
+      if (!row) {
+        row = document.createElement('div');
+        row.dataset.taskId = task.id;
+        const light = document.createElement('span');
+        light.className = 'dynamic-island-task-light';
+        light.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.className = 'dynamic-island-task-text';
+        const state = document.createElement('span');
+        state.className = 'dynamic-island-task-state';
+        row.append(light, text, state);
+      }
+      row.className = `dynamic-island-task is-${task.state}`;
+      row.querySelector('.dynamic-island-task-text').textContent = task.message;
+      row.querySelector('.dynamic-island-task-state').textContent = islandStateLabel(task.state);
+      list.append(row);
+      existingRows.delete(task.id);
+    }
+    existingRows.forEach(row => row.remove());
+  }
+}
+function updateTaskNotice(id, message, { state = 'progress', duration = 0, progress = null } = {}) {
+  const timer = islandTaskTimers.get(id);
+  if (timer) clearTimeout(timer);
+  islandTaskTimers.delete(id);
+  if (!message) islandTasks.delete(id);
+  else {
+    const priority = ({ progress: 100, saving: 90, error: 80, playing: 75, paused: 75, dirty: 70, complete: 60, waiting: 20 })[state] || 50;
+    islandTasks.set(id, { id, message, state, priority, progress, updatedAt: Date.now() });
+    if (duration > 0) islandTaskTimers.set(id, setTimeout(() => {
+      islandTasks.delete(id);
+      islandTaskTimers.delete(id);
+      if (![...islandTasks.values()].some(task => task.id === id)) islandExpanded = false;
+      renderTaskIsland();
+    }, duration));
+  }
+  if (islandTasks.size < 2) islandExpanded = false;
+  renderTaskIsland();
+}
+function playbackTaskMessage(state) {
+  const english = getLanguage() === 'en';
+  const title = playbackLabel || (english ? 'Current mix' : 'Mix actuel');
+  const duration = timelineDuration();
+  const offset = state === 'playing' && audioCtx ? Math.max(0, audioCtx.currentTime - playStartedAt) : playheadOffset;
+  return state === 'playing'
+    ? `${title} · ${formatTime(offset)} / ${formatTime(duration)}`
+    : `${title} · ${english ? 'Paused' : 'En pause'} · ${formatTime(offset)}`;
+}
+function refreshPlaybackTask(state) {
+  if (state !== 'playing' && state !== 'paused') return updateTaskNotice('playback', '');
+  const duration = timelineDuration();
+  const offset = state === 'playing' && audioCtx ? Math.max(0, audioCtx.currentTime - playStartedAt) : playheadOffset;
+  const progress = duration > 0 ? Math.min(100, offset / duration * 100) : 0;
+  updateTaskNotice('playback', playbackTaskMessage(state), { state, progress });
+}
+function syncPlaybackTask(state) {
+  if (playbackIslandTimer) clearInterval(playbackIslandTimer);
+  playbackIslandTimer = null;
+  refreshPlaybackTask(state);
+  if (state === 'playing') playbackIslandTimer = setInterval(() => refreshPlaybackTask('playing'), 1000);
+}
+export function setPlaybackLabel(label) {
+  playbackLabel = String(label || '').trim();
+  if (playing) refreshPlaybackTask(paused ? 'paused' : 'playing');
+}
+$('#statusMoreButton')?.addEventListener('click', () => {
+  islandExpanded = !islandExpanded;
+  renderTaskIsland();
+});
+document.addEventListener('pointerdown', event => {
+  if (!islandExpanded || $('#status')?.contains(event.target)) return;
+  islandExpanded = false;
+  renderTaskIsland();
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !islandExpanded) return;
+  islandExpanded = false;
+  renderTaskIsland();
+});
+renderTaskIsland();
+onLanguageChange(() => { renderTaskIsland(); if (playing) refreshPlaybackTask(paused ? 'paused' : 'playing'); });
+export function status(message, error = false, persistent = false) {
+  if (!message) return updateTaskNotice('notice', '');
+  updateTaskNotice(persistent ? 'operation' : 'notice', message, {
+    state: persistent ? (error ? 'error' : 'progress') : (error ? 'error' : 'complete'),
+    duration: persistent ? 0 : error ? 6000 : 3600,
+  });
 }
 export function startSeparationProgressPolling(requestId) {
   if (separationPollTimer) clearInterval(separationPollTimer);
@@ -71,11 +219,11 @@ export function startSeparationProgressPolling(requestId) {
     try {
       const progress = await apiJson(`/api/separations/${requestId}`);
       if (activeSeparationRequestId !== requestId) return;
-      if (progress.status === 'canceling') status(t('status.canceling'));
+      if (progress.status === 'canceling') status(t('status.canceling'), false, true);
       else if (progress.status === 'cancelled') status(t('status.cancelled'));
       else if (['preparing', 'queued', 'running', 'completed'].includes(progress.status) && Number.isFinite(progress.progress)) {
         const percent = Math.max(0, Math.min(100, Math.round(progress.progress)));
-        status(t('status.progress', { percent }));
+        status(t('status.progress', { percent }), false, true);
       }
     } catch { /* The route becomes visible once the upload reaches the server handler. */ }
     finally { separationPollBusy = false; }
@@ -86,17 +234,32 @@ export function stopSeparationProgressPolling() {
   separationPollTimer = undefined;
   activeSeparationRequestId = null;
   separationPollBusy = false;
+  updateTaskNotice('operation', '');
 }
 export function ensureAudioContext() { if (!audioCtx || audioCtx.state === 'closed') audioCtx = new AudioContext(); return audioCtx; }
 export function getAudioContext() { return audioCtx; }
-export function settings(name) {
+export function automationValue(name, parameter, time, fallback) {
+  const points = automationByTrack[name]?.lanes?.[parameter];
+  if (!points?.length) return fallback;
+  const ordered = [...points].sort((a, b) => a.time - b.time);
+  if (time <= ordered[0].time) return ordered[0].value;
+  if (time >= ordered.at(-1).time) return ordered.at(-1).value;
+  const rightIndex = ordered.findIndex(point => point.time >= time);
+  const left = ordered[rightIndex - 1], right = ordered[rightIndex];
+  const progress = (time - left.time) / Math.max(0.001, right.time - left.time);
+  return left.value + (right.value - left.value) * progress;
+}
+export function settings(name, offset = playheadOffset) {
   // Read the native controls on demand so live playback and offline export agree.
-  const volume = +document.querySelector(`[data-control="${name}"][data-param="volume"]`).value / 100;
+  const rawVolume = +document.querySelector(`[data-control="${name}"][data-param="volume"]`).value;
+  const volume = automationValue(name, 'volume', offset, rawVolume) / 100;
   const pan = +document.querySelector(`[data-control="${name}"][data-param="pan"]`).value / 100;
   const solo = document.querySelector(`[data-solo="${name}"]`)?.getAttribute('aria-pressed') === 'true';
   const anySolo = document.querySelector('[data-solo][aria-pressed="true"]') !== null;
   const muted = document.querySelector(`[data-mute="${name}"]`).getAttribute('aria-pressed') === 'true';
-  return { volume, pan, solo, muted: muted || (anySolo && !solo), effects: effectsByTrack[name] || { ...effectDefaults } };
+  const effects = { ...(effectsByTrack[name] || effectDefaults) };
+  Object.keys(effects).forEach(key => { effects[key] = automationValue(name, key, offset, effects[key]); });
+  return { volume, pan, solo, muted: muted || (anySolo && !solo), effects };
 }
 export function updateLiveMix() {
   // Browser AudioParams are updated while the existing sources keep playing.
@@ -256,6 +419,7 @@ export function schedulePan(panner, name, cfg, startAt, offset = 0, remainingDur
 export function drawWaveform(name, buffer) {
   // The waveform is drawn only on load/resize; the playhead is a lightweight CSS overlay.
   const canvas = document.querySelector(`[data-waveform="${name}"]`), ratio = devicePixelRatio || 1;
+  const zoom = Number(canvas.closest('[data-track]')?.dataset.timelineZoom || 1);
   const width = Math.max(120, canvas.clientWidth), height = Math.max(40, canvas.clientHeight);
   canvas.width = width * ratio; canvas.height = height * ratio;
   const ctx = canvas.getContext('2d'), graphHeight = height - 20; ctx.scale(ratio, ratio); ctx.clearRect(0, 0, width, height);
@@ -263,18 +427,46 @@ export function drawWaveform(name, buffer) {
   ctx.strokeStyle = name === 'vocals' ? '#f2a9e1' : '#8cdbff'; ctx.globalAlpha = .9; ctx.lineWidth = 1;
   ctx.beginPath(); for (let x = 0; x < width; x++) { let min = 1, max = -1; const start = x * step; for (let i = 0; i < step && start + i < data.length; i++) { const value = data[start + i]; if (value < min) min = value; if (value > max) max = value; } const y1 = (1 + min) * graphHeight / 2, y2 = (1 + max) * graphHeight / 2; ctx.moveTo(x, y1); ctx.lineTo(x, y2); } ctx.stroke();
   ctx.globalAlpha = .42; ctx.strokeStyle = '#69717e'; ctx.fillStyle = '#aeb5c0'; ctx.font = '9px DM Mono, monospace'; ctx.lineWidth = 1;
-  const stepSeconds = tickStep(buffer.duration); for (let t = 0; t <= buffer.duration; t += stepSeconds) { const x = (t / buffer.duration) * width; ctx.beginPath(); ctx.moveTo(x + .5, graphHeight + 1); ctx.lineTo(x + .5, graphHeight + 5); ctx.stroke(); if (x < width - 22) ctx.fillText(formatTime(t), x + 3, height - 5); }
-  const automation = automationByTrack[name]; if (automation?.points.length) {
-    const points = automation.points.map(point => ({ x: (point.time / buffer.duration) * width, y: graphHeight * (1 - (point.pan + 100) / 200) }));
-    ctx.globalAlpha = 1; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2; ctx.beginPath();
+  const stepSeconds = tickStep(buffer.duration / zoom); for (let t = 0; t <= buffer.duration; t += stepSeconds) { const x = (t / buffer.duration) * width; ctx.beginPath(); ctx.moveTo(x + .5, graphHeight + 1); ctx.lineTo(x + .5, graphHeight + 5); ctx.stroke(); if (x < width - 22) ctx.fillText(formatTime(t), x + 3, height - 5); }
+  const automation = automationByTrack[name]; if (automation) {
+    const lane = automation.activeLane || 'pan';
+    const points = lane === 'pan' ? automation.points : (automation.lanes?.[lane] || []);
+    const [min, max] = automationRanges[lane] || [0, 100];
+    const base = automationBaseValue(name, lane);
+    const pointValue = point => lane === 'pan' ? point.pan : point.value;
+    const valueAt = time => lane === 'pan' ? getAutomationPan(name, time) : automationValue(name, lane, time, base);
+    const pointsOnGraph = points.map(point => ({ x: (point.time / buffer.duration) * width, y: graphHeight * (1 - (pointValue(point) - min) / Math.max(0.001, max - min)) }));
+    ctx.globalAlpha = .92; ctx.strokeStyle = lane === 'pan' ? '#a78bfa' : '#d7ff54'; ctx.lineWidth = 2; ctx.beginPath();
     for (let x = 0; x < width; x += 1) {
       const time = (x / Math.max(1, width - 1)) * buffer.duration;
-      const y = graphHeight * (1 - (getAutomationPan(name, time) + 100) / 200);
+      const value = Math.max(min, Math.min(max, valueAt(time)));
+      const y = graphHeight * (1 - (value - min) / Math.max(0.001, max - min));
       if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
-    points.forEach((point, index) => { ctx.fillStyle = index === automation.selected ? '#d7ff54' : '#a78bfa'; ctx.beginPath(); ctx.arc(point.x, point.y, index === automation.selected ? 5 : 4, 0, Math.PI * 2); ctx.fill(); });
+    pointsOnGraph.forEach((point, index) => { ctx.fillStyle = index === automation.selected ? '#ffffff' : (lane === 'pan' ? '#a78bfa' : '#d7ff54'); ctx.beginPath(); ctx.arc(point.x, point.y, index === automation.selected ? 5 : 4, 0, Math.PI * 2); ctx.fill(); });
   }
+}
+export function bindTrackTimelineZoom() {
+  const tracksRoot = $('#tracks');
+  if (!tracksRoot) return;
+  tracksRoot.onwheel = event => {
+    if (!event.ctrlKey) return;
+    const track = event.target.closest?.('[data-track]');
+    if (!track || !tracksRoot.contains(track)) return;
+    event.preventDefault();
+    const zoomSteps = [1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4];
+    const current = Number(track.dataset.timelineZoom || 1);
+    const currentIndex = zoomSteps.reduce((best, value, index) => Math.abs(value - current) < Math.abs(zoomSteps[best] - current) ? index : best, 0);
+    const next = zoomSteps[Math.max(0, Math.min(zoomSteps.length - 1, currentIndex + (event.deltaY < 0 ? 1 : -1)))];
+    if (next === current) return;
+    track.dataset.timelineZoom = String(next);
+    track.classList.toggle('is-timeline-zoomed', next > 1);
+    const content = track.querySelector('[data-wave-content]');
+    if (content) content.style.width = `${next * 100}%`;
+    if (tracks[track.dataset.track]) drawWaveform(track.dataset.track, tracks[track.dataset.track]);
+    updatePlayheads();
+  };
 }
 export const stemInfo = {
   vocals: { titleKey: 'stem.vocals', detailKey: 'stem.vocalsDetail', icon: 'mic' },
@@ -300,42 +492,138 @@ export function setTransportState(state = 'stopped') {
   playButton.setAttribute('aria-label', playLabel);
   playButton.title = playLabel;
   stopButton.disabled = !isPlaying && !isPaused;
+  syncPlaybackTask(state);
 }
-export function ensureAutomation(name, duration) { automationByTrack[name] = { points: [{ time: 0, pan: 0 }, { time: duration, pan: 0 }], selected: 0 }; }
+const automationRanges = {
+  pan: [-100, 100], volume: [0, 150], saturation: [0, 100], bassBoost: [0, 100], compressor: [0, 100],
+  eqLow: [-12, 12], eqMid: [-12, 12], eqHigh: [-12, 12], reverb: [0, 100], delay: [0, 100],
+  highPass: [0, 100], lowPass: [0, 100], width: [0, 200], ducking: [0, 100], chorus: [0, 100],
+  flanger: [0, 100], phaser: [0, 100], tremolo: [0, 100], bitcrusher: [0, 100], gate: [0, 100],
+  deEsser: [0, 100], limiter: [0, 100], exciter: [0, 100],
+};
+const effectAutomationLanes = {
+  eq: ['eqLow', 'eqMid', 'eqHigh'], filters: ['highPass', 'lowPass'],
+  compressor: ['compressor'], reverb: ['reverb'], delay: ['delay'], width: ['width'], ducking: ['ducking'],
+  saturation: ['saturation'], bassBoost: ['bassBoost'], chorus: ['chorus'], flanger: ['flanger'], phaser: ['phaser'],
+  tremolo: ['tremolo'], bitcrusher: ['bitcrusher'], gate: ['gate'], deEsser: ['deEsser'], limiter: ['limiter'], exciter: ['exciter'],
+};
+function automationBaseValue(name, lane) {
+  if (lane === 'pan') return 0;
+  if (lane === 'volume') return Number(document.querySelector(`[data-control="${name}"][data-param="volume"]`)?.value ?? 100);
+  return Number(effectsByTrack[name]?.[lane] ?? (lane === 'width' ? 100 : 0));
+}
+function automationPointsFor(name, lane, duration = tracks[name]?.duration || 0) {
+  const state = automationByTrack[name];
+  if (lane === 'pan') return state.points;
+  state.lanes ||= {};
+  state.lanes[lane] ||= [{ time: 0, value: automationBaseValue(name, lane) }, { time: duration, value: automationBaseValue(name, lane) }];
+  return state.lanes[lane];
+}
+export function ensureAutomation(name, duration) {
+  const state = automationByTrack[name] ||= {};
+  Object.assign(state, { points: [{ time: 0, pan: 0 }, { time: duration, pan: 0 }], selected: 0, activeLane: 'pan', activeEffects: [], lanes: {} });
+}
+export function activateTrackEffect(name, key) {
+  if (!trackHasEffect(key, name)) return false;
+  const state = automationByTrack[name];
+  if (!state) return false;
+  state.activeEffects ||= [];
+  if (!state.activeEffects.includes(key)) state.activeEffects.push(key);
+  const values = effectsByTrack[name] ||= { ...effectDefaults };
+  const defaults = { saturation: 16, bassBoost: 24, compressor: 20, eqLow: 2, eqMid: 0, eqHigh: 0, highPass: 2, lowPass: 0, reverb: 18, delay: 18, width: 130, ducking: 20, chorus: 18, flanger: 18, phaser: 18, tremolo: 18, bitcrusher: 18, gate: 18, deEsser: 18, limiter: 18, exciter: 18 };
+  for (const lane of effectAutomationLanes[key] || []) {
+    if (!values[lane] && lane !== 'width') values[lane] = defaults[lane] ?? 18;
+    const points = automationPointsFor(name, lane);
+    if (!points.length) points.push({ time: 0, value: values[lane] }, { time: tracks[name].duration, value: values[lane] });
+  }
+  state.activeLane = (effectAutomationLanes[key] || [])[0] || 'pan';
+  refreshAutomation(name);
+  markProjectDirty();
+  return true;
+}
 export function automationCoordinates(event, canvas) {
-  const buffer = tracks[canvas.dataset.waveform], rect = canvas.getBoundingClientRect(), graphHeight = rect.height - 20;
+  const name = canvas.dataset.waveform, buffer = tracks[name], rect = canvas.getBoundingClientRect(), graphHeight = rect.height - 20;
+  const lane = automationByTrack[name]?.activeLane || 'pan', [min, max] = automationRanges[lane] || [0, 100];
   const y = Math.max(0, Math.min(graphHeight, event.clientY - rect.top));
-  const pan = Math.max(-100, Math.min(100, Math.round((((1 - y / graphHeight) * 200) - 100) / 5) * 5));
-  return { time: Math.max(0, Math.min(buffer.duration, ((event.clientX - rect.left) / rect.width) * buffer.duration)), pan };
+  const step = lane === 'pan' ? 5 : lane.startsWith('eq') ? .5 : 1;
+  const value = Math.max(min, Math.min(max, Math.round((max - y / graphHeight * (max - min)) / step) * step));
+  return { time: Math.max(0, Math.min(buffer.duration, ((event.clientX - rect.left) / rect.width) * buffer.duration)), value, lane };
 }
 export function selectAutomationPoint(event) {
-  const canvas = event.currentTarget, name = canvas.dataset.waveform, { time, pan } = automationCoordinates(event, canvas), buffer = tracks[name], automation = automationByTrack[name];
-  const closeIndex = automation.points.findIndex(point => Math.abs(point.time - time) < Math.max(.25, buffer.duration * .015));
+  const canvas = event.currentTarget, name = canvas.dataset.waveform, { time, value, lane } = automationCoordinates(event, canvas), buffer = tracks[name], automation = automationByTrack[name];
+  const points = automationPointsFor(name, lane, buffer.duration);
+  const closeIndex = points.findIndex(point => Math.abs(point.time - time) < Math.max(.18, buffer.duration * .008));
   if (closeIndex >= 0) automation.selected = closeIndex;
-  else { automation.points.push({ time, pan }); automation.points.sort((a, b) => a.time - b.time); automation.selected = automation.points.findIndex(point => point.time === time); }
+  else {
+    const point = lane === 'pan' ? { time, pan: value } : { time, value };
+    points.push(point); points.sort((a, b) => a.time - b.time); automation.selected = points.indexOf(point);
+  }
   refreshAutomation(name);
   markProjectDirty();
 }
 export function moveAutomationPoint(event) {
   if (!automationDragging) return;
-  const canvas = event.currentTarget, name = canvas.dataset.waveform, automation = automationByTrack[name], point = automation.points[automation.selected], { time, pan } = automationCoordinates(event, canvas), last = automation.points.length - 1;
-  point.pan = pan;
-  if (automation.selected > 0 && automation.selected < last) point.time = Math.max(automation.points[automation.selected - 1].time + .05, Math.min(automation.points[automation.selected + 1].time - .05, time));
+  const canvas = event.currentTarget, name = canvas.dataset.waveform, automation = automationByTrack[name], lane = automation.activeLane || 'pan', points = automationPointsFor(name, lane), point = points[automation.selected], { time, value } = automationCoordinates(event, canvas), last = points.length - 1;
+  if (!point) return;
+  if (lane === 'pan') point.pan = value; else point.value = value;
+  if (automation.selected > 0 && automation.selected < last) point.time = Math.max(points[automation.selected - 1].time + .05, Math.min(points[automation.selected + 1].time - .05, time));
   refreshAutomation(name);
   markProjectDirty();
 }
 export function refreshAutomation(name) {
-  // Refreshing the curve also reschedules live panning from the current play time.
-  const automation = automationByTrack[name], point = automation.points[automation.selected];
-  document.querySelectorAll(`[data-automation-pan="${name}"]`).forEach(button => button.classList.toggle('active', point && +button.dataset.pan === point.pan));
-  const time = document.querySelector(`[data-automation-time="${name}"]`); if (time && point) time.textContent = formatTime(point.time);
+  // Refresh the selected lane, its points, and the effect chips below the shared track curve.
+  const automation = automationByTrack[name]; if (!automation) return;
+  automation.activeLane ||= 'pan';
+  automation.activeEffects ||= [];
+  const laneButtons = document.querySelector(`[data-automation-lanes="${name}"]`);
+  if (laneButtons) {
+    const lanes = ['pan', 'volume', ...automation.activeEffects.flatMap(effect => effectAutomationLanes[effect] || [])];
+    const laneSignature = lanes.join('|');
+    if (laneButtons.dataset.renderedLanes !== laneSignature) {
+      laneButtons.innerHTML = lanes.map(lane => `<button type="button" class="automation-lane" data-select-automation-lane="${name}" data-lane="${lane}">${t(`automation.param.${lane}`)}</button>`).join('');
+      laneButtons.dataset.renderedLanes = laneSignature;
+      laneButtons.querySelectorAll('[data-select-automation-lane]').forEach(button => button.onclick = () => {
+        const currentAutomation = automationByTrack[name];
+        if (!currentAutomation) return;
+        currentAutomation.activeLane = button.dataset.lane;
+        currentAutomation.selected = 0;
+        refreshAutomation(name);
+      });
+    }
+    laneButtons.querySelectorAll('[data-select-automation-lane]').forEach(button => button.classList.toggle('active', button.dataset.lane === automation.activeLane));
+  }
+  const points = automationPointsFor(name, automation.activeLane);
+  const point = points[automation.selected];
+  const time = document.querySelector(`[data-automation-time="${name}"]`);
+  if (time && point) {
+    const value = automation.activeLane === 'pan' ? point.pan : point.value;
+    time.textContent = `${formatTime(point.time)} · ${value}${automation.activeLane === 'volume' ? '%' : ''}`;
+  }
   if (tracks[name]) drawWaveform(name, tracks[name]);
   updateLiveMix();
 }
 export function bindAutomation() {
-  document.querySelectorAll('[data-waveform]').forEach(canvas => { canvas.addEventListener('pointerdown', event => { selectAutomationPoint(event); automationDragging = true; canvas.setPointerCapture(event.pointerId); }); canvas.addEventListener('pointermove', moveAutomationPoint); canvas.addEventListener('pointerup', event => { automationDragging = false; canvas.releasePointerCapture(event.pointerId); }); });
-  document.querySelectorAll('[data-automation-pan]').forEach(button => button.onclick = () => { const name = button.dataset.automationPan, automation = automationByTrack[name], point = automation.points[automation.selected]; if (!point) return; point.pan = +button.dataset.pan; refreshAutomation(name); markProjectDirty(); });
-  document.querySelectorAll('[data-automation-remove]').forEach(remove => remove.onclick = () => { const name = remove.dataset.automationRemove, automation = automationByTrack[name]; if (automation.selected > 0 && automation.selected < automation.points.length - 1) { automation.points.splice(automation.selected, 1); automation.selected--; refreshAutomation(name); markProjectDirty(); } });
+  document.querySelectorAll('[data-waveform]').forEach(canvas => {
+    canvas.addEventListener('pointerdown', event => { selectAutomationPoint(event); automationDragging = true; canvas.setPointerCapture(event.pointerId); });
+    canvas.addEventListener('pointermove', moveAutomationPoint);
+    canvas.addEventListener('pointerup', event => { automationDragging = false; try { canvas.releasePointerCapture(event.pointerId); } catch {} });
+    canvas.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; canvas.classList.add('is-drop-target'); });
+    canvas.addEventListener('dragleave', () => canvas.classList.remove('is-drop-target'));
+    canvas.addEventListener('drop', event => {
+      event.preventDefault(); canvas.classList.remove('is-drop-target');
+      let payload;
+      try { payload = JSON.parse(event.dataTransfer.getData('application/x-audiosplit-effect')); } catch { return; }
+      if (!payload?.effect || payload.track !== canvas.dataset.waveform || !activateTrackEffect(canvas.dataset.waveform, payload.effect)) {
+        status(getLanguage() === 'en' ? 'That effect is not available on this track.' : 'Cet effet n’est pas disponible sur cette piste.', true);
+        return;
+      }
+      status(getLanguage() === 'en' ? 'Effect added to the track curve.' : 'Effet ajouté à la courbe de la piste.');
+    });
+  });
+  document.querySelectorAll('[data-automation-remove]').forEach(remove => remove.onclick = () => {
+    const name = remove.dataset.automationRemove, automation = automationByTrack[name], lane = automation.activeLane || 'pan', points = automationPointsFor(name, lane);
+    if (automation.selected > 0 && automation.selected < points.length - 1) { points.splice(automation.selected, 1); automation.selected--; refreshAutomation(name); markProjectDirty(); }
+  });
 }
 export let fxModalInstance;
 export function setFxModal(modal) { fxModalInstance = modal; }
@@ -433,7 +721,7 @@ export function startPlaybackSources(offset = playheadOffset) {
   playbackEndTimer = undefined;
   liveMaster = createMasterLimiter(audioCtx);
   for (const [name, buffer] of entries) {
-    const source = audioCtx.createBufferSource(), cfg = settings(name), nodes = createTrackNodes(audioCtx, source, name, cfg, liveMaster);
+    const source = audioCtx.createBufferSource(), cfg = settings(name, offset), nodes = createTrackNodes(audioCtx, source, name, cfg, liveMaster);
     source.buffer = buffer;
     schedulePan(nodes.panner, name, cfg, audioCtx.currentTime, offset, Math.max(0, buffer.duration - offset));
     source.onended = () => {
@@ -476,9 +764,13 @@ export function animatePlayheads() {
     const voiceLevel = voiceMeter ? readVoiceLevel(voiceMeter) : 0;
     updateTrackMeters();
     for (const [name, nodes] of liveNodes) {
-      if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, settings(name).effects.ducking, audioCtx, true);
-      if (nodes.effects.deEsser) updateDeEsser(nodes.effects.deEsser, settings(name).effects.deEsser, audioCtx, true);
-      if (nodes.effects.gate) updateNoiseGate(nodes.effects.gate, settings(name).effects.gate, audioCtx, true);
+      const offset = Math.max(0, audioCtx.currentTime - playStartedAt);
+      const config = settings(name, offset);
+      nodes.gain.gain.setTargetAtTime(config.muted ? 0 : config.volume, audioCtx.currentTime, 0.018);
+      if (nodes.effects.ducking) updateVoiceDucking(nodes.effects.ducking, voiceLevel, config.effects.ducking, audioCtx, true);
+      if (nodes.effects.deEsser) updateDeEsser(nodes.effects.deEsser, config.effects.deEsser, audioCtx, true);
+      if (nodes.effects.gate) updateNoiseGate(nodes.effects.gate, config.effects.gate, audioCtx, true);
+      if (Object.keys(automationByTrack[name]?.lanes || {}).some(key => key !== 'volume' && !['ducking', 'deEsser', 'gate'].includes(key))) updateTrackEffects(nodes, config.effects, audioCtx, voiceLevel);
     }
     if (!playheadDragging) playheadOffset = Math.min(timelineDuration(), Math.max(0, audioCtx.currentTime - playStartedAt));
     updatePlayheads(playheadOffset);
@@ -535,9 +827,9 @@ export async function playMix() {
       } else {
         await audioCtx.suspend();
         paused = true;
-        setTransportState('paused');
         playheadOffset = Math.max(0, audioCtx.currentTime - playStartedAt);
         updatePlayheads(playheadOffset);
+        setTransportState('paused');
       }
     } catch (error) {
       console.error('Could not change playback state.', error);

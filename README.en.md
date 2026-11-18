@@ -1,4 +1,4 @@
-# AudioSplit Studio — v1.4.4
+# AudioSplit Studio — v1.5
 
 AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
 
@@ -37,11 +37,11 @@ Confirmations, deletions, and name entry use dialogs styled as part of AudioSpli
 
 As soon as you choose a file, AudioSplit analyzes it locally in the browser: tempo (BPM), key, and likely meter are estimated from the first 90 seconds. Duration, channel count, and sample rate describe the whole file; peak/RMS levels are measured from the analyzed excerpt. Bit depth is shown for WAV files when available in the file header. Estimates include a confidence indicator, and BPM/key fields can be corrected.
 
-After separation, the **Tempo and key** panel lets you enter an original BPM and target BPM, plus a transposition from −12 to +12 semitones. Preview renders every stem with the same settings; **Apply to mix** saves them in the project settings and WAV export. Before/after values, a quality warning for large changes, and reset to the original make adjustments easier. Automation curves and the playhead stay aligned after transformation. Original stems remain intact. This feature uses FFmpeg's Rubber Band filter and reports an explicit error if the installed FFmpeg build does not include it. Target tempo is limited to 50–200% of the original BPM.
+After separation, the **Tempo and key** panel lets you enter original and target BPM values or choose a quick tempo ratio (½× to 1½×). Tempo affects every track. The key picker offers all 24 major and minor keys; pitch changes affect pitched instruments while preserving vocals and separately split drums. **Preview** renders synchronized tracks, then **Apply to mix** saves the result in the project and WAV export. Original stems remain intact. This uses FFmpeg's Rubber Band filter and limits tempo to 50–200% of the original BPM.
 
 ### Local folders and projects
 
-Open **Projects** in the header to create folders and save each separation as a project. The suggested project name comes from the imported filename. Separated tracks and all mixer settings (volume, pan, mute, Solo, effects, and automation curves) are stored locally in `data/library/`, with no database. After the first save, changes are autosaved every 10 seconds; the status appears at the top of the page. You can reopen, rename, or delete projects and folders after restarting the app. The cache-clearing button does not delete this library. Complete saves interrupted by a shutdown are recovered on next startup; imported ZIP projects with a duplicate name get a suffix such as (2) or (3).
+The app has **Projects**, **Home**, and **Studio** pages. Projects is the starting page; Home is for importing audio, and Studio is for mixing. Open **Projects** to create folders and save each separation as a project. The suggested project name comes from the imported filename. Separated tracks and all mixer settings (volume, pan, mute, Solo, effects, and automation) are stored locally in `data/library/`, with no database. After the first save, changes are autosaved every 10 seconds. You can reopen, rename, or delete projects and folders after restarting the app. The cache-clearing button does not delete this library.
 
 The library can also search and sort projects, show their size and available disk space, and **duplicate** a session before trying a different mix. Mix presets store only volume, pan, effects, and automation settings, without copying audio files. Presets can be exported as JSON and imported on this or another installation. Presets and projects share a **20 GiB** library limit; the temporary separation cache has a separate **10 GiB** limit.
 
@@ -52,7 +52,7 @@ The library can also search and sort projects, show their size and available dis
 | Make karaoke or isolate singing | **Vocals + accompaniment** | Vocal stem and music-without-vocals stem |
 | Edit a song precisely | **Detailed** | Vocals, drums/kicks, bass, and other instruments as separate tracks |
 
-During playback, volume, pan, mute, Solo, automation, and effect changes apply immediately. Every track shows its output level, can reset its settings, and includes a waveform with time markers and pan automation points. An alert appears before export if the peak is close to the digital maximum.
+During playback, volume, pan, mute, Solo, automation, and effect changes apply immediately. Open a track's automation editor, choose **Volume** or an available effect, and add a point at the playhead. The curve interpolates between points and can be edited by dragging them. Automation is included in WAV exports and saved with projects. Each track also keeps draggable pan points on its waveform. An alert appears before export if the peak is close to the digital maximum.
 
 ## Language
 

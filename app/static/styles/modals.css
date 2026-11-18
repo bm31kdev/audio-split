@@ -9,6 +9,7 @@
 /* Fx modal uses a short opacity/scale transition controlled by modal-manager.js. */
 .fx-modal { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 48px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
 .fx-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
+.fx-modal.is-dragging-effect { pointer-events: none; }
 .fx-modal-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609b8; backdrop-filter: blur(2px); transition: opacity 0.22s ease; }
 .fx-dialog { display: flex; flex-direction: column; width: min(680px, calc(100vw - 40px)); max-width: min(680px, calc(100vw - 40px)); max-height: calc(100vh - 96px); padding: 23px; overflow: hidden; opacity: 0; background: linear-gradient(145deg, #1c1a25, #111217 70%); border: 1px solid #3b344c; border-radius: 18px; box-shadow: 0 26px 80px #000a; transform: translateY(18px) scale(0.96); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .fx-modal.is-open .fx-modal-backdrop { opacity: 1; }
@@ -47,7 +48,14 @@
 
 /* Saturation controls are only injected for the selected bass-oriented stem. */
 .fx-effect-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.fx-effect-card { padding: 14px; background: #17191e; border: 1px solid #363c2e; border-radius: 12px; }
+.fx-effect-card { position: relative; padding: 14px; background: #17191e; border: 1px solid #363c2e; border-radius: 12px; transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+.fx-effect-card.is-draggable:hover { transform: translateY(-2px); border-color: #718448; background: #1b1e20; box-shadow: 0 9px 24px #0005; }
+.fx-effect-card.is-applied { border-color: #52633b; background: linear-gradient(145deg, #1a2016, #17191e 65%); }
+.fx-effect-state { display: inline-flex; min-height: 20px; align-items: center; margin-bottom: 9px; padding: 0 8px; color: #cbd5ae; background: #24291e; border: 1px solid #3a452b; border-radius: 999px; font: 600 9px/1 Segoe UI, Arial, sans-serif; }
+.fx-effect-state::before { width: 5px; height: 5px; margin-right: 6px; border-radius: 50%; background: var(--lime); content: ''; }
+.fx-effect-state.is-applied { color: #e0efbe; background: #29351f; border-color: #52663a; }
+.fx-effect-state.is-applied::before { background: #a7e5a7; box-shadow: 0 0 7px #a7e5a780; }
+.fx-effect-heading { display: flex; min-height: 24px; align-items: center; justify-content: space-between; gap: 8px; }
 .fx-effect-icon { display: grid; flex: 0 0 auto; width: 36px; height: 36px; place-items: center; color: var(--lime); border: 1px solid #667a3f; border-radius: 9px; }
 .fx-effect-icon svg { width: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .fx-effect-card .eyebrow { margin-bottom: 5px; color: #c7dc8a; font-size: 9px; }
@@ -55,13 +63,6 @@
 .fx-bass-label::before { width: 5px; height: 5px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px #d7ff54a3; content: ''; }
 .fx-effect-card h3 { font-size: 16px; }
 .fx-effect-card p { margin-top: 5px; color: #b5bdac; font-size: 12px; line-height: 1.45; }
-.fx-effect-card.is-unavailable { border-color: #30343d; opacity: .68; }
-.fx-effect-card .fx-availability { margin-top: 9px; color: var(--lime); font-size: 10px; }
-.fx-effect-card.is-unavailable .fx-availability { color: #d4b66a; }
-.fx-control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; margin-top: 12px; }
-.fx-control { display: grid; grid-template-rows: 1fr 12px; gap: 5px; min-height: 34px; color: #cfd5c4; font: 10px Consolas, 'Courier New', monospace; }
-.fx-control output { align-self: center; color: var(--lime); text-align: center; }
-.fx-control input { width: 100%; margin: 0; align-self: center; accent-color: var(--lime); }
 
 /* Changelog is a compact two-column dialog with no internal scroll container. */
 .changelog-modal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 48px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
@@ -76,18 +77,22 @@
 .changelog-header p:last-child { margin-top: 6px; color: var(--muted); font-size: 12px; }
 .changelog-close { width: 34px; height: 34px; padding: 0; border-radius: 8px; }
 .changelog-close svg { width: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.release-list { display: grid; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; list-style: none; }
-.release-group { grid-column: 1 / -1; padding: 8px 2px 2px; color: var(--lime); font: 500 11px Consolas, 'Courier New', monospace; letter-spacing: .7px; text-transform: uppercase; }
-.release { position: relative; padding: 10px 11px 10px 14px; background: #16191f; border: 1px solid #313641; border-radius: 11px; }
-.release::before { position: absolute; top: 11px; bottom: 11px; left: 0; width: 3px; content: ''; background: #657080; border-radius: 0 3px 3px 0; }
+.release-list { display: grid; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; list-style: none; }
+.release { position: relative; padding: 15px 15px 14px 18px; background: linear-gradient(145deg, #191c22, #14161b); border: 1px solid #313641; border-radius: 13px; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.release:hover { transform: translateY(-2px); border-color: #4a515e; box-shadow: 0 10px 24px #0004; }
+.release::before { position: absolute; top: 13px; bottom: 13px; left: 0; width: 3px; content: ''; background: #657080; border-radius: 0 3px 3px 0; }
 .release.current { background: linear-gradient(100deg, #202816, #16191f); border-color: #657e37; }
 .release.current::before { background: var(--lime); }
 .release-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.release h3 { font: 500 12px Consolas, 'Courier New', monospace; }
-.release-date { display: block; margin-top: 3px; color: #858c99; font: 9px Consolas, 'Courier New', monospace; }
+.release-kicker { display: block; margin-bottom: 4px; color: #89909c; font: 9px Consolas, 'Courier New', monospace; letter-spacing: .09em; }
+.release h3 { font: 600 19px/1.1 Consolas, 'Courier New', monospace; }
+.release-date { display: block; margin-top: 5px; color: #858c99; font: 9px Consolas, 'Courier New', monospace; }
 .release.current h3 { color: var(--lime); }
 .release-tag { padding: 3px 6px; color: #d7ff54; font: 9px Consolas, 'Courier New', monospace; text-transform: uppercase; border: 1px solid #465035; border-radius: 999px; }
-.release p { margin-top: 4px; color: #b1b7c2; font-size: 11px; line-height: 1.35; }
+.release p { margin-top: 13px; color: #c0c5ce; font-size: 11px; line-height: 1.55; }
+.release-highlights { margin-top: 12px; }
+.release-highlights span { display: inline-flex; padding: 5px 8px; color: #c7d9a0; font: 9px/1.2 Segoe UI, Arial, sans-serif; background: #20251b; border: 1px solid #38432a; border-radius: 999px; }
+.release.current .release-highlights span { color: var(--lime); background: #252d1b; border-color: #465634; }
 
 /* Confirmations and text prompts use the same framed dialog as version history. */
 .interaction-dialog { width: min(540px, calc(100vw - 40px)); }
@@ -161,10 +166,8 @@
 .fx-modal-content { padding: 0 24px; }
 .fx-done { flex: 0 0 auto; margin: 0 24px 20px; }
 .language-options { padding: 0 24px 24px; }
-.release-group { padding-top: 12px; }
-
 @media (max-width: 540px) {
-  .version-button { bottom: 12px; left: 12px; }
+  .version-button { right: 12px; bottom: 58px; left: auto; }
   .fx-modal, .changelog-modal, .language-modal { padding: 32px 12px; }
   .fx-dialog { padding: 19px; }
   .fx-empty-state, .fx-effect-card { padding: 14px; }
@@ -176,13 +179,12 @@
   .fx-modal-content { padding: 0 18px; }
   .fx-done { margin: 0 18px 16px; }
   .language-options { padding: 0 18px 18px; }
-  .release-list { gap: 5px; padding: 12px; }
+  .release-list { grid-template-columns: 1fr; gap: 8px; padding: 12px; }
   .interaction-content { padding: 16px 18px 6px; }
   .interaction-actions { padding: 10px 18px 18px; }
-  .release { padding: 8px 9px 8px 12px; }
-  .release h3 { font-size: 11px; }
+  .release { padding: 13px 12px 12px 15px; }
+  .release h3 { font-size: 17px; }
   .release p { font-size: 10px; }
-  .release-tag { display: none; }
   .library-content { padding: 14px; }
   .library-workspace { grid-template-columns: 1fr; }
   .library-folders { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -191,6 +193,21 @@
   .preset-card > div:last-child, .presets-heading > div:last-child { justify-content: flex-start; flex-wrap: wrap; }
   .library-toolbar, .save-project-controls { flex-wrap: wrap; }
   .save-project-controls select, .save-project-controls input { flex: 1 1 40%; }
+}
+
+.key-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; min-height: 0; padding: 18px 24px; overflow: auto; scrollbar-width: none; }
+.key-options button { min-height: 44px; color: #d3d7df; background: #17191e; border-color: #363c2e; }
+.key-options button.active, .key-options button:hover { color: #101407; background: var(--lime); border-color: var(--lime); }
+.key-source-select { display: grid; gap: 7px; padding: 0 24px; color: #cbd1dc; font-size: 11px; }
+.key-source-select select { width: 100%; padding: 10px 12px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 13px Segoe UI, Arial, sans-serif; }
+.key-dialog { width: min(600px, calc(100vw - 40px)); }
+.key-choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.key-choice-row select { min-width: 96px; flex: 0 0 auto; }
+.key-choice-row button { min-height: 38px; padding: 7px 10px; font-size: 11px; }
+@media (max-width: 540px) {
+  .key-options { padding: 16px; }
+  .key-source-select { padding: 0 16px; }
+  .key-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* All dialogs share one title block and one full-width separator. */

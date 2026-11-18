@@ -11,6 +11,7 @@ $venvPython = Join-Path $workspace '.venv\Scripts\python.exe'
 $requirementsPath = Join-Path $workspace 'requirements.txt'
 $requirementsLockPath = Join-Path $workspace 'requirements-windows-py311.lock'
 $requirementsStamp = Join-Path $workspace '.venv\.audiosplit-requirements.sha256'
+$runtimeStamp = Join-Path $workspace '.venv\.audiosplit-runtime.sha256'
 
 function Install-WingetPackage([string]$id) {
     Write-Host "Installation de $id..." -ForegroundColor Cyan
@@ -67,6 +68,23 @@ function Enable-FFmpeg {
     if ($LASTEXITCODE -ne 0) { throw 'FFmpeg did not start correctly.' }
 }
 
+$runtimeAlreadyValidated = (Test-Path -LiteralPath $runtimeStamp) -and ((Get-Content -LiteralPath $runtimeStamp -Raw).Trim() -eq $requirementsHash)
+if ($runtimeAlreadyValidated) {
+    Write-Host 'Python audio : OK (quick check)' -ForegroundColor Green
+} else {
+    Write-Host 'First PyTorch startup check: loading the audio engine can take a little while...' -ForegroundColor Yellow
+    & $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
+    $validationExitCode = $LASTEXITCODE
+    if ($validationExitCode -ne 0 -and -not $needsDependencyInstall) {
+        Write-Host 'The existing environment failed its first audio check; repairing dependencies...' -ForegroundColor Yellow
+        Install-AudioSplitDependencies
+        & $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
+        $validationExitCode = $LASTEXITCODE
+    }
+    if ($validationExitCode -ne 0) { throw 'Python audio runtime validation failed.' }
+    [System.IO.File]::WriteAllText($runtimeStamp, $requirementsHash)
+}
+
 Write-Host ''
 Write-Host 'AudioSplit Studio - automatic setup' -ForegroundColor Green
 $python311 = Get-Python311
@@ -97,12 +115,13 @@ function Install-AudioSplitDependencies {
 if ($needsDependencyInstall) { Install-AudioSplitDependencies }
 
 Write-Host 'Validating installation...' -ForegroundColor Cyan
-& $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
+$packageCheck = "import importlib.util, sys; required = ('demucs', 'fastapi', 'multipart', 'soundfile', 'torch', 'torchaudio', 'torchcodec', 'uvicorn'); missing = [name for name in required if importlib.util.find_spec(name) is None]; print('Missing packages: ' + ', '.join(missing)) if missing else None; sys.exit(bool(missing))"
+& $venvPython -c $packageCheck
 $validationExitCode = $LASTEXITCODE
 if ($validationExitCode -ne 0 -and -not $needsDependencyInstall) {
     Write-Host 'The existing environment is incomplete; repairing dependencies...' -ForegroundColor Yellow
     Install-AudioSplitDependencies
-    & $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
+    & $venvPython -c $packageCheck
     $validationExitCode = $LASTEXITCODE
 }
 if ($validationExitCode -ne 0) { throw 'Python dependency validation failed.' }

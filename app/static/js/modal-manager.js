@@ -1,5 +1,5 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.4.4';
-import { effectCatalog, effectIsAvailable, effectTrackNames } from './effects/catalog.js?v=1.4.4';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.17';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.17';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -21,14 +21,15 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
     loadComponent('library-modal.html'),
     loadComponent('interaction-modal.html'),
+    loadComponent('key-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}`;
 }
 
 /**
@@ -160,63 +161,173 @@ export function createInteractionModal() {
   };
 }
 
-// Render a compact control: its accessible name remains available without a visible label.
-function controlMarkup(key, labelKey, value, min, max, step = 1) {
-  const label = t(labelKey);
-  return `<label class="fx-control" title="${label}"><input data-effect-input="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" aria-label="${label}"><output data-effect-output="${key}">${value}</output></label>`;
+/** Edit a track's saved volume/effect points at the shared transport playhead. */
+export function createAutomationModal({ stemInfo, getAutomation, getPlayhead, getDuration, getBaseValue, canAutomate, onChange }) {
+  const modal = document.querySelector('#automationModal');
+  const animated = createAnimatedModal(modal, '.automation-close');
+  const title = modal.querySelector('#automationTitle');
+  const select = modal.querySelector('#automationLaneSelect');
+  const timeLabel = modal.querySelector('#automationPlayheadLabel');
+  const list = modal.querySelector('#automationKeyframeList');
+  const chart = modal.querySelector('#automationCurve');
+  let activeTrack = null;
+  let activeParam = 'volume';
+  let selectedIndex = -1;
+  let draggedPoint = null;
+  let selectedTime = null;
+  const ranges = {
+    volume: [0, 150], saturation: [0, 100], bassBoost: [0, 100], compressor: [0, 100], eqLow: [-12, 12], eqMid: [-12, 12], eqHigh: [-12, 12],
+    reverb: [0, 100], delay: [0, 100], highPass: [0, 100], lowPass: [0, 100], width: [0, 200], ducking: [0, 100], chorus: [0, 100], flanger: [0, 100], phaser: [0, 100], tremolo: [0, 100], bitcrusher: [0, 100], gate: [0, 100], deEsser: [0, 100], limiter: [0, 100], exciter: [0, 100],
+  };
+  const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+  const render = () => {
+    const state = getAutomation(activeTrack);
+    const points = state.lanes?.[activeParam] || [];
+    const time = selectedTime ?? getPlayhead();
+    const [min, max] = ranges[activeParam];
+    timeLabel.textContent = `${t('automation.playhead')} · ${formatTime(time)}`;
+    list.innerHTML = points.map((point, index) => `<li class="automation-keyframe${index === selectedIndex ? ' active' : ''}"><button type="button" data-select-keyframe="${index}">${formatTime(point.time)} <strong>${point.value}</strong></button><button type="button" class="automation-remove" data-remove-keyframe="${index}" aria-label="${t('automation.removePoint')}">×</button></li>`).join('') || `<li class="automation-empty">${t('automation.noPoints')}</li>`;
+    list.querySelectorAll('[data-select-keyframe]').forEach(button => button.onclick = () => {
+      selectedIndex = Number(button.dataset.selectKeyframe);
+      selectedTime = points[selectedIndex]?.time ?? null;
+      render();
+    });
+    list.querySelectorAll('[data-remove-keyframe]').forEach(button => button.onclick = () => {
+      const index = Number(button.dataset.removeKeyframe); points.splice(index, 1); selectedIndex = -1; onChange(activeTrack); render();
+    });
+    const width = Math.max(1, chart.clientWidth), height = Math.max(1, chart.clientHeight), ratio = window.devicePixelRatio || 1;
+    chart.width = Math.round(width * ratio); chart.height = Math.round(height * ratio);
+    const context = chart.getContext('2d'); context.setTransform(ratio, 0, 0, ratio, 0, 0); context.clearRect(0, 0, width, height);
+    const padX = 12, padY = 10, plotWidth = width - padX * 2, plotHeight = height - padY * 2, duration = Math.max(0.01, getDuration(activeTrack));
+    context.strokeStyle = '#303641'; context.lineWidth = 1;
+    for (let row = 0; row < 3; row += 1) { const y = padY + plotHeight * row / 2; context.beginPath(); context.moveTo(padX, y); context.lineTo(width - padX, y); context.stroke(); }
+    const valueY = pointValue => padY + plotHeight * (1 - (pointValue - min) / Math.max(0.001, max - min));
+    const ordered = [...points].sort((a, b) => a.time - b.time);
+    context.strokeStyle = ordered.length ? '#d7ff54' : '#727d59'; context.lineWidth = 2; context.beginPath();
+    if (ordered.length) ordered.forEach((point, index) => { const x = padX + plotWidth * point.time / duration, y = valueY(point.value); if (!index) context.moveTo(x, y); else context.lineTo(x, y); });
+    else { const y = valueY(getBaseValue(activeTrack, activeParam)); context.moveTo(padX, y); context.lineTo(width - padX, y); }
+    context.stroke();
+    ordered.forEach((point, index) => { const x = padX + plotWidth * point.time / duration, y = valueY(point.value); context.fillStyle = index === selectedIndex ? '#ffffff' : '#d7ff54'; context.beginPath(); context.arc(x, y, index === selectedIndex ? 5 : 4, 0, Math.PI * 2); context.fill(); });
+    const cursorX = padX + plotWidth * Math.min(duration, time) / duration;
+    context.strokeStyle = '#ffffff9c'; context.setLineDash([3, 3]); context.beginPath(); context.moveTo(cursorX, padY); context.lineTo(cursorX, height - padY); context.stroke(); context.setLineDash([]);
+  };
+  const open = name => {
+    activeTrack = name; activeParam = 'volume'; selectedIndex = -1; selectedTime = null;
+    const info = stemInfo[name];
+    title.textContent = `${t('automation.title')} — ${t(info.titleKey)}`;
+    const params = Object.keys(ranges).filter(param => param === 'volume' || canAutomate(name, param));
+    select.innerHTML = params.map(param => `<option value="${param}">${t(`automation.param.${param}`)}</option>`).join('');
+    activeParam = 'volume'; select.value = activeParam;
+    render(); animated.show();
+  };
+  select.onchange = () => { activeParam = select.value; selectedIndex = -1; selectedTime = null; render(); };
+  chart.addEventListener('pointerdown', event => {
+    const state = getAutomation(activeTrack); state.lanes ||= {}; state.lanes[activeParam] ||= [];
+    const points = state.lanes[activeParam];
+    const rect = chart.getBoundingClientRect();
+    const [min, max] = ranges[activeParam];
+    const duration = Math.max(0.01, getDuration(activeTrack));
+    const px = event.clientX - rect.left, py = event.clientY - rect.top;
+    const plotWidth = rect.width - 24, plotHeight = rect.height - 20;
+    const nearest = points.map((point, index) => ({ point, index, x: 12 + plotWidth * point.time / duration, y: 10 + plotHeight * (1 - (point.value - min) / Math.max(0.001, max - min)) })).sort((a, b) => Math.hypot(a.x - px, a.y - py) - Math.hypot(b.x - px, b.y - py))[0];
+    if (nearest && Math.hypot(nearest.x - px, nearest.y - py) <= 16) {
+      draggedPoint = nearest.point; selectedIndex = nearest.index; selectedTime = draggedPoint.time;
+    } else {
+      const clampedTime = Math.max(0, Math.min(duration, (px - 12) / Math.max(1, plotWidth) * duration));
+      const clampedValue = max - Math.max(0, Math.min(1, (py - 10) / Math.max(1, plotHeight))) * (max - min);
+      if (!points.length && duration > 0.04) {
+        const baseline = getBaseValue(activeTrack, activeParam);
+        points.push({ time: 0, value: baseline }, { time: Math.round(duration * 100) / 100, value: baseline });
+      }
+      const point = { time: Math.round(clampedTime * 100) / 100, value: Math.round(clampedValue * 10) / 10 };
+      const existing = points.findIndex(candidate => Math.abs(candidate.time - point.time) < 0.04);
+      if (existing >= 0) { points[existing] = point; draggedPoint = point; }
+      else { points.push(point); draggedPoint = point; }
+      points.sort((a, b) => a.time - b.time); selectedIndex = points.indexOf(point); selectedTime = point.time;
+      onChange(activeTrack);
+    }
+    chart.setPointerCapture(event.pointerId); event.preventDefault(); render();
+  });
+  chart.addEventListener('pointermove', event => {
+    if (!draggedPoint) return;
+    const rect = chart.getBoundingClientRect(), [min, max] = ranges[activeParam];
+    const duration = getDuration(activeTrack), plotWidth = Math.max(1, rect.width - 24), plotHeight = Math.max(1, rect.height - 20);
+    const points = getAutomation(activeTrack).lanes[activeParam];
+    const proposedTime = Math.round(Math.max(0, Math.min(1, (event.clientX - rect.left - 12) / plotWidth)) * duration * 100) / 100;
+    const neighbors = points.filter(point => point !== draggedPoint).sort((a, b) => a.time - b.time);
+    const before = neighbors.filter(point => point.time <= proposedTime).at(-1)?.time ?? 0;
+    const after = neighbors.find(point => point.time > proposedTime)?.time ?? duration;
+    const minTime = points.length > 1 ? before + 0.01 : 0, maxTime = points.length > 1 ? after - 0.01 : duration;
+    draggedPoint.time = Math.max(minTime, Math.min(maxTime, proposedTime));
+    selectedTime = draggedPoint.time;
+    draggedPoint.value = Math.round((max - Math.max(0, Math.min(1, (event.clientY - rect.top - 10) / plotHeight)) * (max - min)) * 10) / 10;
+    points.sort((a, b) => a.time - b.time); selectedIndex = points.indexOf(draggedPoint); onChange(activeTrack); render();
+  });
+  const stopDrag = event => { if (!draggedPoint) return; draggedPoint = null; try { chart.releasePointerCapture(event.pointerId); } catch {} };
+  chart.addEventListener('pointerup', stopDrag); chart.addEventListener('pointercancel', stopDrag);
+  return { open, refresh: () => { if (activeTrack && modal.getAttribute('aria-hidden') === 'false') render(); }, close: animated.close };
 }
 
-function effectCard(effect, controls, available, targets) {
-  const scope = t('fx.availableOn', { tracks: effectTrackNames(effect, targets, t) });
+/** Pick one of the 24 common major/minor keys for all stems. */
+export function createKeyModal(trigger, { getKeys, getCurrentKey, getSourceKey, getAllKeys, onSourceChoose, onChoose }) {
+  const modal = document.querySelector('#keyModal');
+  const animated = createAnimatedModal(modal, '.key-close', trigger);
+  const options = modal.querySelector('#keyOptions');
+  const sourceWrap = modal.querySelector('#keySourceWrap');
+  const sourceSelect = modal.querySelector('#keySourceSelect');
+  const open = () => {
+    const renderOptions = () => {
+      const current = getCurrentKey();
+      const source = getSourceKey();
+      sourceWrap.classList.toggle('hidden', Boolean(source));
+      options.innerHTML = getKeys(source).map(key => `<button type="button" data-key-choice="${key.value}" class="${current === key.value ? 'active' : ''}" ${key.disabled || !source ? 'disabled' : ''}>${key.label}</button>`).join('');
+      options.querySelectorAll('[data-key-choice]:not(:disabled)').forEach(button => button.onclick = () => { if (onChoose(button.dataset.keyChoice) !== false) animated.close(); });
+    };
+    sourceSelect.innerHTML = `<option value="">${t('analysis.unknown')}</option>${getAllKeys().map(key => `<option value="${key.value}">${key.label}</option>`).join('')}`;
+    sourceSelect.value = getSourceKey() || '';
+    sourceSelect.onchange = () => { if (sourceSelect.value) onSourceChoose(sourceSelect.value); renderOptions(); };
+    renderOptions();
+    animated.show();
+  };
+  trigger.onclick = open;
+  return { open, close: animated.close };
+}
+
+// Render each effect as a card that can be placed directly on its track curve.
+function effectCard(effect, track, alreadyApplied) {
   const saturationLabel = effect.key === 'saturation' ? `<p class="eyebrow fx-bass-label">${t('fx.bass.label')}</p>` : '';
-  return `<article class="fx-effect-card${available ? '' : ' is-unavailable'}">${saturationLabel}<h3>${t(effect.title)}</h3><p>${t(effect.description)}</p><p class="fx-availability">${scope}</p>${available ? `<div class="fx-control-grid">${controls}</div>` : ''}</article>`;
+  const dragHint = alreadyApplied ? `<span class="fx-effect-state is-applied">${t('fx.alreadyApplied')}</span>` : `<span class="fx-effect-state">${t('fx.drag')}</span>`;
+  return `<article class="fx-effect-card${alreadyApplied ? ' is-applied' : ' is-draggable'}" ${alreadyApplied ? '' : `draggable="true" data-drag-effect="${effect.key}" data-drag-track="${track}" title="${t('fx.dragHint')}"`}>${dragHint}<div class="fx-effect-heading">${saturationLabel}<h3>${t(effect.title)}</h3></div><p>${t(effect.description)}</p></article>`;
 }
 
 /**
  * Create the Fx controller. The track/effect state belongs to app.js; this
  * module only renders controls and reports changes through callbacks.
  */
-export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, getValues, setValue }) {
+export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, getActiveEffects }) {
   const modal = document.querySelector('#fxModal');
   const animated = createAnimatedModal(modal, '.fx-close');
   const title = modal.querySelector('#fxModalTitle');
   const content = modal.querySelector('#fxModalContent');
+  document.addEventListener('dragend', () => modal.classList.remove('is-dragging-effect'));
 
   const open = (name) => {
     const info = stemInfo[name];
     const trackName = t(info.titleKey);
-    const values = getValues(name);
     title.textContent = t('fx.title', { track: trackName });
     const targets = { saturation: getSaturationTarget(), width: getWidthTarget() };
-    const cards = effectCatalog.map(effect => {
-      const available = effectIsAvailable(effect, name, targets);
-      let controls = '';
-      if (available && effect.key === 'eq') controls = [
-        controlMarkup('eqLow', 'fx.low', values.eqLow, -12, 12),
-        controlMarkup('eqMid', 'fx.mid', values.eqMid, -12, 12),
-        controlMarkup('eqHigh', 'fx.high', values.eqHigh, -12, 12),
-      ].join('');
-      else if (available && effect.key === 'bassBoost') controls = controlMarkup('bassBoost', 'fx.bassBoost.amount', values.bassBoost, 0, 100);
-      else if (available && effect.key === 'filters') controls = [
-        controlMarkup('highPass', 'fx.highPass', values.highPass, 0, 100),
-        controlMarkup('lowPass', 'fx.lowPass', values.lowPass, 0, 100),
-      ].join('');
-      else if (available) {
-        const labelKey = { compressor: 'fx.compression', reverb: 'fx.mix', delay: 'fx.mix', width: 'fx.width', ducking: 'fx.duck', saturation: 'fx.amount', bassBoost: 'fx.bassBoost.amount' }[effect.key] || 'fx.amount';
-        controls = controlMarkup(effect.key, labelKey, values[effect.key], effect.key === 'width' ? 0 : 0, effect.key === 'width' ? 200 : 100);
-      }
-      return effectCard(effect, controls, available, targets);
+    const activeEffects = getActiveEffects(name);
+    const cards = effectCatalog.filter(effect => effectIsAvailable(effect, name, targets)).map(effect => {
+      const alreadyApplied = activeEffects.includes(effect.key);
+      return effectCard(effect, name, alreadyApplied);
     });
     content.innerHTML = `<div class="fx-effect-grid">${cards.join('')}</div>`;
-    content.querySelectorAll('[data-effect-input]').forEach((input) => {
-      input.oninput = (event) => {
-        const key = event.currentTarget.dataset.effectInput;
-        const value = Number(event.currentTarget.value);
-        setValue(name, key, value);
-        content.querySelectorAll(`[data-effect-output="${key}"]`).forEach(output => { output.textContent = value; });
-      };
-    });
-
+    content.querySelectorAll('[data-drag-effect]').forEach(card => card.addEventListener('dragstart', event => {
+      event.dataTransfer.setData('application/x-audiosplit-effect', JSON.stringify({ track: card.dataset.dragTrack, effect: card.dataset.dragEffect }));
+      event.dataTransfer.effectAllowed = 'copy';
+      modal.classList.add('is-dragging-effect');
+      animated.close();
+    }));
     animated.show();
   };
 
@@ -229,19 +340,12 @@ export function createChangelogModal(trigger) {
   const animated = createAnimatedModal(modal, '.changelog-close', trigger);
   const list = modal.querySelector('.release-list');
   const releases = [...list.querySelectorAll('.release')];
-  const groups = new Map([['1.4', []], ['1.3', []], ['1.2', []], ['1.1', []], ['1.0', []]]);
-  releases.forEach((release) => {
-    const version = release.querySelector('h3')?.textContent.match(/\d+\.\d+/)?.[0];
-    if (groups.has(version)) groups.get(version).push(release);
+  releases.sort((a, b) => {
+    const version = element => (element.dataset.version || '0.0').split('.').map(Number);
+    const [aMajor, aMinor] = version(a), [bMajor, bMinor] = version(b);
+    return bMajor - aMajor || bMinor - aMinor;
   });
-  list.replaceChildren();
-  groups.forEach((items, version) => {
-    if (!items.length) return;
-    const heading = document.createElement('li');
-    heading.className = 'release-group';
-    heading.textContent = `Versions ${version}`;
-    list.append(heading, ...items);
-  });
+  list.replaceChildren(...releases);
   trigger.onclick = animated.show;
   return { close: animated.close };
 }

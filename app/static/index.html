@@ -5,35 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.4.4">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.4.4">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.17">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.17">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.4.4">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.4.4">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.4.4">
-  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.4.4">
-  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.4.4">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.4.4">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.17">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.17">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.17">
+  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.17">
+  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.17">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.17">
 </head>
 <body>
   <main>
     <!-- Application identity and local-processing status. -->
-    <header>
-      <img class="brand-logo" src="/logo/logov2snas%20fond%20%21.png" alt="AudioSplit Studio">
-      <div><h1>AudioSplit <span>Studio</span></h1><p data-i18n="app.tagline">Séparez. Mixez. Exportez.</p></div>
-      <span id="autosaveStatus" class="autosave-status" aria-live="polite"></span>
-      <button data-button-variant="primary" id="libraryButton" class="library-button" type="button" title="Projets enregistrés">Projets</button>
-      <button data-button-variant="primary" id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg><span data-i18n="language.trigger">FR</span></button>
-      <div class="local" data-i18n="app.local">● Traitement local</div>
+    <header class="app-header">
+      <div class="brand-lockup">
+        <img class="brand-logo" src="/logo/logov2snas%20fond%20%21.png" alt="AudioSplit Studio">
+        <div><h1>AudioSplit <span>Studio</span></h1><p data-i18n="app.tagline">Séparez. Mixez. Exportez.</p></div>
+      </div>
+      <nav class="app-nav" aria-label="Navigation"><button data-button-variant="primary" data-page="projects" id="libraryButton" class="library-button" type="button" title="Projets enregistrés">Projets</button><button data-button-variant="primary" data-page="home" class="nav-button" type="button" data-i18n="nav.home">Accueil</button><button data-button-variant="primary" data-page="studio" class="nav-button" type="button" data-i18n="nav.studio">Studio</button></nav>
+      <div class="header-tools">
+        <div class="header-utilities">
+          <button data-button-variant="primary" data-button-size="header-icon" id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg><span data-i18n="language.trigger">FR</span></button>
+          <div class="local" data-i18n="app.local">● Traitement local</div>
+        </div>
+      </div>
     </header>
+    <div id="status" class="status global-status is-visible is-idle" role="status" aria-live="polite" aria-atomic="true">
+      <span class="dynamic-island-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span id="statusText" class="dynamic-island-text">AudioSplit prêt</span>
+      <button id="statusMoreButton" class="dynamic-island-more" type="button" aria-label="Afficher les tâches du studio" aria-expanded="false" aria-controls="statusDetails" hidden>
+        <svg class="dynamic-island-stack" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>
+        <svg class="dynamic-island-check" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+        <svg class="dynamic-island-alert" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg>
+        <span id="statusTaskCount" class="dynamic-island-count"></span>
+      </button>
+      <span class="dynamic-island-progress" aria-hidden="true"><i id="statusProgressBar"></i></span>
+      <section id="statusDetails" class="dynamic-island-details" aria-label="Tâches du studio" aria-hidden="true" inert>
+        <h2 id="statusDetailsTitle">Activité du studio</h2>
+        <div id="statusTaskList" class="dynamic-island-task-list"></div>
+      </section>
+    </div>
 
     <!-- Import settings stay in the shell because they are not mixer-specific. -->
-    <section class="hero"><p class="eyebrow" data-i18n="hero.eyebrow">STUDIO DE STEMS</p><h2 data-i18n-html="hero.title">Redonnez de l’espace<br>à votre musique.</h2><p data-i18n="hero.description">Extrayez la voix, ajustez chaque piste et créez votre version stéréo.</p></section>
-    <aside class="v2-teaser" aria-labelledby="v2TeaserTitle">
-      <div class="v2-teaser-mark" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/><path d="m19 14 1.1 3.1L23 18l-2.9 1-1.1 3-1-3-3-1 3-.9L19 14Z"/></svg></div>
-      <div class="v2-teaser-copy"><p class="v2-teaser-kicker" data-i18n="v2.eyebrow">PROCHAINEMENT</p><h3 id="v2TeaserTitle" data-i18n="v2.title">AudioSplit Studio V2 arrive bientôt</h3><p data-i18n="v2.description">Un nouveau chapitre pour séparer et mixer vos morceaux se prépare.</p></div>
-      <span class="v2-teaser-version" aria-hidden="true">V2</span>
+    <section id="homePage" class="app-page"><section class="hero"><p class="eyebrow" data-i18n="hero.eyebrow">STUDIO DE STEMS</p><h2 data-i18n-html="hero.title">Redonnez de l’espace<br>à votre musique.</h2><p data-i18n="hero.description">Extrayez la voix, ajustez chaque piste et créez votre version stéréo.</p></section>
+    <aside class="release-highlight" aria-labelledby="releaseHighlightTitle">
+      <div class="release-highlight-mark" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/><path d="m19 14 1.1 3.1L23 18l-2.9 1-1.1 3-1-3-3-1 3-.9L19 14Z"/></svg></div>
+      <div class="release-highlight-copy"><p class="release-highlight-kicker" data-i18n="v15.eyebrow">VERSION DISPONIBLE</p><h3 id="releaseHighlightTitle" data-i18n="v15.title">AudioSplit Studio 1.5 est disponible</h3><p data-i18n="v15.description">Les nouveautés de cette version :</p><ul class="release-feature-list"><li data-i18n="v15.feature.projects">Pages Projets, Accueil et Studio</li><li data-i18n="v15.feature.automation">Automatisation temporelle du volume et des effets</li><li data-i18n="v15.feature.transform">Réglages du tempo et de la tonalité</li></ul></div>
+      <span class="release-highlight-version" aria-hidden="true">1.5</span>
     </aside>
+    <aside class="shortcuts-card" aria-labelledby="shortcutsTitle"><h3 id="shortcutsTitle" data-i18n="shortcuts.title">Raccourcis du lecteur</h3><p class="shortcuts-description" data-i18n="shortcuts.description">Disponibles dans le studio lorsqu’un mix est chargé.</p><div class="shortcuts-list"><div><kbd>Espace</kbd><span data-i18n="shortcuts.play">Lecture / pause</span></div><div><kbd>← / →</kbd><span data-i18n="shortcuts.seek">Reculer / avancer de 10 s</span></div><div><kbd>Maj + ← / →</kbd><span data-i18n="shortcuts.seekLarge">Reculer / avancer de 30 s</span></div><div><kbd>Début / Fin</kbd><span data-i18n="shortcuts.ends">Aller au début / à la fin</span></div></div></aside>
     <section id="importCard" class="card import-card">
       <input id="fileInput" type="file" accept="audio/mpeg,audio/wav,audio/flac,audio/mp4,audio/ogg,.mp3,.wav,.flac,.m4a,.ogg" hidden>
       <div class="upload-icon" aria-hidden="true"><svg class="upload-arrow lucide" viewBox="0 0 24 24" width="28" height="28"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg></div>
@@ -62,18 +83,18 @@
       </section>
       <button data-button-variant="secondary" id="separateButton" class="primary" disabled data-i18n="file.separate">Séparer la voix et l'accompagnement</button>
       <button data-button-variant="danger" id="cancelSeparationButton" class="cancel-separation hidden" type="button" disabled data-i18n="file.cancel">Annuler la séparation</button>
-      <p id="status" class="status" aria-live="polite"></p>
-    </section>
+    </section></section>
 
     <!-- Dynamic stem tracks are rendered by app.js after Demucs completes. -->
-    <section id="mixer" class="mixer hidden">
-      <div class="mixer-top"><div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div><div class="transport"><button data-button-variant="secondary" id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8V4Z"/></svg></button><button data-button-variant="primary" id="stopButton" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"/></svg></button></div></div>
+    <section id="studioPage" class="app-page hidden"><section id="mixer" class="mixer hidden">
+      <div class="mixer-top"><div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div><div class="transport-group"><div class="transport"><button data-button-variant="secondary" id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8V4Z"/></svg></button><button data-button-variant="primary" id="stopButton" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"/></svg></button></div><p class="keyboard-hint" data-i18n="shortcuts.studioHint">Espace : lecture/pause · ←/→ : ±10 s</p></div></div>
       <section id="transformPanel" class="transform-panel hidden" aria-labelledby="transformTitle">
         <div class="transform-heading"><div><h3 id="transformTitle" data-i18n="transform.title">Tempo et tonalité</h3><p data-i18n="transform.description">Modifiez toutes les pistes ensemble, puis préécoutez avant d’appliquer.</p></div><span id="transformStatus" class="transform-status" aria-live="polite"></span></div>
         <div class="transform-controls">
           <label><span data-i18n="transform.sourceBpm">Tempo d’origine (BPM)</span><input id="transformSourceBpm" type="number" min="40" max="240" step="0.1" inputmode="decimal"></label>
           <label><span data-i18n="transform.targetBpm">Tempo cible (BPM)</span><input id="transformTargetBpm" type="number" min="40" max="240" step="0.1" inputmode="decimal"></label>
-          <label><span data-i18n="transform.pitch">Transposition</span><select id="transformSemitones"><option value="-12">−12</option><option value="-11">−11</option><option value="-10">−10</option><option value="-9">−9</option><option value="-8">−8</option><option value="-7">−7</option><option value="-6">−6</option><option value="-5">−5</option><option value="-4">−4</option><option value="-3">−3</option><option value="-2">−2</option><option value="-1">−1</option><option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option><option value="11">+11</option><option value="12">+12</option></select></label>
+          <div class="tempo-presets" data-i18n-aria-label="transform.tempoRatios"><button type="button" data-button-variant="modal" data-tempo-factor="0.5" data-i18n-title="transform.factor50">½×</button><button type="button" data-button-variant="modal" data-tempo-factor="0.75" data-i18n-title="transform.factor75">¾×</button><button type="button" data-button-variant="modal" data-tempo-factor="1" data-i18n-title="transform.factor100">1×</button><button type="button" data-button-variant="modal" data-tempo-factor="1.25" data-i18n-title="transform.factor125">1¼×</button><button type="button" data-button-variant="modal" data-tempo-factor="1.5" data-i18n-title="transform.factor150">1½×</button></div>
+          <label><span data-i18n="transform.pitch">Transposition</span><div class="key-choice-row"><select id="transformSemitones"><option value="-12">−12</option><option value="-11">−11</option><option value="-10">−10</option><option value="-9">−9</option><option value="-8">−8</option><option value="-7">−7</option><option value="-6">−6</option><option value="-5">−5</option><option value="-4">−4</option><option value="-3">−3</option><option value="-2">−2</option><option value="-1">−1</option><option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option><option value="11">+11</option><option value="12">+12</option></select><button id="chooseKeyButton" type="button" data-button-variant="secondary" data-i18n="transform.chooseKey">Choisir une tonalité</button></div></label>
           <div class="transform-actions"><button type="button" data-button-variant="primary" id="previewTransformButton" data-i18n="transform.preview">Préécouter</button><button type="button" data-button-variant="secondary" id="applyTransformButton" data-i18n="transform.apply">Appliquer au mix</button><button type="button" data-button-variant="modal" id="resetTransformButton" data-i18n="transform.reset">Réinitialiser</button></div>
         </div>
         <div class="transform-comparison" aria-live="polite">
@@ -86,17 +107,17 @@
       </section>
       <div id="tracks" class="tracks"></div>
       <button data-button-variant="secondary" id="exportButton" class="export" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg><span data-i18n="export">Exporter le mixage WAV stéréo</span></button>
-    </section>
+    </section></section>
+    <div id="modalRoot"></div>
   </main>
 
   <button data-button-variant="danger" id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5m4-5v5"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
 
   <!-- The badge is always available; its dialog is loaded from a component file. -->
-      <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.4.4</strong></button>
-  <div id="modalRoot"></div>
+      <button data-button-variant="primary" id="versionButton" class="version-button" type="button" data-i18n-title="version.title" title="Voir l’historique des versions">AudioSplit <strong>v1.5</strong></button>
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.4.4"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.17"></script>
 </body>
 </html>

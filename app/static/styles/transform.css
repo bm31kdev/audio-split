@@ -25,6 +25,11 @@
   .transform-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .transform-actions { grid-column: 1 / -1; }
 }
+.tempo-presets { display: flex; align-items: end; gap: 5px; padding-bottom: 1px; }
+.tempo-presets button { min-width: 41px; min-height: 38px; padding: 6px 8px; font: 11px Consolas, monospace; }
+.transform-controls { align-items: end; }
+.key-choice-row { align-items: end; }
+@media (max-width: 680px) { .tempo-presets { grid-column: 1 / -1; } }
 @media (max-width: 480px) {
   .transform-panel { padding: 12px; }
   .transform-heading { flex-direction: column; gap: 5px; }

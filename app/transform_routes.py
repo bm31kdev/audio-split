@@ -39,13 +39,13 @@ def set_progress(request_id: str, *, status: str, completed: int, total: int, cu
         transform_progress[request_id] = {"status": status, "completed": completed, "total": total, "current": current, "updated": time.time()}
 
 
-def transform_cache_id(source_kind: str, source_id: str, source_dir: Path, names: list[str], tempo: float, pitch: float) -> str:
+def transform_cache_id(source_kind: str, source_id: str, source_dir: Path, names: list[str], tempo: float, pitch: float, pitch_targets: list[str] | None = None) -> str:
     files = []
     for name in names:
         path = source_dir / STEM_FILES[name]
         info = path.stat()
         files.append((STEM_FILES[name], info.st_size, info.st_mtime_ns))
-    signature = json.dumps((source_kind, source_id, files, round(tempo, 7), round(pitch, 7)), separators=(",", ":"))
+    signature = json.dumps((source_kind, source_id, files, round(tempo, 7), round(pitch, 7), sorted(names if pitch_targets is None else pitch_targets)), separators=(",", ":"))
     return hashlib.sha256(signature.encode("utf-8")).hexdigest()[:32]
 
 
@@ -84,13 +84,14 @@ def resolve_source(payload: dict, language: str) -> tuple[str, Path, list[str]]:
     raise HTTPException(404, localized(language, "Les stems d’origine ne sont plus disponibles. Rechargez le projet ou relancez la séparation.", "Original stems are unavailable. Reopen the project or separate the track again."))
 
 
-def render_stems(executable: str, source_dir: Path, names: list[str], output_dir: Path, tempo: float, pitch: float, language: str, request_id: str) -> dict:
-    filter_value = f"rubberband=tempo={tempo:.8f}:pitch={pitch:.8f}"
+def render_stems(executable: str, source_dir: Path, names: list[str], output_dir: Path, tempo: float, pitch: float, pitch_targets: list[str], language: str, request_id: str) -> dict:
     output_dir.mkdir(parents=True, exist_ok=False)
 
     def render_one(name: str) -> tuple[str, int]:
         source = source_dir / STEM_FILES[name]
         target = output_dir / STEM_FILES[name]
+        stem_pitch = pitch if name in pitch_targets else 1.0
+        filter_value = f"rubberband=tempo={tempo:.8f}:pitch={stem_pitch:.8f}"
         result = subprocess.run(
             [executable, "-hide_banner", "-loglevel", "error", "-y", "-threads", "1", "-i", str(source), "-vn", "-af", filter_value, "-c:a", "pcm_s16le", "-threads", "1", str(target)],
             capture_output=True, text=True, timeout=1800, check=False,
@@ -135,13 +136,20 @@ async def create_transform(payload: dict):
         raise HTTPException(400, localized(language, "La transposition doit rester entre −12 et +12 demi-tons.", "Pitch shift must stay between −12 and +12 semitones."))
 
     source_kind, source_dir, names = resolve_source(payload, language)
+    requested_targets = payload.get("pitchTargets")
+    if requested_targets is None:
+        pitch_targets = list(names)
+    elif not isinstance(requested_targets, list) or any(not isinstance(name, str) for name in requested_targets) or set(requested_targets) - set(names):
+        raise HTTPException(400, localized(language, "Les pistes de tonalité demandées sont invalides.", "The requested pitch tracks are invalid."))
+    else:
+        pitch_targets = list(dict.fromkeys(requested_targets))
     source_id = payload.get("projectId") if source_kind == "project" else payload.get("jobId")
-    if tempo == 1 and semitones == 0:
+    if tempo == 1 and (semitones == 0 or not pitch_targets):
         root = "/api/library/projects" if source_kind == "project" else "/api/jobs"
         return {"transformId": None, "stems": {name: f"{root}/{source_id}/{name}" for name in names}, "stemFileBytes": {name: (source_dir / STEM_FILES[name]).stat().st_size for name in names}}
 
     pitch_ratio = 2 ** (semitones / 12)
-    transform_id = transform_cache_id(source_kind, source_id, source_dir, names, tempo, pitch_ratio)
+    transform_id = transform_cache_id(source_kind, source_id, source_dir, names, tempo, pitch_ratio, pitch_targets)
     output_dir = TRANSFORM_ROOT / transform_id
     request_id = payload.get("requestId") if isinstance(payload.get("requestId"), str) and safe_id(payload["requestId"]) else uuid.uuid4().hex
     cached = not output_dir.is_symlink() and all((output_dir / STEM_FILES[name]).is_file() and (output_dir / STEM_FILES[name]).stat().st_size > 0 for name in names)
@@ -170,7 +178,7 @@ async def create_transform(payload: dict):
     prune_transform_cache(estimate)
     set_progress(request_id, status="rendering", completed=0, total=len(names))
     try:
-        sizes = await run_in_threadpool(render_stems, executable, source_dir, names, output_dir, tempo, pitch_ratio, language, request_id)
+        sizes = await run_in_threadpool(render_stems, executable, source_dir, names, output_dir, tempo, pitch_ratio, pitch_targets, language, request_id)
         prune_transform_cache(0, keep_id=transform_id)
         set_progress(request_id, status="completed", completed=len(names), total=len(names))
     except Exception:
