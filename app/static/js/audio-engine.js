@@ -450,6 +450,20 @@ export function drawWaveform(name, buffer) {
 export function bindTrackTimelineZoom() {
   const tracksRoot = $('#tracks');
   if (!tracksRoot) return;
+  const updatePinnedControls = track => {
+    const waveArea = track.querySelector('.wave-area');
+    const controls = track.querySelector('.automation-tools');
+    if (!waveArea || !controls) return;
+    controls.style.width = track.classList.contains('is-timeline-zoomed') ? `${waveArea.clientWidth}px` : '';
+  };
+  let observer = tracksRoot._timelineZoomObserver;
+  if (!observer) {
+    observer = new ResizeObserver(entries => entries.forEach(entry => updatePinnedControls(entry.target.closest('[data-track]'))));
+    tracksRoot._timelineZoomObserver = observer;
+  }
+  observer.disconnect();
+  tracksRoot.querySelectorAll('.wave-area').forEach(area => observer.observe(area));
+  tracksRoot.querySelectorAll('[data-track]').forEach(updatePinnedControls);
   tracksRoot.onwheel = event => {
     if (!event.ctrlKey) return;
     const track = event.target.closest?.('[data-track]');
@@ -464,6 +478,7 @@ export function bindTrackTimelineZoom() {
     track.classList.toggle('is-timeline-zoomed', next > 1);
     const content = track.querySelector('[data-wave-content]');
     if (content) content.style.width = `${next * 100}%`;
+    updatePinnedControls(track);
     if (tracks[track.dataset.track]) drawWaveform(track.dataset.track, tracks[track.dataset.track]);
     updatePlayheads();
   };

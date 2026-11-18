@@ -12,10 +12,10 @@
 .transport .transport-stop { color: #d8dce4; background: #222630; border-color: #414652; }
 .transport .transport-stop:hover:not(:disabled) { color: #fff; background: #332327; border-color: #96515c; }
 .transport .transport-stop-icon rect { fill: currentColor; stroke: none; }
-.tracks { display: grid; gap: 12px; }
+.tracks { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 
 /* Every stem uses the same grid: identity, Fx, pan, waveform, and level. */
-.track { display: grid; grid-template-columns: 44px minmax(112px, 142px) 42px 44px minmax(150px, 1fr) 56px; align-items: center; gap: 16px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.track { display: grid; width: 100%; min-width: 0; grid-template-columns: 44px minmax(112px, 142px) 42px 44px minmax(150px, 1fr) 56px; align-items: center; gap: 16px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
 .track.is-solo-active { border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); box-shadow: 0 0 16px #d7ff541c; }
 .track.is-solo-muted { opacity: .42; filter: grayscale(.85) saturate(.55); }
 .track-icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 11px; }
@@ -53,7 +53,7 @@
 .wave-area::-webkit-scrollbar-track { background: #121419; }
 .wave-content { position: relative; width: 100%; min-width: 100%; }
 .wave-area .waveform { display: block; width: 100%; height: 116px; cursor: crosshair; touch-action: none; background: #1c2028; border-radius: 7px; }
-.automation-tools { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 2px 0; color: var(--muted); font: 10px Consolas, 'Courier New', monospace; }
+.automation-tools { position: sticky; z-index: 4; left: 0; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 2px 0; color: var(--muted); font: 10px Consolas, 'Courier New', monospace; }
 .automation-lanes { display: flex; min-width: 0; flex: 1; align-items: center; gap: 5px; overflow-x: auto; scrollbar-width: none; }
 .automation-lanes::-webkit-scrollbar { display: none; }
 .automation-time { flex: 0 0 auto; color: var(--text); }
