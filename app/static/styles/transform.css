@@ -1,4 +1,4 @@
-/* Tempo and pitch controls apply the same offline render to every stem. */
+/* Tempo applies to all stems; pitch shift targets one selected stem. */
 .transform-panel { margin: 0 0 18px; padding: 16px; background: linear-gradient(130deg, #191d16, #15171d 68%); border: 1px solid #3c4930; border-radius: 12px; }
 .transform-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .transform-heading h3 { font-size: 15px; }
@@ -9,6 +9,7 @@
 .transform-controls input { width: 100%; min-width: 0; height: 36px; padding: 0 10px; color: var(--text); background: #111319; border: 1px solid #3c4350; border-radius: 7px; font: 12px Consolas, 'Courier New', monospace; }
 .transform-controls input:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
 .transform-controls input:invalid { border-color: var(--orange); }
+.transform-controls > label > .styled-select { width: 100%; min-width: 0; }
 .transform-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .transform-actions button { min-height: 36px; padding: 0 10px; font-size: 10px; }
 .transform-comparison { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 12px; padding: 11px 13px; background: #101218; border: 1px solid #303640; border-radius: 9px; }

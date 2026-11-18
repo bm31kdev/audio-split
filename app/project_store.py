@@ -196,7 +196,7 @@ def validate_mix_transform(payload: dict | None) -> dict:
     """Validate persisted tempo and pitch settings independently of audio files."""
     if payload is None:
         payload = {}
-    if not isinstance(payload, dict) or set(payload) - {"tempoRatio", "pitchSemitones", "sourceBpm", "targetBpm", "sourceKey", "targetKey"}:
+    if not isinstance(payload, dict) or set(payload) - {"tempoRatio", "pitchSemitones", "pitchTrack", "sourceBpm", "targetBpm", "sourceKey", "targetKey"}:
         raise HTTPException(400, "Project contains invalid tempo or pitch settings.")
     values = {}
     for key, default, low, high in (("tempoRatio", 1, 0.5, 2), ("pitchSemitones", 0, -12, 12)):
@@ -215,6 +215,10 @@ def validate_mix_transform(payload: dict | None) -> dict:
         if value is not None and (not isinstance(value, str) or value not in valid_keys):
             raise HTTPException(400, f"Project contains an invalid {key} value.")
         values[key] = value
+    pitch_track = payload.get("pitchTrack")
+    if pitch_track is not None and (not isinstance(pitch_track, str) or pitch_track not in {"vocals", "accompaniment", "drums", "bass", "other"}):
+        raise HTTPException(400, "Project contains an invalid pitchTrack value.")
+    values["pitchTrack"] = pitch_track
     return values
 
 

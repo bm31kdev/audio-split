@@ -1,6 +1,6 @@
 import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.5.0.22';
-import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.23';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.18';
+import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.24';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.24';
 import { libraryLabels } from './js/library-text.js?v=1.5.0.23';
 import { mountButtonComponent } from './js/button-component.js?v=1.5.0.20';
 import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.22';
@@ -208,6 +208,7 @@ async function openSavedProject(projectId) {
       decoded.push([name, await getAudioContext().decodeAudioData(bytes)]);
     }
     currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null, ...(project.transform || {}) };
+    currentMixTransform.pitchTrack = defaultPitchTrack(project.stems, currentMixTransform.pitchTrack);
     decoded.forEach(([name, buffer]) => {
       tracks[name] = buffer; effectsByTrack[name] = { ...effectDefaults, ...(project.effects?.[name] || {}) };
       const curve = project.automation?.[name] || { points: [{ time: 0, pan: 0 }, { time: buffer.duration, pan: 0 }], selected: 0 };
@@ -236,7 +237,7 @@ async function openSavedProject(projectId) {
       try { await renderTransform(currentMixTransform); }
       catch (error) {
         const detail = error.message || t('transform.error');
-        currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: currentMixTransform.sourceBpm, targetBpm: currentMixTransform.sourceBpm };
+        currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: currentMixTransform.sourceBpm, targetBpm: currentMixTransform.sourceBpm, pitchTrack: currentMixTransform.pitchTrack };
         renderedTransform = { ...currentMixTransform };
         setTransformInputs(currentMixTransform);
         syncTransformUi();
@@ -442,10 +443,35 @@ function setTransformStatus(key, state = '') {
   target.textContent = key ? t(key) : '';
   target.dataset.state = state;
 }
+function pitchableTracks(names = Object.keys(tracks)) {
+  return names.filter(name => !['vocals', 'drums'].includes(name) && Boolean(stemInfo[name]));
+}
+function defaultPitchTrack(names = Object.keys(tracks), preferred = null) {
+  const available = pitchableTracks(names);
+  if (available.includes(preferred)) return preferred;
+  return ['other', 'accompaniment', 'bass'].find(name => available.includes(name)) || available[0] || '';
+}
+function syncPitchTrackOptions(preferred = currentMixTransform.pitchTrack) {
+  const select = $('#transformPitchTrack');
+  if (!select) return '';
+  const available = pitchableTracks();
+  const selected = defaultPitchTrack(available, preferred);
+  const signature = available.join('|');
+  if (select.dataset.trackOptions !== signature) {
+    select.innerHTML = available.length
+      ? available.map(name => `<option value="${name}">${t(stemInfo[name].titleKey)}</option>`).join('')
+      : `<option value="">${t('transform.noPitchTracks')}</option>`;
+    select.dataset.trackOptions = signature;
+  }
+  select.disabled = !available.length;
+  select.value = selected;
+  return selected;
+}
 function setTransformInputs(transform) {
   $('#transformSourceBpm').value = transform.sourceBpm ?? '';
   $('#transformTargetBpm').value = transform.targetBpm ?? transform.sourceBpm ?? '';
   $('#transformSemitones').value = String(transform.pitchSemitones ?? 0);
+  syncPitchTrackOptions(transform.pitchTrack);
   $('#chooseKeyButton').textContent = `${t('transform.chooseKey')}${transform.targetKey ? ` · ${transform.targetKey}` : ''}`;
   syncTransformUi();
 }
@@ -462,11 +488,13 @@ function readTransformInputs() {
   if (tempoRatio < 0.5 || tempoRatio > 2) throw new Error(t('transform.tempoRangeError'));
   if (!Number.isInteger(pitchSemitones) || pitchSemitones < -12 || pitchSemitones > 12) throw new Error(t('transform.pitchRangeError'));
   const sourceKey = currentMixTransform.sourceKey || (currentJobId ? $('#analysisKey').value || currentMusicAnalysis?.key : null) || null;
-  return { tempoRatio, pitchSemitones, sourceBpm, targetBpm, sourceKey, targetKey: currentMixTransform.targetKey || null };
+  const pitchTrack = syncPitchTrackOptions($('#transformPitchTrack').value || currentMixTransform.pitchTrack);
+  return { tempoRatio, pitchSemitones, pitchTrack, sourceBpm, targetBpm, sourceKey, targetKey: currentMixTransform.targetKey || null };
 }
 function sameRenderParameters(a, b) {
   return Math.abs(Number(a.tempoRatio || 1) - Number(b.tempoRatio || 1)) < 0.0001
-    && Number(a.pitchSemitones || 0) === Number(b.pitchSemitones || 0);
+    && Number(a.pitchSemitones || 0) === Number(b.pitchSemitones || 0)
+    && (!(Number(a.pitchSemitones || 0) || Number(b.pitchSemitones || 0)) || (a.pitchTrack || '') === (b.pitchTrack || ''));
 }
 function sameTransform(a, b) {
   return sameRenderParameters(a, b) && (a.sourceBpm ?? null) === (b.sourceBpm ?? null)
@@ -481,11 +509,13 @@ function updateTransformSummary(transform) {
   const signedPitch = pitch > 0 ? `+${pitch}` : String(pitch);
   const sourceTonic = transform?.sourceKey ? ` · ${transform.sourceKey}` : '';
   const targetTonic = transform?.targetKey ? ` · ${transform.targetKey}` : '';
+  const targetTrack = Number(transform?.pitchSemitones || 0) && transform?.pitchTrack && stemInfo[transform.pitchTrack]
+    ? ` · ${t(stemInfo[transform.pitchTrack].titleKey)}` : '';
   const baseDuration = timelineDuration() / (Number(renderedTransform.tempoRatio) || 1);
   const resultDuration = Number.isFinite(baseDuration) ? baseDuration * (Number(transform?.tempoRatio) || 1) : 0;
   const durationLabel = seconds => seconds > 0 ? ` · ${formatTime(seconds)}` : '';
   $('#transformOriginalSummary').textContent = `${formatBpm(originalBpm)}${sourceTonic}${durationLabel(baseDuration)} · ${t('transform.semitonesValue', { value: 0 })}`;
-  $('#transformResultSummary').textContent = `${formatBpm(targetBpm)}${targetTonic}${durationLabel(resultDuration)} · ${t('transform.semitonesValue', { value: signedPitch })}`;
+  $('#transformResultSummary').textContent = `${formatBpm(targetBpm)}${targetTonic}${targetTrack}${durationLabel(resultDuration)} · ${t('transform.semitonesValue', { value: signedPitch })}`;
   const warning = $('#transformQualityWarning');
   const tempoChange = Math.abs(Number(transform?.tempoRatio || 1) - 1);
   const qualityMayDrop = Math.abs(pitch) >= 5 || tempoChange >= 0.1;
@@ -496,6 +526,7 @@ function syncTransformUi() {
   const panel = $('#transformPanel');
   if (!panel) return;
   const available = Object.keys(tracks).length > 0 && Boolean(currentJobId || activeProjectId);
+  syncPitchTrackOptions($('#transformPitchTrack')?.value || currentMixTransform.pitchTrack);
   panel.classList.toggle('hidden', !available);
   const mismatch = !sameRenderParameters(renderedTransform, currentMixTransform);
   $('#exportButton').disabled = !Object.keys(tracks).length || mismatch;
@@ -540,7 +571,7 @@ async function renderTransform(transform, { startPreview = false } = {}) {
   };
   try {
     const request = { tempoRatio: transform.tempoRatio, pitchSemitones: transform.pitchSemitones, language: getLanguage(), requestId };
-    if (transform.pitchSemitones) request.pitchTargets = Object.keys(tracks).filter(name => !['vocals', 'drums'].includes(name));
+    if (transform.pitchSemitones) request.pitchTargets = transform.pitchTrack ? [transform.pitchTrack] : [];
     if (activeProjectId) request.projectId = activeProjectId; else request.jobId = currentJobId;
     progressTimer = window.setInterval(refreshProgress, 500);
     void refreshProgress();
@@ -603,7 +634,7 @@ async function applyTransform() {
     currentMixTransform = { ...selected };
     syncTransformUi();
     markProjectDirty();
-    status(getLanguage() === 'en' ? 'Tempo and pitch changes applied to every track.' : 'Changements de tempo et de tonalité appliqués à toutes les pistes.');
+    status(getLanguage() === 'en' ? 'Tempo applied to all tracks; pitch shift applied only to the selected track.' : 'Tempo appliqué à toutes les pistes ; tonalité modifiée uniquement sur la piste choisie.');
   } catch (error) { console.error('Audio transform failed.', error); setTransformStatus(error.message || t('transform.error'), 'error'); status(error.message || t('transform.error'), true); }
 }
 $('#transformSourceBpm').oninput = syncTransformUi;
@@ -615,6 +646,7 @@ document.querySelectorAll('[data-tempo-factor]').forEach(button => button.onclic
   syncTransformUi();
 });
 $('#transformSemitones').onchange = syncTransformUi;
+$('#transformPitchTrack').onchange = syncTransformUi;
 function normalizedKey(value) { return String(value || '').replace('♯', '#').trim(); }
 function keySemitone(value) {
   const note = normalizedKey(value).split(/\s+/)[0];
@@ -751,7 +783,7 @@ async function separateAudio() {
     const detectedBpm = Number($('#analysisBpm').value);
     const sourceBpm = Number.isFinite(detectedBpm) && detectedBpm >= 40 && detectedBpm <= 240 ? detectedBpm : null;
     const sourceKey = $('#analysisKey').value || currentMusicAnalysis?.key || null;
-    currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm, targetBpm: sourceBpm, sourceKey, targetKey: sourceKey };
+    currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, pitchTrack: defaultPitchTrack(decoded.map(([name]) => name)), sourceBpm, targetBpm: sourceBpm, sourceKey, targetKey: sourceKey };
     renderedTransform = { ...currentMixTransform };
     setTransformInputs(currentMixTransform);
     if ($('#projectNameInput')) $('#projectNameInput').value = file.name.replace(/\.[^.]+$/, '');

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.23">
   <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
   <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.20">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.20">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.24">
 </head>
 <body>
   <main>
@@ -87,12 +87,13 @@
     <section id="studioPage" class="app-page hidden"><section id="mixer" class="mixer hidden">
       <div class="mixer-top"><div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div><div class="mixer-head-actions"><button type="button" data-button-variant="secondary" id="saveMixAsProjectButton" class="save-mix-project"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Enregistrer dans Projets</span></button><div class="transport-group"><div class="transport"><button data-button-variant="secondary" id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8V4Z"/></svg></button><button data-button-variant="primary" id="stopButton" class="transport-stop" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg class="lucide transport-stop-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button></div><p class="keyboard-hint" data-i18n="shortcuts.studioHint">Espace : lecture/pause · ←/→ : ±10 s</p></div></div></div>
       <section id="transformPanel" class="transform-panel hidden" aria-labelledby="transformTitle">
-        <div class="transform-heading"><div><h3 id="transformTitle" data-i18n="transform.title">Tempo et tonalité</h3><p data-i18n="transform.description">Modifiez toutes les pistes ensemble, puis préécoutez avant d’appliquer.</p></div><span id="transformStatus" class="transform-status" aria-live="polite"></span></div>
+        <div class="transform-heading"><div><h3 id="transformTitle" data-i18n="transform.title">Tempo et tonalité</h3><p data-i18n="transform.description">Le tempo agit sur toutes les pistes ; la tonalité seulement sur la piste choisie.</p></div><span id="transformStatus" class="transform-status" aria-live="polite"></span></div>
         <div class="transform-controls">
           <label><span data-i18n="transform.sourceBpm">Tempo d’origine (BPM)</span><input id="transformSourceBpm" type="number" min="40" max="240" step="0.1" inputmode="decimal"></label>
           <label><span data-i18n="transform.targetBpm">Tempo cible (BPM)</span><input id="transformTargetBpm" type="number" min="40" max="240" step="0.1" inputmode="decimal"></label>
           <div class="tempo-presets" data-i18n-aria-label="transform.tempoRatios"><button type="button" data-button-variant="modal" data-tempo-factor="0.5" data-i18n-title="transform.factor50">½×</button><button type="button" data-button-variant="modal" data-tempo-factor="0.75" data-i18n-title="transform.factor75">¾×</button><button type="button" data-button-variant="modal" data-tempo-factor="1" data-i18n-title="transform.factor100">1×</button><button type="button" data-button-variant="modal" data-tempo-factor="1.25" data-i18n-title="transform.factor125">1¼×</button><button type="button" data-button-variant="modal" data-tempo-factor="1.5" data-i18n-title="transform.factor150">1½×</button></div>
           <label><span data-i18n="transform.pitch">Transposition</span><div class="key-choice-row"><select id="transformSemitones"><option value="-12">−12</option><option value="-11">−11</option><option value="-10">−10</option><option value="-9">−9</option><option value="-8">−8</option><option value="-7">−7</option><option value="-6">−6</option><option value="-5">−5</option><option value="-4">−4</option><option value="-3">−3</option><option value="-2">−2</option><option value="-1">−1</option><option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option><option value="11">+11</option><option value="12">+12</option></select><button id="chooseKeyButton" type="button" data-button-variant="secondary" data-i18n="transform.chooseKey">Choisir une tonalité</button></div></label>
+          <label><span data-i18n="transform.pitchTrack">Piste à transposer</span><select id="transformPitchTrack" data-i18n-aria-label="transform.pitchTrack"></select></label>
           <div class="transform-actions"><button type="button" data-button-variant="primary" id="previewTransformButton" data-i18n="transform.preview">Préécouter</button><button type="button" data-button-variant="secondary" id="applyTransformButton" data-i18n="transform.apply">Appliquer au mix</button><button type="button" data-button-variant="modal" id="resetTransformButton" data-i18n="transform.reset">Réinitialiser</button></div>
         </div>
         <div class="transform-comparison" aria-live="polite">
@@ -116,6 +117,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.23"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.24"></script>
 </body>
 </html>
