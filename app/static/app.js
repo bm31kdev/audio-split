@@ -1,7 +1,7 @@
 import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.5.0.22';
-import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.22';
+import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.23';
 import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.18';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.18';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.23';
 import { mountButtonComponent } from './js/button-component.js?v=1.5.0.20';
 import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.22';
 import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.22';
@@ -71,6 +71,11 @@ function libraryActionIcon(action) {
   return lucideIcon(names[action], { size: 17 });
 }
 let libraryData = { folders: [] }, presetData = [], selectedFolderId = null;
+function updateStudioProjectButton() {
+  const button = $('#saveMixAsProjectButton');
+  const label = button?.querySelector('span');
+  if (label) label.textContent = activeProjectId ? libraryLabels().manageProject : libraryLabels().saveFromStudio;
+}
 async function refreshLibrary() {
   libraryData = await apiJson('/api/library');
   const presetResult = await apiJson('/api/library/presets');
@@ -91,6 +96,7 @@ function renderLibrary() {
   $('#importProjectButton').textContent = labels.importArchive;
   $('#saveProjectHeading').textContent = labels.currentTitle;
   $('#saveProjectHint').textContent = labels.hint || (getLanguage() === 'en' ? 'A project includes separated tracks and all mixer settings.' : 'Un projet contient les pistes séparées et tous les réglages du mixeur.');
+  updateStudioProjectButton();
   $('#projectNameInput').placeholder = labels.name;
   $('#saveProjectButton').textContent = activeProjectId ? labels.update : labels.save;
   $('#saveProjectPanel').classList.toggle('hidden', !Object.keys(tracks).length || (!currentJobId && !activeProjectId));
@@ -218,6 +224,7 @@ async function openSavedProject(projectId) {
     document.querySelector(`input[name="splitMode"][value="${currentMode}"]`).checked = true;
     document.querySelector(`input[name="engine"][value="${currentEngine}"]`).checked = true;
     currentJobId = null; activeProjectId = project.id; projectDirty = false;
+    updateStudioProjectButton();
     $('#fileName').textContent = currentSourceName;
     $('#projectNameInput').value = project.name;
     renderTracks(project.stems, project.settings || {});
@@ -290,6 +297,7 @@ function clearMixerForReplacement() {
   Object.keys(automationByTrack).forEach(name => delete automationByTrack[name]);
   currentJobId = null;
   activeProjectId = null;
+  updateStudioProjectButton();
   projectDirty = false;
   currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
   renderedTransform = { ...currentMixTransform };
@@ -315,6 +323,25 @@ function encodeWavInWorker(buffer, confirmPeak) {
     worker.onerror = (event) => { worker.terminate(); reject(new Error(event.message || 'WAV encoding worker failed.')); };
     worker.postMessage({ channels, sampleRate: buffer.sampleRate }, channels.map(channel => channel.buffer));
   });
+}
+async function openProjectSavePanel() {
+  if (!Object.keys(tracks).length) return;
+  try {
+    await refreshLibrary();
+    if (!libraryData.folders.length) {
+      const folder = await apiJson('/api/library/folders', { method: 'POST', body: JSON.stringify({ name: libraryLabels().defaultFolder }) });
+      selectedFolderId = folder.id;
+      await refreshLibrary();
+    }
+    showAppPage('projects');
+    requestAnimationFrame(() => {
+      $('#saveProjectPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('#projectNameInput').focus();
+      if (!activeProjectId) $('#projectNameInput').select();
+    });
+  } catch (error) {
+    status(userFacingError(error, 'status.actionError'), true);
+  }
 }
 async function exportMix() {
   // OfflineAudioContext renders the current mix without recording speaker output.
@@ -719,6 +746,7 @@ async function separateAudio() {
     currentMode = mode;
     currentEngine = engine;
     activeProjectId = null;
+    updateStudioProjectButton();
     projectDirty = false;
     const detectedBpm = Number($('#analysisBpm').value);
     const sourceBpm = Number.isFinite(detectedBpm) && detectedBpm >= 40 && detectedBpm <= 240 ? detectedBpm : null;
@@ -890,6 +918,7 @@ async function initializeModalComponents() {
       }
     };
     $('#saveProjectButton').onclick = () => void saveCurrentProject();
+    $('#saveMixAsProjectButton').onclick = () => void openProjectSavePanel();
     $('#saveFolderSelect').onchange = event => { selectedFolderId = event.target.value || null; };
     $('#projectSearchInput').oninput = () => renderLibrary();
     $('#projectSortSelect').onchange = () => renderLibrary();
