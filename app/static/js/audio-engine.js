@@ -1,24 +1,24 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.17';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.17';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.17';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.17';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.17';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.17';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.17';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.17';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.17';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.17';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.17';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.17';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.17';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.17';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.17';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.17';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.17';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.17';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.17';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.17';
-import { lucideIcon } from './lucide.js?v=1.5.0.17';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.18';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.18';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.18';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.18';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.18';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.18';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.18';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.18';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.18';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.18';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.18';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.18';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.18';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.18';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.18';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.18';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.18';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.18';
+import { lucideIcon } from './lucide.js?v=1.5.0.18';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -476,18 +476,20 @@ export const stemInfo = {
   other: { titleKey: 'stem.other', detailKey: 'stem.otherDetail', icon: 'spark' },
 };
 export function icon(name) {
-  const names = { mic: 'mic', wave: 'audio-lines', drum: 'drum', bass: 'guitar', spark: 'sparkles' };
+  const names = { mic: 'mic', wave: 'audio-lines', drum: 'drum', bass: 'bass', spark: 'sparkles' };
   return lucideIcon(names[name] || name);
 }
 export function speakerIcon(muted = false) { return lucideIcon(muted ? 'volume-x' : 'volume-2'); }
 export function playIcon() { return lucideIcon('play'); }
 export function pauseIcon() { return lucideIcon('pause'); }
+export function stopIcon() { return lucideIcon('stop', { className: 'transport-stop-icon' }); }
 export function setTransportState(state = 'stopped') {
   const playButton = $('#playButton'), stopButton = $('#stopButton');
   const isPlaying = state === 'playing', isPaused = state === 'paused';
   const hasTracks = Object.keys(tracks).length > 0;
   playButton.disabled = !hasTracks;
   playButton.innerHTML = isPlaying ? pauseIcon() : playIcon();
+  stopButton.innerHTML = stopIcon();
   const playLabel = isPlaying ? t('pause.title') : isPaused ? t('resume.title') : t('play.title');
   playButton.setAttribute('aria-label', playLabel);
   playButton.title = playLabel;

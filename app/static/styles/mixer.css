@@ -5,9 +5,13 @@
 .transport { display: flex; gap: 8px; }
 .transport-group { display: grid; justify-items: end; gap: 5px; }
 .keyboard-hint { color: var(--muted); font-size: 9px; white-space: nowrap; }
-.transport button { width: 38px; height: 38px; padding: 0; border-radius: 9px; }
-.transport svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.transport button { width: 38px; height: 38px; padding: 0; border-radius: 11px; }
+.transport svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .transport .play { color: #111709; background: var(--lime); border-color: var(--lime); }
+.transport .play svg path { fill: currentColor; stroke: currentColor; }
+.transport .transport-stop { color: #d8dce4; background: #222630; border-color: #414652; }
+.transport .transport-stop:hover:not(:disabled) { color: #fff; background: #332327; border-color: #96515c; }
+.transport .transport-stop-icon rect { fill: currentColor; stroke: none; }
 .tracks { display: grid; gap: 12px; }
 
 /* Every stem uses the same grid: identity, Fx, pan, waveform, and level. */
@@ -15,7 +19,8 @@
 .track.is-solo-active { border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); box-shadow: 0 0 16px #d7ff541c; }
 .track.is-solo-muted { opacity: .42; filter: grayscale(.85) saturate(.55); }
 .track-icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 11px; }
-.track-icon svg, .mute svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.track-icon svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.mute svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .vocals .track-icon { color: #f2a9e1; background: #39253a; }
 .accompaniment .track-icon { color: #8cdbff; background: #203744; }
 .drums .track-icon { color: #ffc76b; background: #3b3020; }
@@ -28,7 +33,7 @@
 .track-actions button.track-reset.audio-button { width: 28px; min-height: 28px; height: 28px; padding: 0; }
 .track-actions button.track-automation.audio-button { width: auto; min-width: 58px; min-height: 28px; height: 28px; gap: 4px; padding: 0 7px; font-size: 10px; }
 .track-automation svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.track-reset svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.track-reset svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .track .track-actions button.track-solo[aria-pressed="true"] { color: #171b0f; background: var(--lime); border-color: var(--lime); box-shadow: 0 0 14px #d7ff5459; }
 .track-meter { display: flex; align-items: center; gap: 5px; margin-top: 8px; color: var(--muted); font: 9px Consolas, 'Courier New', monospace; }
 .track-meter-label { flex: 0 0 auto; }

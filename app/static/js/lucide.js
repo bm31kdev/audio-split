@@ -11,14 +11,15 @@ const icons = {
   play: '<path d="m7 4 13 8-13 8V4Z"/>',
   pause: '<path d="M8 5v14M16 5v14"/>',
   square: '<rect x="4" y="4" width="16" height="16" rx="1"/>',
+  stop: '<rect x="7" y="7" width="10" height="10" rx="1.5"/>',
   mic: '<path d="M12 19v3"/><path d="M8 22h8"/><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2"/>',
   'audio-lines': '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>',
-  drum: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/><path d="m7 2 3 3m7-3-3 3"/>',
-  guitar: '<path d="M11.9 12.1 9.2 14.8"/><path d="m14.1 10.1 1.9-1.9 3.3-3.3a1.4 1.4 0 0 1 2 2L18 10.2l-1.9 1.9"/><path d="m6.5 15.5 2 2"/><path d="M10.4 8.7a3.1 3.1 0 0 0-4.4 0l-3.2 3.2a3.1 3.1 0 0 0 4.4 4.4l3.2-3.2a3.1 3.1 0 0 0 0-4.4Z"/><circle cx="7.2" cy="13.9" r=".7"/>',
+  drum: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5.2"/><path d="M12 20.5V22m-3 0h6M5.3 5.3l2.5 2.5m10.9-2.5-2.5 2.5"/>',
+  bass: '<path d="M14 4 20 10"/><path d="m17 7 4-4m-2 7 3 3"/><path d="M12 8.8a4.2 4.2 0 0 0-5.9 0l-3 3a4.2 4.2 0 1 0 5.9 5.9l3-3a4.2 4.2 0 0 0 0-5.9Z"/><path d="m9.4 10.5 7.8-7.8m-6.1 9.5 7.8-7.8"/>',
   sparkles: '<path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/><path d="m19 14 1.1 3.1L23 18l-2.9 1-1.1 3-1-3-3-1 3-.9L19 14Z"/>',
   'volume-2': '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>',
   'volume-x': '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>',
-  'rotate-ccw': '<path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.1-6.2L3 13"/>',
+  'rotate-ccw': '<path d="M3 2v6h6"/><path d="M3.05 13A9 9 0 1 0 5.64 5.64L3 8"/>',
   'sliders-horizontal': '<path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3"/><path d="M2 14h4m4-6h4m4 8h4"/>',
 };
 

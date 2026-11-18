@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.17">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.17">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.17">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.17">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.17">
-  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.17">
-  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.17">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.17">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.18">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.18">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.18">
+  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
+  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.18">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.18">
 </head>
 <body>
   <main>
@@ -87,7 +87,7 @@
 
     <!-- Dynamic stem tracks are rendered by app.js after Demucs completes. -->
     <section id="studioPage" class="app-page hidden"><section id="mixer" class="mixer hidden">
-      <div class="mixer-top"><div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div><div class="transport-group"><div class="transport"><button data-button-variant="secondary" id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8V4Z"/></svg></button><button data-button-variant="primary" id="stopButton" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1"/></svg></button></div><p class="keyboard-hint" data-i18n="shortcuts.studioHint">Espace : lecture/pause · ←/→ : ±10 s</p></div></div>
+      <div class="mixer-top"><div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div><div class="transport-group"><div class="transport"><button data-button-variant="secondary" id="playButton" class="play" aria-label="Écouter le mix" title="Écouter le mix"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8V4Z"/></svg></button><button data-button-variant="primary" id="stopButton" class="transport-stop" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg class="lucide transport-stop-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button></div><p class="keyboard-hint" data-i18n="shortcuts.studioHint">Espace : lecture/pause · ←/→ : ±10 s</p></div></div>
       <section id="transformPanel" class="transform-panel hidden" aria-labelledby="transformTitle">
         <div class="transform-heading"><div><h3 id="transformTitle" data-i18n="transform.title">Tempo et tonalité</h3><p data-i18n="transform.description">Modifiez toutes les pistes ensemble, puis préécoutez avant d’appliquer.</p></div><span id="transformStatus" class="transform-status" aria-live="polite"></span></div>
         <div class="transform-controls">
@@ -118,6 +118,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.17"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.18"></script>
 </body>
 </html>

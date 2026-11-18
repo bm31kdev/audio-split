@@ -1,5 +1,5 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.17';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.17';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.18';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
