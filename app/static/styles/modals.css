@@ -100,6 +100,7 @@
 .interaction-message { margin: 0; color: #d3d7df; font-size: 12px; line-height: 1.65; }
 .interaction-message.has-preserved-lines { white-space: pre-line; }
 .interaction-input-group { display: grid; gap: 7px; margin-top: 4px; color: #d3d7df; font-size: 11px; }
+.interaction-input-group.hidden { display: none; }
 .interaction-input-group input { width: 100%; min-width: 0; padding: 10px 12px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 13px Segoe UI, Arial, sans-serif; }
 .interaction-input-group input:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
 .interaction-exact-hint { margin-top: 8px; color: var(--orange); font-size: 10px; }
