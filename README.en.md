@@ -1,120 +1,63 @@
-# AudioSplit Studio — v1.5
+# AudioSplit Studio
 
-AudioSplit Studio separates a song directly on your Windows PC, lets you mix every extracted stem, and exports your own stereo WAV mix. The application is available in French and English.
+**Separate a song, shape every stem, and export a stereo mix — right on your PC.**
 
-> [Lire ce guide en français →](README.md)
->
-## Start the application
+[Lire la version française](README.md)
 
-Download or clone this repository, open PowerShell inside the project folder, then run this single command:
+## Get started
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
-```
-
-On the first run, the launcher does everything automatically:
-
-1. Installs Python 3.11 and FFmpeg if they are missing.
-2. Installs the pinned dependency versions for Windows and Python 3.11.
-3. Opens the app on port 8000, or automatically selects the first free port from 8000 to 8010 if that port is busy.
-
-When `Installation complete: OK` appears, the app is ready. The launcher prints the exact URL; if AudioSplit Studio is already running, it opens that instance. Keep the PowerShell window open while using AudioSplit Studio. Press `Ctrl+C` in that window to stop the server.
-
-> Already ran the command once? Run the exact same command again. It checks the existing setup and does not reinstall packages unnecessarily.
-
-After setup, you can also start the server manually with `powershell -ExecutionPolicy Bypass -File .\start.ps1`. This launcher opens an existing instance or selects a free port from 8000 to 8010.
-
-## Use AudioSplit Studio
-
-1. Pick a separation mode at the top of the page.
-2. Import an `MP3`, `WAV`, `FLAC`, `M4A`, or `OGG` file.
-3. Start local separation and wait for it to finish.
-4. Play the result, adjust tracks and effects, then export a stereo WAV mix.
-
-Confirmations, deletions, and name entry use dialogs styled as part of AudioSplit Studio instead of native browser pop-ups.
-
-### Music analysis
-
-As soon as you choose a file, AudioSplit analyzes it locally in the browser: tempo (BPM), key, and likely meter are estimated from the first 90 seconds. Duration, channel count, and sample rate describe the whole file; peak/RMS levels are measured from the analyzed excerpt. Bit depth is shown for WAV files when available in the file header. Estimates include a confidence indicator, and BPM/key fields can be corrected.
-
-After separation, the **Tempo and key** panel lets you enter original and target BPM values or choose a quick tempo ratio (½× to 1½×). Tempo affects every track. The key picker offers all 24 major and minor keys; pitch changes affect pitched instruments while preserving vocals and separately split drums. **Preview** renders synchronized tracks, then **Apply to mix** saves the result in the project and WAV export. Original stems remain intact. This uses FFmpeg's Rubber Band filter and limits tempo to 50–200% of the original BPM.
-
-### Local folders and projects
-
-The app has **Projects**, **Home**, and **Studio** pages. Projects is the starting page; Home is for importing audio, and Studio is for mixing. Open **Projects** to create folders and save each separation as a project. The suggested project name comes from the imported filename. Separated tracks and all mixer settings (volume, pan, mute, Solo, effects, and automation) are stored locally in `data/library/`, with no database. After the first save, changes are autosaved every 10 seconds. You can reopen, rename, or delete projects and folders after restarting the app. The cache-clearing button does not delete this library.
-
-The library can also search and sort projects, show their size and available disk space, and **duplicate** a session before trying a different mix. Mix presets store only volume, pan, effects, and automation settings, without copying audio files. Presets can be exported as JSON and imported on this or another installation. Presets and projects share a **20 GiB** library limit; the temporary separation cache has a separate **10 GiB** limit.
-
-### Pick the right separation mode
-
-| Goal | Mode | Result |
-| --- | --- | --- |
-| Make karaoke or isolate singing | **Vocals + accompaniment** | Vocal stem and music-without-vocals stem |
-| Edit a song precisely | **Detailed** | Vocals, drums/kicks, bass, and other instruments as separate tracks |
-
-During playback, volume, pan, mute, Solo, automation, and effect changes apply immediately. Open a track's automation editor, choose **Volume** or an available effect, and add a point at the playhead. The curve interpolates between points and can be edited by dragging them. Automation is included in WAV exports and saved with projects. Each track also keeps draggable pan points on its waveform. An alert appears before export if the peak is close to the digital maximum.
-
-## Language
-
-Use the small globe button in the top-right corner of the application to choose **Français** or **English**. The selection is saved in your browser and also applies to application messages.
-
-## Effects
-
-The Fx button beside each track gives access to context-appropriate effects:
-
-- 3-band EQ and high/low-pass filters on every track.
-- Compressor on vocals and bass.
-- Reverb and delay on vocals.
-- Stereo width on accompaniment or instruments.
-- Vocal ducking on non-vocal tracks.
-- Bass boost on the Bass track: a linear low-frequency filter without saturation.
-- Bass saturation on bass, or on accompaniment in simple mode.
-- Chorus, flanger, and phaser on vocals and instrument tracks.
-- Tremolo on vocals, drums, and instruments; bitcrusher on drums and instruments.
-- Noise gate on vocals and drums; de-esser on vocals only.
-- Limiter on every track and exciter on vocals and instrument tracks.
-
-Every card shows which tracks support the effect. Adjustments apply during playback and are included in the WAV export.
-
-## Notes
-
-- Processing happens entirely on your PC. Music files are never sent to an online service.
-- The first separation with each model makes Demucs download its weights from the internet into PyTorch's local cache. This may take several minutes and requires disk space; an offline first run fails until the model has been downloaded.
-- Later separation results may be loaded from AudioSplit's local cache.
-- Demucs currently uses the CPU, even when a compatible GPU is installed.
-- The export is a 16-bit PCM stereo WAV file.
-- Imports are limited to 512 MiB and 15 minutes. Detailed mode may allow a shorter duration depending on the memory required by its stems; the temporary cache is capped at 10 GiB and the app preserves a free-disk reserve.
-- The project library is capped at 20 GiB. Each project can be exported as a ZIP archive and imported later to back it up or move it; keep those archives on another drive to protect them from a PC disk failure.
-- Exports estimated to exceed the browser memory budget are rejected before rendering. A master limiter and automatic peak reduction protect the WAV from clipping.
-- **Clear AudioSplit cache** removes cached separations and temporary uploaded audio files from your PC. Your currently open mixer remains available until the page is reloaded.
-- Project manifest JSON files have a local `.bak` recovery copy. This does not replace a backup of the audio library itself.
-- Deleting a folder or project requires typing its exact name before its files are permanently removed.
-
-## Troubleshooting
-
-First, close PowerShell and the browser, then run the same startup command again:
+Download the repository, open PowerShell in the project folder, and run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 ```
 
-If `winget` is unavailable, install **App Installer** from the Microsoft Store and try again. The automatic launcher currently supports Windows only.
+On the first run, the script installs Python 3.11, FFmpeg, and the required packages if needed, then opens AudioSplit Studio in your browser. It prints the local address it uses. Keep the PowerShell window open while the app is running; press `Ctrl+C` to stop the server.
 
-## Project structure
+Run the same command next time. It checks the existing setup and skips reinstalling dependencies when nothing has changed. If the usual port is busy, it selects an available port from 8000 to 8010.
 
-The project intentionally stays simple: FastAPI runs Demucs locally in `app/main.py`, while the Web Audio mixer lives in `app/static/`. Temporary separations live in `data/jobs/` and `data/uploads/`. The persistent library lives in `data/library/` as folders, audio files, and JSON manifests, with no database. Local data is not versioned.
+> The automatic launcher is for Windows and uses `winget`. If `winget` is unavailable, install **App Installer** from the Microsoft Store. Internet access is needed for setup and the first Demucs model download.
 
-- `app/static/index.html`: application shell.
-- `app/static/components/`: Fx, language, project-library, and version-history modal HTML.
-- `app/static/js/i18n.js`: French/English UI dictionary and language persistence.
-- `app/static/js/audio-engine.js` and `track-state.js`: audio engine and mixer control state.
-- `app/static/js/effects/`: one Web Audio module per effect, including linear bass boost.
-- `app/static/js/modal-manager.js`: loading and lifecycle for modal components.
-- `app/static/app.js`: mixer orchestration, playback, export, and language-aware UI.
-- `requirements.txt` lists direct dependencies; `requirements-windows-py311.lock` pins transitive dependencies with SHA-256 hashes for Windows/Python 3.11.
+## Make a mix
 
-- `app/static/components/button.html` and `button-component.js`: reusable button template and shared visual variants.
+1. On **Home**, choose a separation mode and import an MP3, WAV, FLAC, M4A, or OGG file.
+2. Start local processing. Simple mode produces vocals and accompaniment; detailed mode also separates drums, bass, and other instruments.
+3. In **Studio**, listen to the stems and adjust each track’s volume, pan, mute, or Solo. Changes are heard immediately.
+4. Export the result as a stereo WAV file.
+
+Use the curves to automate volume, pan, and effects over time: add or drag points with the mouse. Each track’s **Fx** button opens the effects available for that track, such as EQ, compression, reverb, delay, or bass processing. These settings are included in playback, projects, and exports.
+
+AudioSplit also analyzes a song’s tempo and key. In Studio, preview and apply tempo or key changes to the mix. Vocals and separately split drums are preserved during transposition.
+
+Use the globe button in the top-right corner to switch the app between English and French.
+
+## Projects and files
+
+In **Projects**, create folders and save separations as projects. A project keeps the stems and mix settings; after the first save, changes are saved automatically every 10 seconds. You can also save mix presets and export or import them.
+
+Everything stays on this computer, with no database and no upload of your music to an online service:
+
+- Projects and presets are in `data/library/` and remain available after restarting the app.
+- Generated separations and temporary audio copies are in `data/jobs/` and `data/uploads/`.
+- **Clear AudioSplit cache** removes temporary data, not the project library.
+
+## Good to know
+
+- Demucs currently runs on the CPU. The first separation downloads model weights; later runs may reuse the local cache.
+- Files can be up to **512 MiB** and **15 minutes** long. Detailed separation and export can require substantial memory; the app blocks renders that exceed its safety limits.
+- The temporary cache is limited to **10 GiB** and the project library to **20 GiB**.
+- Exports are 16-bit PCM stereo WAV files.
+
+## If startup fails
+
+Run the setup command above again: it checks the environment and can repair dependencies. If PowerShell cannot find `winget`, install **App Installer**. If every port from 8000 to 8010 is occupied, close the other AudioSplit instance or the application using those ports, then try again.
+
+## Contributing
+
+The server uses Python and FastAPI; Demucs handles source separation. The interface and Web Audio mixer are in `app/static/`. API routes, the local project library, and presets are split into modules under `app/`. The app does not use a database.
+
+The Windows launcher uses Python 3.11 and `requirements-windows-py311.lock` for pinned dependencies. Direct dependencies are listed in `requirements.txt`.
 
 ## License
 
-The project code is distributed under the [MIT License](LICENSE). Third-party dependencies and resources remain subject to their own licenses.
+The project code is licensed under [MIT](LICENSE). Third-party dependencies retain their respective licenses.

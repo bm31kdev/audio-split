@@ -1,120 +1,63 @@
-# AudioSplit Studio — v1.5
+# AudioSplit Studio
 
-AudioSplit Studio permet de séparer une musique directement sur votre PC, de régler chaque piste extraite, puis d’exporter votre propre mixage WAV stéréo. L’application est disponible en français et en anglais.
+**Séparez une musique, façonnez chaque piste et exportez un mix stéréo — directement sur votre PC.**
 
-> [Read this guide in English →](README.en.md)
->
-## Démarrer l’application
+[Lire la version anglaise](README.en.md)
 
-Téléchargez ou clonez le projet, ouvrez PowerShell dans son dossier, puis lancez cette seule commande :
+## Démarrer
+
+Téléchargez le dépôt, ouvrez PowerShell dans le dossier du projet et lancez :
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
 ```
 
-Au premier lancement, le script fait tout automatiquement :
+Au premier lancement, le script installe Python 3.11, FFmpeg et les dépendances nécessaires s’ils manquent, puis ouvre AudioSplit Studio dans le navigateur. Il affiche l’adresse locale utilisée. Gardez la fenêtre PowerShell ouverte pendant l’utilisation ; `Ctrl+C` arrête le serveur.
 
-1. Installe Python 3.11 et FFmpeg s’ils sont absents.
-2. Installe les versions de dépendances épinglées pour Windows et Python 3.11.
-3. Ouvre l’application sur le port 8000, ou choisit automatiquement le premier port libre entre 8000 et 8010 si celui-ci est occupé.
+Relancez la même commande pour ouvrir l’application plus tard. Le script vérifie l’installation existante et évite de réinstaller les dépendances si elles n’ont pas changé. Il choisit un port libre entre 8000 et 8010 si le port habituel est occupé.
 
-Lorsque `Installation complete: OK` s’affiche, l’application est prête. Le lanceur affiche son adresse exacte ; si AudioSplit Studio tourne déjà, il ouvre cette instance. Gardez la fenêtre PowerShell ouverte pendant son utilisation. Pour arrêter le serveur, faites `Ctrl+C` dans cette fenêtre.
+> Le lanceur automatique est prévu pour Windows et utilise `winget`. Si `winget` est absent, installez **App Installer** depuis le Microsoft Store. Une connexion Internet est nécessaire à l’installation et au premier téléchargement des modèles Demucs.
 
-> Vous avez déjà utilisé cette commande ? Relancez exactement la même. Elle vérifie l’installation existante et ne réinstalle pas inutilement les paquets.
+## Faire un mix
 
-Après l’installation, vous pouvez aussi lancer le serveur manuellement avec `powershell -ExecutionPolicy Bypass -File .\start.ps1`. Ce lanceur ouvre l’instance déjà active ou choisit un port libre entre 8000 et 8010.
+1. Sur **Accueil**, choisissez le type de séparation et importez un fichier MP3, WAV, FLAC, M4A ou OGG.
+2. Lancez le traitement local. Le mode simple produit la voix et l’accompagnement ; le mode détaillé sépare aussi batterie, basse et autres instruments.
+3. Dans **Studio**, écoutez les pistes et ajustez leur volume, panoramique, sourdine ou Solo. Les changements s’entendent immédiatement.
+4. Exportez le résultat en WAV stéréo.
 
-## Utiliser AudioSplit Studio
+Les courbes permettent d’automatiser le volume, le panoramique et les effets dans le temps : ajoutez ou déplacez des points avec la souris. Le bouton **Fx** de chaque piste ouvre les effets disponibles pour cette piste, comme l’égaliseur, le compresseur, la réverbération, le delay ou les effets de basse. Les réglages sont inclus dans l’écoute, les projets et l’export.
 
-1. Choisissez un type de séparation en haut de la page.
-2. Importez un fichier `MP3`, `WAV`, `FLAC`, `M4A` ou `OGG`.
-3. Lancez la séparation locale et attendez sa fin.
-4. Écoutez le résultat, réglez les pistes et les effets, puis exportez un WAV stéréo.
+AudioSplit analyse aussi le tempo et la tonalité du morceau. Dans le Studio, vous pouvez préécouter puis appliquer un changement de tempo ou de tonalité au mix. La voix et la batterie séparée sont préservées lors de la transposition.
 
-Les confirmations, suppressions et saisies de nom utilisent des modaux AudioSplit intégrés à l’interface, au lieu des fenêtres natives du navigateur.
+Le bouton globe en haut à droite permet de passer l’application du français à l’anglais.
 
-### Analyse musicale
+## Projets et fichiers
 
-Dès qu’un fichier est choisi, AudioSplit l’analyse localement dans le navigateur : tempo (BPM), tonalité et mesure probable sont estimés sur les 90 premières secondes. La durée, le nombre de canaux et la fréquence d’échantillonnage décrivent le fichier entier ; les niveaux crête/RMS sont mesurés sur l’extrait analysé. La profondeur en bits est indiquée pour les WAV lorsque leur en-tête la fournit. Les estimations affichent leur niveau de confiance et les champs BPM/tonalité sont corrigeables.
+Dans **Projets**, créez des dossiers et enregistrez vos séparations sous forme de projets. Un projet conserve les pistes et les réglages du mix ; après le premier enregistrement, il est sauvegardé automatiquement toutes les 10 secondes. Vous pouvez aussi enregistrer des préréglages de mix, puis les exporter ou les importer.
 
-Après séparation, le panneau **Tempo et tonalité** permet de saisir le BPM d’origine et une cible, ou de choisir un ratio rapide (½× à 1½×). Le tempo est appliqué à toutes les pistes. Le sélecteur de tonalité propose les 24 tonalités majeures et mineures ; il transpose les pistes instrumentales et préserve la voix ainsi que la batterie séparée. **Préécouter** lance un rendu synchronisé, puis **Appliquer au mix** conserve le résultat dans le projet et dans l’export WAV. Les stems sources restent intacts. La transformation utilise le filtre Rubber Band de FFmpeg et limite le tempo à 50–200 % du BPM d’origine.
+Tout reste sur cet ordinateur, sans base de données ni envoi de vos musiques à un service en ligne :
 
-### Choisir le bon type de séparation
-
-| Votre objectif | Mode | Résultat |
-| --- | --- | --- |
-| Faire un karaoké ou isoler le chant | **Voix + accompagnement** | Une piste voix et une piste musique sans voix |
-| Retoucher précisément un morceau | **Détaillée** | Voix, batterie/kicks, basse et autres instruments séparés |
-
-Pendant la lecture, les réglages de volume, panoramique, sourdine, Solo, automatisation et effets sont appliqués immédiatement. Ouvrez le bouton d’automatisation d’une piste, choisissez **Volume** ou un effet, puis ajoutez un point à la position de lecture. La courbe interpolée se modifie à la souris ; les mêmes changements sont inclus dans l’export WAV et sauvegardés dans le projet. Chaque piste affiche son niveau et garde aussi les points de panoramique directement sur sa forme d’onde.
-
-### Dossiers et projets locaux
-
-L’application présente trois pages **Projets**, **Accueil** et **Studio**. Elle s’ouvre sur la bibliothèque Projets ; Accueil sert à importer une musique et Studio au mixage. Ouvrez **Projets** pour créer des dossiers et enregistrer chaque séparation comme un projet. Le nom proposé reprend celui du fichier importé. Les pistes séparées et tous les réglages du mixeur (volume, panoramique, sourdine, Solo, effets et automation) sont sauvegardés localement dans `data/library/`, sans base de données. Après le premier enregistrement, les changements sont sauvegardés automatiquement toutes les 10 secondes. Vous pouvez rouvrir, renommer ou supprimer les projets et dossiers après avoir redémarré l’application. Le bouton de vidage du cache ne supprime pas cette bibliothèque.
-
-La bibliothèque permet aussi de rechercher et trier les projets, d’afficher leur taille et l’espace disque disponible, et de **dupliquer** une session avant d’essayer un autre mix. Les préréglages stockent uniquement les volumes, panoramiques, effets et courbes, sans recopier les fichiers audio. Ils peuvent être exportés en JSON puis importés sur cette installation ou une autre. Les préréglages et projets partagent la limite de bibliothèque de **20 Gio** ; le cache temporaire des séparations a une limite distincte de **10 Gio**.
-
-## Changer la langue
-
-Utilisez le petit bouton globe en haut à droite de l’application pour choisir **Français** ou **English**. Le choix est enregistré dans votre navigateur et s’applique aussi aux messages de l’application.
-
-## Effets
-
-Le bouton **Fx** à côté de chaque piste affiche les effets pertinents :
-
-- Égaliseur 3 bandes et filtres passe-haut/passe-bas sur toutes les pistes.
-- Compresseur sur la voix et la basse.
-- Reverb et delay sur la voix.
-- Largeur stéréo sur l’accompagnement ou les instruments.
-- Ducking voix sur les pistes non vocales.
-- Boost basse sur la piste Basse : filtre linéaire de graves, sans saturation.
-- Saturation basse sur la basse, ou sur l’accompagnement en mode simple.
-- Chorus, flanger et phaser sur la voix et les pistes d’instruments.
-- Trémolo sur la voix, la batterie et les instruments ; bitcrusher sur la batterie et les instruments.
-- Noise gate sur la voix et la batterie ; de-esser sur la voix uniquement.
-- Limiteur sur toutes les pistes et exciter sur la voix et les pistes d’instruments.
-
-Chaque carte indique les pistes compatibles. Les réglages s’appliquent pendant l’écoute et sont inclus dans l’export WAV.
+- Les projets et préréglages sont dans `data/library/` et restent disponibles après redémarrage.
+- Les séparations calculées et copies temporaires sont dans `data/jobs/` et `data/uploads/`.
+- **Vider le cache AudioSplit** supprime les données temporaires, pas la bibliothèque de projets.
 
 ## À savoir
 
-- Le traitement se fait entièrement sur votre PC : les musiques ne sont jamais envoyées à un service en ligne.
-- Lors de la première séparation avec chaque modèle, Demucs télécharge automatiquement ses poids depuis Internet dans le cache local de PyTorch. Le téléchargement peut prendre plusieurs minutes et nécessite de l’espace disque ; une première séparation hors ligne échouera tant que le modèle n’aura pas été téléchargé.
-- Les résultats de séparation suivants peuvent venir du cache AudioSplit local.
-- Demucs utilise actuellement le processeur, même si une carte graphique compatible est installée.
-- L’export est un WAV PCM stéréo 16 bits.
-- Les imports sont limités à 512 Mio et 15 minutes. Les modes détaillés peuvent être limités à une durée plus courte selon la mémoire requise par les stems ; le cache temporaire est plafonné à 10 Gio et l’application garde une marge d’espace disque.
-- La bibliothèque de projets est plafonnée à 20 Gio. Chaque projet peut être exporté en archive ZIP puis importé pour le sauvegarder ou le transférer ; gardez ces archives sur un autre disque si vous voulez protéger vos sauvegardes d’une panne du PC.
-- L’export refuse un rendu estimé trop volumineux pour éviter de saturer la mémoire du navigateur. Un limiteur master et une réduction automatique des crêtes évitent l’écrêtage du WAV.
-- **Vider le cache AudioSplit** supprime les séparations enregistrées et les fichiers audio temporaires de votre PC. Le mixeur actuellement ouvert reste utilisable jusqu’au rechargement de la page.
-- Les manifestes de projet ont une sauvegarde locale `.bak` pour récupérer un JSON corrompu ; cela ne remplace pas une copie de sauvegarde de la bibliothèque audio.
-- Pour supprimer un dossier ou un projet, l’application demande de retaper son nom exact avant d’effacer définitivement ses fichiers.
+- Demucs fonctionne actuellement sur le processeur. Le premier traitement télécharge les poids du modèle ; les suivants peuvent réutiliser le cache local.
+- Un fichier peut peser jusqu’à **512 Mio** et durer jusqu’à **15 minutes**. Le mode détaillé et l’export peuvent demander beaucoup de mémoire ; l’application bloque les rendus qui dépasseraient ses limites de sécurité.
+- Le cache temporaire est limité à **10 Gio** et la bibliothèque de projets à **20 Gio**.
+- L’export est un WAV stéréo PCM 16 bits.
 
-## En cas de problème
+## Si le démarrage échoue
 
-Commencez par fermer PowerShell et le navigateur, puis relancez la commande de démarrage :
+Relancez la commande d’installation ci-dessus : elle vérifie l’environnement et peut réparer les dépendances. Si l’erreur indique que `winget` est introuvable, installez **App Installer**. Si tous les ports 8000 à 8010 sont occupés, fermez l’autre instance ou l’application qui les utilise, puis réessayez.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-and-run.ps1
-```
+## Pour contribuer
 
-Si `winget` est introuvable, installez **App Installer** depuis le Microsoft Store, puis relancez la commande. Le lanceur automatique prend actuellement en charge Windows uniquement.
+Le serveur est écrit en Python avec FastAPI ; Demucs réalise la séparation. L’interface et le mixeur Web Audio sont dans `app/static/`. Les routes, la bibliothèque locale et les préréglages sont organisés en modules sous `app/`. Il n’y a pas de base de données.
 
-## Structure du projet
-
-Le projet reste volontairement simple : `app/main.py` assemble FastAPI et ses middlewares ; les routes de séparation et de bibliothèque, l’état local et les utilitaires sont répartis dans des modules dédiés. Le mixeur Web Audio se trouve dans `app/static/`, avec un module par effet. Les séparations temporaires sont dans `data/jobs/` et `data/uploads/`. La bibliothèque durable se trouve dans `data/library/`, sous forme de dossiers, fichiers audio et manifestes JSON, sans base de données. Ces données locales ne sont pas versionnées.
-
-- `app/static/index.html` : structure principale de l’application.
-- `app/static/components/` : HTML des modals Fx, langue, bibliothèque de projets et historique des versions.
-- `app/static/js/i18n.js` : dictionnaires français/anglais et sauvegarde du choix de langue.
-- `app/static/js/audio-engine.js` et `track-state.js` : moteur audio et état des contrôles du mixeur.
-- `app/static/js/effects/` : un module Web Audio par effet, dont le boost basse linéaire.
-- `app/static/js/modal-manager.js` : chargement et cycle de vie des modals.
-- `app/static/app.js` : orchestration du mixeur, de la lecture, de l’export et de l’interface multilingue.
-- `requirements.txt` décrit les dépendances principales ; `requirements-windows-py311.lock` verrouille leurs dépendances indirectes avec hashes SHA-256 pour Windows/Python 3.11.
-
-- `app/static/components/button.html` et `button-component.js` : bouton réutilisable et variantes visuelles communes.
+Le lanceur Windows utilise Python 3.11 et le fichier `requirements-windows-py311.lock` pour installer des dépendances verrouillées. Les dépendances directes sont listées dans `requirements.txt`.
 
 ## Licence
 
-Le code du projet est distribué sous licence [MIT](LICENSE). Les dépendances et ressources tierces restent soumises à leurs propres licences.
+Le code du projet est sous licence [MIT](LICENSE). Les dépendances tierces conservent leurs licences respectives.
