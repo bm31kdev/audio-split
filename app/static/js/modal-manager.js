@@ -295,9 +295,8 @@ export function createKeyModal(trigger, { getKeys, getCurrentKey, getSourceKey, 
 
 // Render each effect as a card that can be placed directly on its track curve.
 function effectCard(effect, track, alreadyApplied) {
-  const saturationLabel = effect.key === 'saturation' ? `<p class="eyebrow fx-bass-label">${t('fx.bass.label')}</p>` : '';
   const dragHint = alreadyApplied ? `<span class="fx-effect-state is-applied">${t('fx.alreadyApplied')}</span>` : `<span class="fx-effect-state">${t('fx.drag')}</span>`;
-  return `<article class="fx-effect-card${alreadyApplied ? ' is-applied' : ' is-draggable'}" ${alreadyApplied ? '' : `draggable="true" data-drag-effect="${effect.key}" data-drag-track="${track}" title="${t('fx.dragHint')}"`}>${dragHint}<div class="fx-effect-heading">${saturationLabel}<h3>${t(effect.title)}</h3></div><p>${t(effect.description)}</p></article>`;
+  return `<article class="fx-effect-card${alreadyApplied ? ' is-applied' : ' is-draggable'}" ${alreadyApplied ? '' : `draggable="true" data-drag-effect="${effect.key}" data-drag-track="${track}" title="${t('fx.dragHint')}"`}>${dragHint}<div class="fx-effect-heading"><h3>${t(effect.title)}</h3></div><p>${t(effect.description)}</p></article>`;
 }
 
 /**

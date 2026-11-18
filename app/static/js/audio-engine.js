@@ -83,6 +83,7 @@ function renderTaskIsland() {
   if (!island || !message || !more) return;
   const tasks = [...islandTasks.values()].sort((a, b) => b.priority - a.priority || b.updatedAt - a.updatedAt);
   const primary = tasks[0];
+  const secondary = tasks[1];
   const english = getLanguage() === 'en';
   message.textContent = primary?.message || '';
   island.setAttribute('aria-label', primary?.message || (english ? 'AudioSplit Studio is ready' : 'AudioSplit Studio est prêt'));
@@ -95,6 +96,7 @@ function renderTaskIsland() {
   island.classList.toggle('is-complete', primary?.state === 'complete');
   island.classList.toggle('is-playing', primary?.state === 'playing');
   island.classList.toggle('is-paused', primary?.state === 'paused');
+  island.classList.toggle('has-secondary-task', Boolean(secondary));
   island.title = primary?.message || (english ? 'AudioSplit Studio is ready' : 'AudioSplit Studio est prêt');
   const progressBar = $('#statusProgressBar');
   if (progressBar) {
@@ -105,11 +107,26 @@ function renderTaskIsland() {
     island.classList.toggle('is-indeterminate', Boolean(primary?.state === 'progress' && progress === null));
   }
 
-  more.hidden = tasks.length < 2;
-  more.classList.toggle('has-complete', tasks.some(task => task.state === 'complete'));
-  more.classList.toggle('has-error', tasks.some(task => task.state === 'error'));
-  $('#statusTaskCount').textContent = String(Math.min(tasks.length, 9));
-  more.setAttribute('aria-label', english ? `Show ${tasks.length} studio tasks` : `Afficher les ${tasks.length} tâches du studio`);
+  more.hidden = !secondary;
+  more.dataset.taskState = secondary?.state || '';
+  const glyphs = {
+    progress: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    saving: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+    dirty: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+    waiting: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    playing: '<path d="M4 10v4m4-8v12m4-15v18m4-14v10m4-7v4"/>',
+    paused: '<path d="M8 5v14M16 5v14"/>',
+    complete: '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
+    error: '<path d="M10.3 3.9 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/>',
+  };
+  $('#statusSecondaryGlyph').innerHTML = `<svg viewBox="0 0 24 24">${glyphs[secondary?.state] || '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>'}</svg>`;
+  const extraCount = Math.max(0, tasks.length - 2);
+  $('#statusTaskCount').hidden = extraCount === 0;
+  $('#statusTaskCount').textContent = extraCount > 9 ? '9+' : `+${extraCount}`;
+  more.title = secondary?.message || '';
+  more.setAttribute('aria-label', secondary
+    ? (english ? `Next: ${secondary.message}${extraCount ? `. ${extraCount} more tasks` : ''}. Show activity` : `Ensuite : ${secondary.message}${extraCount ? `. ${extraCount} autre${extraCount > 1 ? 's' : ''} tâche${extraCount > 1 ? 's' : ''}` : ''}. Afficher l’activité`)
+    : (english ? 'Show studio activity' : 'Afficher l’activité du studio'));
   more.setAttribute('aria-expanded', String(islandExpanded && tasks.length > 1));
   const details = $('#statusDetails'), list = $('#statusTaskList'), title = $('#statusDetailsTitle');
   if (details && list && title) {

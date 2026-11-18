@@ -8,9 +8,9 @@
   <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.20">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.21">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.20">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.22">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.22">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.22">
   <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
   <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.20">
   <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.20">
@@ -34,11 +34,9 @@
     <div id="status" class="status global-status is-visible is-idle" role="status" aria-live="polite" aria-atomic="true">
       <span class="dynamic-island-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
       <span id="statusText" class="dynamic-island-text">AudioSplit prêt</span>
-      <button id="statusMoreButton" class="dynamic-island-more" type="button" aria-label="Afficher les tâches du studio" aria-expanded="false" aria-controls="statusDetails" hidden>
-        <svg class="dynamic-island-stack" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>
-        <svg class="dynamic-island-check" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
-        <svg class="dynamic-island-alert" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg>
-        <span id="statusTaskCount" class="dynamic-island-count"></span>
+      <button id="statusMoreButton" class="dynamic-island-more" type="button" aria-label="Afficher la tâche suivante" aria-expanded="false" aria-controls="statusDetails" hidden>
+        <span id="statusSecondaryGlyph" class="dynamic-island-secondary-glyph" aria-hidden="true"></span>
+        <span id="statusTaskCount" class="dynamic-island-count" hidden></span>
       </button>
       <span class="dynamic-island-progress" aria-hidden="true"><i id="statusProgressBar"></i></span>
       <section id="statusDetails" class="dynamic-island-details" aria-label="Tâches du studio" aria-hidden="true" inert>
@@ -118,6 +116,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.21"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.22"></script>
 </body>
 </html>
