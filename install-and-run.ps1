@@ -68,23 +68,6 @@ function Enable-FFmpeg {
     if ($LASTEXITCODE -ne 0) { throw 'FFmpeg did not start correctly.' }
 }
 
-$runtimeAlreadyValidated = (Test-Path -LiteralPath $runtimeStamp) -and ((Get-Content -LiteralPath $runtimeStamp -Raw).Trim() -eq $requirementsHash)
-if ($runtimeAlreadyValidated) {
-    Write-Host 'Python audio : OK (quick check)' -ForegroundColor Green
-} else {
-    Write-Host 'First PyTorch startup check: loading the audio engine can take a little while...' -ForegroundColor Yellow
-    & $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
-    $validationExitCode = $LASTEXITCODE
-    if ($validationExitCode -ne 0 -and -not $needsDependencyInstall) {
-        Write-Host 'The existing environment failed its first audio check; repairing dependencies...' -ForegroundColor Yellow
-        Install-AudioSplitDependencies
-        & $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
-        $validationExitCode = $LASTEXITCODE
-    }
-    if ($validationExitCode -ne 0) { throw 'Python audio runtime validation failed.' }
-    [System.IO.File]::WriteAllText($runtimeStamp, $requirementsHash)
-}
-
 Write-Host ''
 Write-Host 'AudioSplit Studio - automatic setup' -ForegroundColor Green
 $python311 = Get-Python311
@@ -101,7 +84,8 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
 $requirementsHash = (Get-FileHash -LiteralPath $requirementsPath -Algorithm SHA256).Hash + (Get-FileHash -LiteralPath $requirementsLockPath -Algorithm SHA256).Hash
 $needsDependencyInstall = $createdVenv -or -not (Test-Path -LiteralPath $requirementsStamp)
 if (-not $needsDependencyInstall) {
-    $installedHash = (Get-Content -LiteralPath $requirementsStamp -Raw).Trim()
+    $installedStamp = Get-Content -LiteralPath $requirementsStamp -Raw -ErrorAction SilentlyContinue
+    $installedHash = if ([string]::IsNullOrWhiteSpace($installedStamp)) { '' } else { $installedStamp.Trim() }
     $needsDependencyInstall = $installedHash -ne $requirementsHash
 }
 
@@ -125,6 +109,34 @@ if ($validationExitCode -ne 0 -and -not $needsDependencyInstall) {
     $validationExitCode = $LASTEXITCODE
 }
 if ($validationExitCode -ne 0) { throw 'Python dependency validation failed.' }
+
+# Check the expensive Torch/Demucs imports only after the dependency hash exists.
+# Empty or damaged stamp files are treated as cache misses instead of null dereferences.
+$runtimeAlreadyValidated = $false
+if (-not $needsDependencyInstall -and (Test-Path -LiteralPath $runtimeStamp)) {
+    $runtimeStampContent = Get-Content -LiteralPath $runtimeStamp -Raw -ErrorAction SilentlyContinue
+    if (-not [string]::IsNullOrWhiteSpace($runtimeStampContent)) {
+        $runtimeAlreadyValidated = $runtimeStampContent.Trim() -eq $requirementsHash
+    }
+}
+if (-not $runtimeAlreadyValidated -and (Test-Path -LiteralPath $runtimeStamp)) {
+    Remove-Item -LiteralPath $runtimeStamp -Force
+}
+if ($runtimeAlreadyValidated) {
+    Write-Host 'Python audio : OK (quick check)' -ForegroundColor Green
+} else {
+    Write-Host 'First PyTorch startup check: loading the audio engine can take a little while...' -ForegroundColor Yellow
+    & $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
+    $validationExitCode = $LASTEXITCODE
+    if ($validationExitCode -ne 0 -and -not $needsDependencyInstall) {
+        Write-Host 'The existing environment failed its first audio check; repairing dependencies...' -ForegroundColor Yellow
+        Install-AudioSplitDependencies
+        & $venvPython -c "import demucs, fastapi, multipart, soundfile, torch, torchaudio, torchcodec, uvicorn; print('Python audio : OK')"
+        $validationExitCode = $LASTEXITCODE
+    }
+    if ($validationExitCode -ne 0) { throw 'Python audio runtime validation failed.' }
+    [System.IO.File]::WriteAllText($runtimeStamp, $requirementsHash)
+}
 
 Write-Host ''
 Write-Host 'Installation complete: OK' -ForegroundColor Green
