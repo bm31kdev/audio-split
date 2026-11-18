@@ -6,8 +6,8 @@
 .transform-status { flex: 0 0 auto; color: var(--lime); font: 10px Consolas, 'Courier New', monospace; }
 .transform-controls { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)) auto; align-items: end; gap: 10px; margin-top: 14px; }
 .transform-controls label { display: grid; gap: 5px; color: #d6dbe3; font-size: 10px; }
-.transform-controls input, .transform-controls select { width: 100%; min-width: 0; height: 36px; padding: 0 10px; color: var(--text); background: #111319; border: 1px solid #3c4350; border-radius: 7px; font: 12px Consolas, 'Courier New', monospace; }
-.transform-controls input:focus, .transform-controls select:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
+.transform-controls input { width: 100%; min-width: 0; height: 36px; padding: 0 10px; color: var(--text); background: #111319; border: 1px solid #3c4350; border-radius: 7px; font: 12px Consolas, 'Courier New', monospace; }
+.transform-controls input:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
 .transform-controls input:invalid { border-color: var(--orange); }
 .transform-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .transform-actions button { min-height: 36px; padding: 0 10px; font-size: 10px; }
@@ -29,6 +29,7 @@
 .tempo-presets button { min-width: 41px; min-height: 38px; padding: 6px 8px; font: 11px Consolas, monospace; }
 .transform-controls { align-items: end; }
 .key-choice-row { align-items: end; }
+.key-choice-row > .styled-select { width: 120px; min-width: 96px; flex: 0 0 auto; }
 @media (max-width: 680px) { .tempo-presets { grid-column: 1 / -1; } }
 @media (max-width: 480px) {
   .transform-panel { padding: 12px; }

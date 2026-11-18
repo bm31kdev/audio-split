@@ -27,6 +27,7 @@ export function applyButtonStyles(root = document) {
   if (root instanceof HTMLButtonElement) buttons.push(root);
   buttons.push(...root.querySelectorAll?.('button') || []);
   buttons.forEach((button) => {
+    if (button.matches('.styled-dropdown-trigger, .styled-dropdown-option')) return;
     if (!button.dataset.buttonSize) button.dataset.buttonSize = guessSize(button);
     const requested = button.dataset.buttonVariant || guessVariant(button);
     const variant = VARIANTS.has(requested) ? requested : guessVariant(button);

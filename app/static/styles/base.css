@@ -172,6 +172,22 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .split-mode label { color: #d8dce4; font-size: 12px; cursor: pointer; }
 .split-mode input { accent-color: var(--lime); }
 .hidden { display: none; }
+.styled-select { position: relative; display: block; width: 100%; min-width: 0; }
+.styled-select > select { position: absolute; z-index: -1; inset: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.styled-dropdown-trigger { display: flex; width: 100%; min-width: 0; min-height: 36px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 11px; overflow: hidden; color: var(--text); text-align: left; background: linear-gradient(180deg, #1c2028, #15181e); border: 1px solid #3b414e; border-radius: 8px; font: 11px Segoe UI, Arial, sans-serif; transition: border-color .15s ease, background .15s ease, box-shadow .15s ease; }
+.styled-dropdown-trigger:hover:not(:disabled), .styled-select.is-open .styled-dropdown-trigger { background: #20251b; border-color: #647a3e; box-shadow: 0 0 0 2px #d7ff5412; }
+.styled-dropdown-trigger:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.styled-dropdown-trigger:disabled { cursor: not-allowed; opacity: .55; }
+.styled-dropdown-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.styled-dropdown-arrow { display: grid; width: 18px; height: 18px; flex: 0 0 auto; place-items: center; color: var(--lime); }
+.styled-dropdown-arrow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform .16s ease; }
+.styled-select.is-open .styled-dropdown-arrow svg { transform: rotate(180deg); }
+.styled-dropdown-menu { position: fixed; z-index: 1000; display: grid; gap: 3px; padding: 5px; overflow-y: auto; overscroll-behavior: contain; color: var(--text); background: #171a20; border: 1px solid #414854; border-radius: 10px; box-shadow: 0 14px 38px #000b, 0 0 0 1px #ffffff08; scrollbar-width: thin; scrollbar-color: #525b67 transparent; }
+.styled-dropdown-option { display: flex; min-width: 0; min-height: 34px; align-items: center; padding: 0 10px; color: #d9dde5; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 6px; font: 11px Segoe UI, Arial, sans-serif; cursor: pointer; }
+.styled-dropdown-option:hover, .styled-dropdown-option:focus-visible { color: #f4ffd9; background: #22291a; border-color: #3d4b2b; outline: none; }
+.styled-dropdown-option[aria-selected="true"] { color: var(--lime); background: #202718; }
+.styled-dropdown-option:disabled { color: #777e89; cursor: not-allowed; opacity: .5; }
+.styled-dropdown-empty { padding: 9px 10px; color: var(--muted); font-size: 11px; }
 .app-page { min-height: 58vh; }
 .projects-page { max-width: 100%; margin: 0 auto; padding-top: 42px; }
 .projects-page-header { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }

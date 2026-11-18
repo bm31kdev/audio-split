@@ -112,13 +112,14 @@
 .library-dialog { width: min(760px, calc(100vw - 40px)); }
 .library-content { min-height: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .library-toolbar, .save-project-controls { display: flex; gap: 8px; }
-.library-toolbar input, .save-project-controls input, .save-project-controls select { min-width: 0; padding: 10px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Segoe UI, Arial, sans-serif; }
+.library-toolbar input, .save-project-controls input { min-width: 0; padding: 10px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Segoe UI, Arial, sans-serif; }
 .library-toolbar input { flex: 1; }
 .library-storage { display: flex; flex-wrap: wrap; gap: 7px 16px; margin: 0 0 12px; padding: 10px 12px; color: var(--muted); background: #15171d; border: 1px solid #303540; border-radius: 9px; font-size: 10px; }
 .library-storage strong { color: var(--lime); font-weight: 600; }
 .library-search-row { display: flex; gap: 8px; margin-top: 9px; }
-.library-search-row input, .library-search-row select { min-width: 0; padding: 9px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Segoe UI, Arial, sans-serif; }
+.library-search-row input { min-width: 0; padding: 9px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Segoe UI, Arial, sans-serif; }
 .library-search-row input { flex: 1; }
+.library-search-row > .styled-select { width: 170px; flex: 0 0 170px; }
 .mix-presets { margin-top: 15px; padding: 13px; border: 1px solid #3b414e; border-radius: 11px; background: #15171d; }
 .presets-heading, .presets-heading > div:last-child, .preset-card, .preset-card > div:last-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .presets-heading h3 { font-size: 13px; }
@@ -154,7 +155,7 @@
 .save-project-panel h3 { font-size: 13px; }
 .save-project-panel p { margin-top: 4px; color: var(--muted); font-size: 10px; }
 .save-project-controls { margin-top: 10px; }
-.save-project-controls select { flex: 0 0 25%; }
+.save-project-controls > .styled-select { flex: 0 0 25%; }
 .save-project-controls input { flex: 1; }
 .save-project-controls button { color: #101407; background: var(--lime); border-color: var(--lime); }
 
@@ -200,10 +201,9 @@
 .key-options button { min-height: 44px; color: #d3d7df; background: #17191e; border-color: #363c2e; }
 .key-options button.active, .key-options button:hover { color: #101407; background: var(--lime); border-color: var(--lime); }
 .key-source-select { display: grid; gap: 7px; padding: 0 24px; color: #cbd1dc; font-size: 11px; }
-.key-source-select select { width: 100%; padding: 10px 12px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 13px Segoe UI, Arial, sans-serif; }
+.key-source-select > .styled-select { width: 100%; }
 .key-dialog { width: min(600px, calc(100vw - 40px)); }
 .key-choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.key-choice-row select { min-width: 96px; flex: 0 0 auto; }
 .key-choice-row button { min-height: 38px; padding: 7px 10px; font-size: 11px; }
 @media (max-width: 540px) {
   .key-options { padding: 16px; }

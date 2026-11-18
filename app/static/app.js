@@ -2,7 +2,7 @@ import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, M
 import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.18';
 import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.18';
 import { libraryLabels } from './js/library-text.js?v=1.5.0.18';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.18';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.20';
 import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.18';
 import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.18';
 import { userFacingError } from './js/ui-errors.js?v=1.5.0.18';
@@ -11,6 +11,8 @@ import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.18';
 import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.18';
 import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.18';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.20';
+enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, interactionModal, keyModal;
 let resolveInteractionModalReady;
@@ -828,6 +830,7 @@ setTransportState();
 async function initializeModalComponents() {
   try {
     await mountModalComponents($('#modalRoot'));
+    enhanceStyledDropdowns($('#modalRoot'));
     applyTranslations();
     fxModal = createFxModal({
       stemInfo,
@@ -901,6 +904,7 @@ async function initializeModalComponents() {
   }
 }
 onLanguageChange(() => {
+  enhanceStyledDropdowns(document);
   $('#libraryButton').textContent = getLanguage() === 'en' ? 'Projects' : 'Projets';
   setAnalysisStatus(currentAnalysisStatusKey, $('#analysisStatus').dataset.state || '');
   syncTransformUi();
