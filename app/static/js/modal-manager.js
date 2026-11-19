@@ -1,4 +1,4 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.25';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.26';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
 import { PAN_CURVE_PRESETS, generatePanCurvePoints } from './pan-curves.js?v=1.5.0.25';
 
@@ -349,8 +349,8 @@ export function createPanCurveModal({ getTrackLabel, onApply }) {
     title.textContent = `${t('panCurves.title')} — ${getTrackLabel(track)}`;
     content.innerHTML = PAN_CURVE_PRESETS.map(preset => {
       const points = generatePanCurvePoints(preset.id, 100);
-      const path = points.map((point, index) => `${index ? 'L' : 'M'} ${(point.time).toFixed(1)} ${(13 - point.pan * 0.1).toFixed(1)}`).join(' ');
-      return `<button type="button" class="pan-curve-card" data-button-variant="modal" draggable="true" data-pan-curve-preset="${preset.id}" title="${t('panCurves.dragHint')}"><svg viewBox="0 0 100 26" aria-hidden="true"><path d="${path}"/></svg><strong>${t(preset.titleKey)}</strong><span>${t(preset.descriptionKey)}</span><small>${t('panCurves.dragOrClick')}</small></button>`;
+      const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point.time.toFixed(1)} ${(13 - point.pan * 0.1).toFixed(1)}`).join(' ');
+      return `<article class="fx-effect-card is-draggable pan-curve-card" role="button" tabindex="0" draggable="true" data-pan-curve-preset="${preset.id}" title="${t('panCurves.dragHint')}"><span class="fx-effect-state">${t('panCurves.drag')}</span><div class="fx-effect-heading"><h3>${t(preset.titleKey)}</h3><svg class="pan-curve-preview" viewBox="0 0 100 26" aria-hidden="true"><path class="pan-curve-midline" d="M2 13H98"/><path class="pan-curve-line" d="${path}"/></svg></div><p>${t(preset.descriptionKey)}</p><small>${t('panCurves.dragOrClick')}</small></article>`;
     }).join('');
     content.querySelectorAll('[data-pan-curve-preset]').forEach(card => {
       card.addEventListener('dragstart', event => {
@@ -361,6 +361,12 @@ export function createPanCurveModal({ getTrackLabel, onApply }) {
       });
       card.addEventListener('click', () => {
         if (onApply(activeTrack, card.dataset.panCurvePreset) !== false) animated.close();
+      });
+      card.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          if (onApply(activeTrack, card.dataset.panCurvePreset) !== false) animated.close();
+        }
       });
     });
     animated.show();
