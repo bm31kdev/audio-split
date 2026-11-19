@@ -1,4 +1,4 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.27';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.30';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
 import { PAN_CURVE_PRESETS, generatePanCurvePoints } from './pan-curves.js?v=1.5.0.25';
 
