@@ -1,13 +1,14 @@
 /* Mixer layout, generated stem cards, and Web Audio control surfaces. */
 .mixer { margin-top: 48px; }
-.mixer-top { display: flex; align-items: end; justify-content: space-between; margin-bottom: 22px; }
+.mixer-top { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
 .mixer h2 { font-size: 34px; }
-.mixer-head-actions { display: flex; align-items: flex-end; gap: 14px; }
+.mixer-bottom-bar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.mixer-toolbar { display: flex; align-items: center; gap: 8px; }
+.mixer-toolbar > button { min-height: 38px; }
 .save-mix-project { min-height: 38px; gap: 8px; padding: 0 12px; font-size: 10px; }
 .save-mix-project svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .transport { display: flex; gap: 8px; }
-.transport-group { display: grid; justify-items: end; gap: 5px; }
-.keyboard-hint { color: var(--muted); font-size: 9px; white-space: nowrap; }
+.transport-group { display: flex; flex: 0 0 auto; align-items: center; }
 .transport button { width: 38px; height: 38px; padding: 0; border-radius: 11px; }
 .transport svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .transport .play { color: #111709; background: var(--lime); border-color: var(--lime); }
@@ -78,7 +79,7 @@
 .track-state-inputs[hidden] { display: none; }
 .mute { width: 36px; height: 34px; padding: 0; background: #242934; border-radius: 7px; }
 .mute[aria-pressed=true] { color: #180b06; background: var(--orange); border-color: var(--orange); }
-.export { margin: 24px 0 0 auto; }
+.mixer-bottom-bar .export { margin: 0; }
 
 /* Keep generated tracks usable when the available width changes. */
 @media (max-width: 850px) {
@@ -89,9 +90,13 @@
 }
 
 @media (max-width: 540px) {
-  .mixer-top { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-  .mixer-head-actions { width: 100%; align-items: center; justify-content: space-between; gap: 9px; }
-  .save-mix-project { min-width: 0; padding: 0 9px; font-size: 9px; }
+  .mixer-top { align-items: center; gap: 8px; }
+  .mixer h2 { font-size: 27px; }
+  .mixer-bottom-bar { flex-wrap: wrap; justify-content: stretch; gap: 8px; }
+  .mixer-toolbar { width: 100%; flex: 1 0 100%; }
+  .mixer-toolbar > button { min-width: 0; flex: 1 1 0; padding: 0 9px; font-size: 9px; }
+  .mixer-bottom-bar .export { width: auto; flex: 1 1 0; margin: 0; }
+  .save-mix-project { gap: 5px; }
   .track { grid-template-columns: 40px minmax(0, 1fr) 34px 92px; gap: 8px; padding: 10px; }
   .track-title p { display: none; }
   .track-actions { margin-top: 5px; }
@@ -102,6 +107,4 @@
   .wave-area { grid-column: 1 / -1; }
   .automation-tools { gap: 5px; }
   .automation-tools button.audio-button.automation-lane { padding: 0 6px; font-size: 8px; }
-  .keyboard-hint { font-size: 8px; }
-  .export { width: 100%; margin-left: 0; }
 }

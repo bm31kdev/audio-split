@@ -1,5 +1,5 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.36';
-import { t } from './i18n.js?v=1.5.0.36';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.37';
+import { t } from './i18n.js?v=1.5.0.37';
 import { lucideIcon } from './lucide.js?v=1.5.0.18';
 
 export function snapshotTrackControls(names) {
@@ -94,16 +94,21 @@ export function renderTracks(names, savedControls = {}) {
     const pan = document.querySelector(`[data-control="${name}"][data-param="pan"]`);
     const mute = document.querySelector(`[data-mute="${name}"]`);
     const solo = document.querySelector(`[data-solo="${name}"]`);
+    if (!tracks[name] || !volume || !pan || !mute || !solo) return;
+
+    // Restore every per-track mix setting, including automation and effect lanes.
     volume.value = '100'; pan.value = '0';
     mute.setAttribute('aria-pressed', 'false'); mute.innerHTML = speakerIcon(false);
     const title = t(stemInfo[name].titleKey), muteLabel = t('control.mute', { track: title }), soloLabel = t('control.solo', { track: title });
     mute.setAttribute('aria-label', muteLabel); mute.title = muteLabel;
     solo.setAttribute('aria-pressed', 'false');
     solo.setAttribute('aria-label', soloLabel); solo.title = soloLabel;
-    syncSoloTrackStyles();
     effectsByTrack[name] = { ...effectDefaults };
     ensureAutomation(name, tracks[name].duration);
-    updateOutputs(); refreshAutomation(name); markProjectDirty();
+    syncSoloTrackStyles();
+    updateOutputs();
+    refreshAutomation(name);
+    markProjectDirty();
   });
   bindAutomation();
   names.forEach(refreshAutomation);
