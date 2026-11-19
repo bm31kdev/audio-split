@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.35';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.36';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.35';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.36';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -77,6 +77,14 @@ function bindModalFocusTrap(modal) {
       event.preventDefault(); first.focus();
     }
   });
+}
+
+/** Open the tempo and key controls in a focused, keyboard-accessible modal. */
+export function createTransformModal(trigger) {
+  const modal = document.querySelector('#transformModal');
+  const animated = createAnimatedModal(modal, '.transform-close', trigger);
+  trigger.onclick = animated.show;
+  return { close: animated.close };
 }
 
 export function bindModalAccessibility(modal) { bindModalFocusTrap(modal); }

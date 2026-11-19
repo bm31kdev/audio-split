@@ -1,11 +1,11 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.35';
-import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.35';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.35';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.35';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.36';
+import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.36';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.36';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.36';
 import { mountButtonComponent } from './js/button-component.js?v=1.5.0.20';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.35';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.35';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.35';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.36';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.36';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.36';
 import { lucideIcon } from './js/lucide.js?v=1.5.0.18';
 import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.18';
@@ -14,7 +14,7 @@ import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysi
 import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.25';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
-let fxModal, changelogModal, languageModal, interactionModal, keyModal;
+let fxModal, changelogModal, languageModal, interactionModal, keyModal, transformModal;
 let panCurvesModal;
 let resolveInteractionModalReady;
 const interactionModalReady = new Promise(resolve => { resolveInteractionModalReady = resolve; });
@@ -306,6 +306,7 @@ function clearMixerForReplacement() {
   setTransformInputs(currentMixTransform);
   $('#mixer').classList.add('hidden');
   $('#transformPanel').classList.add('hidden');
+  transformModal?.close();
   $('#tracks').replaceChildren();
   $('#exportButton').disabled = true;
 }
@@ -527,6 +528,8 @@ function syncTransformUi() {
   const panel = $('#transformPanel');
   if (!panel) return;
   const available = Object.keys(tracks).length > 0 && Boolean(currentJobId || activeProjectId);
+  $('#transformOpenButton').disabled = !available;
+  if (!available) transformModal?.close();
   syncPitchTrackOptions($('#transformPitchTrack')?.value || currentMixTransform.pitchTrack);
   panel.classList.toggle('hidden', !available);
   const mismatch = !sameRenderParameters(renderedTransform, currentMixTransform);
@@ -893,6 +896,7 @@ async function initializeModalComponents() {
     await mountModalComponents($('#modalRoot'));
     enhanceStyledDropdowns($('#modalRoot'));
     applyTranslations();
+    transformModal = createTransformModal($('#transformOpenButton'));
     fxModal = createFxModal({
       stemInfo,
       getSaturationTarget,
@@ -1017,5 +1021,5 @@ window.addEventListener('beforeunload', (event) => {
     event.returnValue = '';
   }
 });
-document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); keyModal?.close(); panCurvesModal?.close(); interactionModal?.close(); } });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') { fxModal?.close(); changelogModal?.close(); languageModal?.close(); keyModal?.close(); panCurvesModal?.close(); interactionModal?.close(); transformModal?.close(); } });
 window.addEventListener('resize',()=>Object.entries(tracks).forEach(([name, buffer])=>buffer&&drawWaveform(name,buffer)));
