@@ -17,8 +17,8 @@
 .transport .transport-stop-icon rect { fill: currentColor; stroke: none; }
 .tracks { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 
-/* Every stem uses the same grid: identity, Fx, pan, waveform, and level. */
-.track { display: grid; width: 100%; min-width: 0; grid-template-columns: 44px minmax(112px, 142px) 42px 44px minmax(150px, 1fr) 56px; align-items: center; gap: 16px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+/* Every stem uses the same grid: identity, Fx, waveform, and mute. */
+.track { display: grid; width: 100%; min-width: 0; grid-template-columns: 44px minmax(112px, 142px) 42px minmax(150px, 1fr) 44px; align-items: center; gap: 16px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
 .track.is-solo-active { border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); box-shadow: 0 0 16px #d7ff541c; }
 .track.is-solo-muted { opacity: .42; filter: grayscale(.85) saturate(.55); }
 .track-icon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 11px; }
@@ -75,28 +75,18 @@
 .playhead.is-playing { opacity: 1; }
 .playhead:focus-visible { filter: drop-shadow(0 0 5px var(--lime)); }
 
-/* Pan and volume are visual gauges with invisible native range inputs. */
-.pan-fader { display: grid; grid-template-rows: 12px 1fr 12px 12px; align-items: center; width: 44px; height: 100px; padding: 4px 0; color: var(--purple); font: 10px Consolas, 'Courier New', monospace; text-align: center; background: #242934; border: 1px solid #3b414e; border-radius: 7px; }
-.pan-letter { color: #c8cad3; line-height: 12px; }
-.pan-fader output, .volume-fader output { font: 500 10px Consolas, 'Courier New', monospace; }
-.gauge { position: relative; width: 18px; height: 100%; justify-self: center; overflow: hidden; background: #181b22; border: 1px solid color-mix(in srgb, currentColor 38%, #242934); border-radius: 3px; }
-.gauge i { position: absolute; right: 0; bottom: 0; left: 0; height: var(--level, 50%); pointer-events: none; background: currentColor; opacity: 0.88; transition: height 0.08s linear; }
-.gauge input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; cursor: ns-resize; opacity: 0; writing-mode: vertical-lr; direction: rtl; }
-.volume-stack { display: grid; grid-template-rows: 34px 1fr; gap: 6px; width: 56px; height: 100px; }
-.mute { width: 56px; height: 34px; padding: 0; background: #242934; border-radius: 7px; }
+/* Pan and volume now live on the shared automation curves; retain hidden values for project compatibility. */
+.track-state-inputs[hidden] { display: none; }
+.volume-stack { display: flex; width: 44px; justify-content: center; }
+.mute { width: 38px; height: 34px; padding: 0; background: #242934; border-radius: 7px; }
 .mute[aria-pressed=true] { color: #180b06; background: var(--orange); border-color: var(--orange); }
-/* The number sits under the gauge, matching the lower marker of the pan fader. */
-.volume-fader { display: grid; grid-template-rows: 1fr 12px; align-items: center; height: 60px; padding: 4px; color: var(--lime); background: #242934; border: 1px solid #3b414e; border-radius: 7px; }
-.volume-fader .gauge { grid-row: 1; height: 36px; }
-.volume-fader output { grid-row: 2; align-self: center; padding: 0; text-align: center; }
 .export { margin: 24px 0 0 auto; }
 
 /* Keep generated tracks usable when the available width changes. */
 @media (max-width: 850px) {
-  .track { grid-template-columns: 44px 1fr 42px 44px 56px; }
+  .track { grid-template-columns: 44px minmax(0, 1fr) 42px 44px; }
   .fx-button { grid-column: 3; grid-row: 1; }
-  .pan-fader { grid-column: 4; grid-row: 1; }
-  .volume-stack { grid-column: 5; grid-row: 1; }
+  .volume-stack { grid-column: 4; grid-row: 1; }
   .wave-area { grid-column: 1 / -1; grid-row: 2; }
 }
 
@@ -104,13 +94,13 @@
   .mixer-top { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
   .mixer-head-actions { width: 100%; align-items: center; justify-content: space-between; gap: 9px; }
   .save-mix-project { min-width: 0; padding: 0 9px; font-size: 9px; }
-  .track { grid-template-columns: 44px minmax(0, 1fr) 38px 40px 50px; gap: 10px; padding: 12px; }
+  .track { grid-template-columns: 44px minmax(0, 1fr) 38px 40px; gap: 10px; padding: 12px; }
   .track-title p { display: none; }
   .track-actions { margin-top: 5px; }
   .track-meter { margin-top: 5px; }
   .fx-button { width: 38px; height: 38px; }
-  .pan-fader { width: 40px; }
-  .volume-stack, .mute { width: 50px; }
+  .volume-stack { width: 40px; }
+  .mute { width: 36px; }
   .wave-area { grid-column: 1 / -1; }
   .automation-tools { gap: 5px; }
   .automation-tools button.audio-button.automation-lane { padding: 0 6px; font-size: 8px; }
