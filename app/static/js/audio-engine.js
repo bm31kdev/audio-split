@@ -17,8 +17,9 @@ import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.18';
 import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.18';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.18';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.25';
 import { lucideIcon } from './lucide.js?v=1.5.0.18';
+import { generatePanCurvePoints } from './pan-curves.js?v=1.5.0.25';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -645,6 +646,24 @@ export function bindAutomation() {
     canvas.addEventListener('dragleave', () => canvas.classList.remove('is-drop-target'));
     canvas.addEventListener('drop', event => {
       event.preventDefault(); canvas.classList.remove('is-drop-target');
+      let panPreset;
+      try { panPreset = JSON.parse(event.dataTransfer.getData('application/x-audiosplit-pan-curve')); } catch {}
+      if (panPreset) {
+        const name = canvas.dataset.waveform;
+        const points = panPreset.track === name ? generatePanCurvePoints(panPreset.preset, tracks[name]?.duration) : null;
+        if (!points) {
+          status(getLanguage() === 'en' ? 'Drop the pan curve onto the same track it was opened from.' : 'Déposez la courbe de panoramique sur la piste depuis laquelle vous l’avez ouverte.', true);
+          return;
+        }
+        const automation = automationByTrack[name];
+        automation.points = points;
+        automation.activeLane = 'pan';
+        automation.selected = 0;
+        refreshAutomation(name);
+        markProjectDirty();
+        status(getLanguage() === 'en' ? 'Pan curve applied to the track.' : 'Courbe de panoramique appliquée à la piste.');
+        return;
+      }
       let payload;
       try { payload = JSON.parse(event.dataTransfer.getData('application/x-audiosplit-effect')); } catch { return; }
       if (!payload?.effect || payload.track !== canvas.dataset.waveform || !activateTrackEffect(canvas.dataset.waveform, payload.effect)) {
@@ -654,6 +673,7 @@ export function bindAutomation() {
       status(getLanguage() === 'en' ? 'Effect added to the track curve.' : 'Effet ajouté à la courbe de la piste.');
     });
   });
+  document.querySelectorAll('[data-pan-curves]').forEach(button => button.onclick = () => panCurveModalInstance?.open(button.dataset.panCurves));
   document.querySelectorAll('[data-automation-remove]').forEach(remove => remove.onclick = () => {
     const name = remove.dataset.automationRemove, automation = automationByTrack[name], lane = automation.activeLane || 'pan', points = automationPointsFor(name, lane);
     if (automation.selected > 0 && automation.selected < points.length - 1) { points.splice(automation.selected, 1); automation.selected--; refreshAutomation(name); markProjectDirty(); }
@@ -661,6 +681,8 @@ export function bindAutomation() {
 }
 export let fxModalInstance;
 export function setFxModal(modal) { fxModalInstance = modal; }
+export let panCurveModalInstance;
+export function setPanCurveModal(modal) { panCurveModalInstance = modal; }
 export function bindFxButtons() {
   // Track buttons are generated after a separation, so bind them after every render.
   document.querySelectorAll('[data-fx]').forEach(button => button.onclick = () => fxModalInstance?.open(button.dataset.fx));

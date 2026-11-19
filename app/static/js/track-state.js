@@ -1,5 +1,5 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.22';
-import { t } from './i18n.js?v=1.5.0.18';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.25';
+import { t } from './i18n.js?v=1.5.0.25';
 import { lucideIcon } from './lucide.js?v=1.5.0.18';
 
 export function snapshotTrackControls(names) {
@@ -58,7 +58,7 @@ export function renderTracks(names, savedControls = {}) {
     const volume = saved.volume ?? 100, pan = saved.pan ?? 0, muted = saved.muted ?? false, solo = saved.solo ?? false;
     const soloLabel = t(solo ? 'control.unsolo' : 'control.solo', { track: trackTitle });
     const muteLabel = t(muted ? 'control.unmute' : 'control.mute', { track: trackTitle });
-    const automation = `<div class="automation-tools"><div class="automation-lanes" data-automation-lanes="${name}"></div><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}" aria-label="${t('automation.remove')}">${lucideIcon('x', { size: 13 })}</button></div>`;
+    const automation = `<div class="automation-tools"><div class="automation-lanes" data-automation-lanes="${name}"></div><button type="button" class="pan-curves-trigger" data-button-variant="modal" data-pan-curves="${name}" title="${t('panCurves.open')}"><svg viewBox="0 0 20 16" aria-hidden="true"><path d="M1 13c4 0 4-10 9-10s5 10 9 10"/><path d="M1 8h18" opacity=".32"/></svg><span>${t('panCurves.button')}</span></button><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}" aria-label="${t('automation.remove')}">${lucideIcon('x', { size: 13 })}</button></div>`;
     return `<article class="track ${name}" data-track="${name}">
       <div class="track-icon">${icon(info.icon)}</div>
       <div class="track-title">

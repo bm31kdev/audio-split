@@ -186,7 +186,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .styled-dropdown-arrow { display: grid; width: 18px; height: 18px; flex: 0 0 auto; place-items: center; color: var(--lime); }
 .styled-dropdown-arrow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform .16s ease; }
 .styled-select.is-open .styled-dropdown-arrow svg { transform: rotate(180deg); }
-.styled-dropdown-menu { position: fixed; z-index: 1000; display: grid; gap: 3px; padding: 5px; overflow-y: auto; overscroll-behavior: contain; color: var(--text); background: #171a20; border: 1px solid #414854; border-radius: 10px; box-shadow: 0 14px 38px #000b, 0 0 0 1px #ffffff08; scrollbar-width: thin; scrollbar-color: #525b67 transparent; }
+.styled-dropdown-menu { position: fixed; z-index: 1000; display: grid; min-height: 0; grid-auto-rows: max-content; gap: 3px; padding: 5px; overflow-y: auto; overscroll-behavior-y: contain; touch-action: pan-y; color: var(--text); background: #171a20; border: 1px solid #414854; border-radius: 10px; box-shadow: 0 14px 38px #000b, 0 0 0 1px #ffffff08; scrollbar-width: thin; scrollbar-color: #525b67 transparent; }
 .styled-dropdown-option { display: flex; min-width: 0; min-height: 34px; align-items: center; padding: 0 10px; color: #d9dde5; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 6px; font: 11px Segoe UI, Arial, sans-serif; cursor: pointer; }
 .styled-dropdown-option:hover, .styled-dropdown-option:focus-visible { color: #f4ffd9; background: #22291a; border-color: #3d4b2b; outline: none; }
 .styled-dropdown-option[aria-selected="true"] { color: var(--lime); background: #202718; }

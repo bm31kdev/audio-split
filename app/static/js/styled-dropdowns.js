@@ -60,8 +60,9 @@ function positionMenu(record) {
   const edge = 12;
   const below = window.innerHeight - rect.bottom - edge;
   const above = rect.top - edge;
-  const openAbove = below < 180 && above > below;
-  const available = Math.max(96, Math.min(320, (openAbove ? above : below) - gap));
+  let openAbove = below < 180 && above > below;
+  if (below < 96 && above > below) openAbove = true;
+  const available = Math.max(48, Math.min(320, (openAbove ? above : below) - gap));
   record.menu.style.left = `${Math.max(edge, Math.min(rect.left, window.innerWidth - rect.width - edge))}px`;
   record.menu.style.width = `${Math.min(rect.width, window.innerWidth - edge * 2)}px`;
   record.menu.style.maxHeight = `${available}px`;
@@ -180,7 +181,11 @@ document.addEventListener('pointerdown', event => {
   closeAllDropdowns();
 });
 window.addEventListener('resize', closeAllDropdowns);
-window.addEventListener('scroll', closeAllDropdowns, true);
+window.addEventListener('scroll', event => {
+  // Scrolling the long options list must leave it open; only page/container scroll closes it.
+  if (activeRecord && (event.target === activeRecord.menu || activeRecord.menu.contains(event.target))) return;
+  closeAllDropdowns();
+}, true);
 new MutationObserver(records => {
   for (const record of records) {
     const target = record.target;

@@ -1,6 +1,6 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, updateOutputs, updateLiveMix, refreshAutomation, markProjectDirty, apiJson } from './audio-engine.js?v=1.5.0.22';
-import { savePayload, renderTracks } from './track-state.js?v=1.5.0.22';
-import { getLanguage, t } from './i18n.js?v=1.5.0.18';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, updateOutputs, updateLiveMix, refreshAutomation, markProjectDirty, apiJson } from './audio-engine.js?v=1.5.0.25';
+import { savePayload, renderTracks } from './track-state.js?v=1.5.0.25';
+import { getLanguage, t } from './i18n.js?v=1.5.0.25';
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
