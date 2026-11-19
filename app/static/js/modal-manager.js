@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.37';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.38';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.37';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.38';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -22,7 +22,7 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, settingsModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
@@ -30,8 +30,9 @@ export async function mountModalComponents(root) {
     loadComponent('interaction-modal.html'),
     loadComponent('key-modal.html'),
     loadComponent('pan-curves-modal.html'),
+    loadComponent('settings-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${settingsModal}`;
 }
 
 /**
@@ -414,5 +415,13 @@ export function createLanguageModal(trigger) {
   modal.querySelectorAll('[data-language-choice]').forEach((button) => {
     button.onclick = () => { setLanguage(button.dataset.languageChoice); refresh(); animated.close(); };
   });
+  return { close: animated.close };
+}
+
+/** Create the bilingual, intentionally empty settings dialog. */
+export function createSettingsModal(trigger) {
+  const modal = document.querySelector('#settingsModal');
+  const animated = createAnimatedModal(modal, '.settings-close', trigger);
+  trigger.onclick = animated.show;
   return { close: animated.close };
 }

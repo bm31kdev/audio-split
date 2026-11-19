@@ -64,6 +64,8 @@
 
 /* Keep the release history self-contained while giving the current release room to breathe. */
 .changelog-modal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 36px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
+.settings-modal { z-index: 40; }
+.changelog-dialog.settings-dialog { width: min(440px, calc(100vw - 40px)); max-width: min(440px, calc(100vw - 40px)); min-height: 174px; }
 .changelog-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
 .changelog-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609d4; backdrop-filter: blur(5px); transition: opacity 0.22s ease; }
 .changelog-dialog { position: relative; display: flex; flex-direction: column; width: min(650px, calc(100vw - 40px)); max-width: min(650px, calc(100vw - 40px)); max-height: calc(100vh - 72px); opacity: 0; overflow: hidden; background: radial-gradient(ellipse at 12% 0%, #242a1b 0, transparent 38%), linear-gradient(145deg, #1b1e25, #111217 68%); border: 1px solid #434a3e; border-radius: 22px; box-shadow: 0 32px 100px #000c, inset 0 1px #ffffff0c; transform: translateY(20px) scale(0.97); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }

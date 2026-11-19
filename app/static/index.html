@@ -8,12 +8,12 @@
   <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.25">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.38">
   <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.38">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.33">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.38">
   <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
   <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.20">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.37">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.38">
 </head>
 <body>
   <main>
@@ -27,7 +27,8 @@
       <div class="header-tools">
         <div class="header-utilities">
           <button data-button-variant="primary" data-button-size="header-icon" id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg><span data-i18n="language.trigger">FR</span></button>
-          <div class="local" data-i18n="app.local">● Traitement local</div>
+          <button data-button-variant="primary" data-button-size="small-icon" id="settingsButton" class="settings-button" type="button" data-i18n-title="settings.triggerTitle" data-i18n-aria-label="settings.triggerTitle" title="Paramètres" aria-label="Paramètres"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.35a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51.97Z"/></svg></button>
+          <span class="local-indicator" aria-hidden="true"></span>
         </div>
       </div>
     </header>
@@ -149,6 +150,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.37"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.38"></script>
 </body>
 </html>

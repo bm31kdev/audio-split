@@ -24,7 +24,7 @@ h1 { font-size: 18px; line-height: 1.1; }
 h1 span, .eyebrow, .local { color: var(--lime); }
 header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .header-tools { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 14px; grid-area: tools; }
-.header-utilities { display: flex; align-items: center; gap: 12px; }
+.header-utilities { display: flex; align-items: center; gap: 8px; }
 .language-button { width: 54px; height: 34px; padding: 0; color: #cfd5df; background: #171a21; border-color: #3e4654; font: 500 10px Consolas, 'Courier New', monospace; }
 .library-button { padding: 8px 12px; color: var(--lime); background: #171a21; border-color: #48543a; font-size: 11px; }
 .app-nav { display: flex; align-items: center; gap: 3px; padding: 4px; grid-area: nav; border: 1px solid #30343e; border-radius: 12px; background: #111318; }
@@ -33,6 +33,8 @@ header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .app-nav button.audio-button[data-button-variant="primary"].is-current { color: var(--lime); background: #242a1b; border-color: #3d4a2d; box-shadow: inset 0 1px #ffffff09; }
 .language-button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .language-button:hover:not(:disabled) { color: var(--lime); border-color: var(--lime); }
+.settings-button svg { width: 17px; height: 17px; stroke-width: 1.7; }
+.local-indicator { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px #d7ff5477; }
 .local { margin: 0; font: 11px Consolas, 'Courier New', monospace; white-space: nowrap; }
 .global-status {
   position: fixed;
