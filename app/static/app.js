@@ -1,12 +1,11 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson } from './js/audio-engine.js?v=1.5.0.30';
-import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.31';
-import { generatePanCurvePoints } from './js/pan-curves.js?v=1.5.0.25';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.32';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.23';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.35';
+import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.35';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.35';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.35';
 import { mountButtonComponent } from './js/button-component.js?v=1.5.0.20';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.30';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.30';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.18';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.35';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.35';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.35';
 import { lucideIcon } from './js/lucide.js?v=1.5.0.18';
 import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.18';
@@ -903,15 +902,17 @@ async function initializeModalComponents() {
     setFxModal(fxModal);
     panCurvesModal = createPanCurveModal({
       getTrackLabel: name => t(stemInfo[name]?.titleKey || 'stem.accompaniment'),
-      onApply: (name, preset) => {
-        const points = generatePanCurvePoints(preset, tracks[name]?.duration);
+      getActiveLane: name => automationByTrack[name]?.activeLane || 'pan',
+      onApply: (name, preset, lane) => {
+        const points = generateAutomationCurvePoints(name, preset, lane);
         if (!points || !automationByTrack[name]) return false;
-        automationByTrack[name].points = points;
-        automationByTrack[name].activeLane = 'pan';
+        if (lane === 'pan') automationByTrack[name].points = points;
+        else { automationByTrack[name].lanes ||= {}; automationByTrack[name].lanes[lane] = points; }
+        automationByTrack[name].activeLane = lane;
         automationByTrack[name].selected = 0;
         refreshAutomation(name);
         markProjectDirty();
-        status(t('panCurves.applied'));
+        status(t('panCurves.applied', { parameter: t(`automation.param.${lane}`) }));
         return true;
       },
     });

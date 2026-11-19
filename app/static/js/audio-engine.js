@@ -17,9 +17,9 @@ import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.18';
 import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.18';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.30';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.35';
 import { lucideIcon } from './lucide.js?v=1.5.0.18';
-import { generatePanCurvePoints } from './pan-curves.js?v=1.5.0.25';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.35';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -536,6 +536,19 @@ const automationRanges = {
   flanger: [0, 100], phaser: [0, 100], tremolo: [0, 100], bitcrusher: [0, 100], gate: [0, 100],
   deEsser: [0, 100], limiter: [0, 100], exciter: [0, 100],
 };
+export function generateAutomationCurvePoints(name, preset, lane = 'pan') {
+  const duration = tracks[name]?.duration;
+  const template = generateCurveTemplatePoints(preset, duration);
+  if (!template) return null;
+  if (lane === 'pan') return template;
+  const range = automationRanges[lane];
+  if (!range) return null;
+  const [min, max] = range;
+  return template.map(point => ({
+    time: point.time,
+    value: Math.round((min + ((point.pan + 100) / 200) * (max - min)) * 10) / 10,
+  }));
+}
 const effectAutomationLanes = {
   eq: ['eqLow', 'eqMid', 'eqHigh'], filters: ['highPass', 'lowPass'],
   compressor: ['compressor'], reverb: ['reverb'], delay: ['delay'], width: ['width'], ducking: ['ducking'],
@@ -611,7 +624,13 @@ export function refreshAutomation(name) {
   automation.activeLane ||= 'pan';
   automation.activeEffects ||= [];
   const panCurveButton = document.querySelector(`[data-pan-curves="${name}"]`);
-  if (panCurveButton) panCurveButton.hidden = automation.activeLane !== 'pan';
+  if (panCurveButton) {
+    const parameter = t(`automation.param.${automation.activeLane}`);
+    const label = t('panCurves.openFor', { parameter });
+    panCurveButton.hidden = false;
+    panCurveButton.setAttribute('aria-label', label);
+    panCurveButton.title = label;
+  }
   const laneButtons = document.querySelector(`[data-automation-lanes="${name}"]`);
   if (laneButtons) {
     const lanes = ['pan', 'volume', ...automation.activeEffects.flatMap(effect => effectAutomationLanes[effect] || [])];
@@ -648,22 +667,24 @@ export function bindAutomation() {
     canvas.addEventListener('dragleave', () => canvas.classList.remove('is-drop-target'));
     canvas.addEventListener('drop', event => {
       event.preventDefault(); canvas.classList.remove('is-drop-target');
-      let panPreset;
-      try { panPreset = JSON.parse(event.dataTransfer.getData('application/x-audiosplit-pan-curve')); } catch {}
-      if (panPreset) {
+      let curvePreset;
+      try { curvePreset = JSON.parse(event.dataTransfer.getData('application/x-audiosplit-automation-curve')); } catch {}
+      if (curvePreset) {
         const name = canvas.dataset.waveform;
-        const points = panPreset.track === name ? generatePanCurvePoints(panPreset.preset, tracks[name]?.duration) : null;
+        const lane = curvePreset.lane || 'pan';
+        const points = curvePreset.track === name ? generateAutomationCurvePoints(name, curvePreset.preset, lane) : null;
         if (!points) {
-          status(getLanguage() === 'en' ? 'Drop the pan curve onto the same track it was opened from.' : 'Déposez la courbe de panoramique sur la piste depuis laquelle vous l’avez ouverte.', true);
+          status(getLanguage() === 'en' ? 'Drop the curve onto the same track it was opened from.' : 'Déposez la courbe sur la piste depuis laquelle vous l’avez ouverte.', true);
           return;
         }
         const automation = automationByTrack[name];
-        automation.points = points;
-        automation.activeLane = 'pan';
+        if (lane === 'pan') automation.points = points;
+        else { automation.lanes ||= {}; automation.lanes[lane] = points; }
+        automation.activeLane = lane;
         automation.selected = 0;
         refreshAutomation(name);
         markProjectDirty();
-        status(getLanguage() === 'en' ? 'Pan curve applied to the track.' : 'Courbe de panoramique appliquée à la piste.');
+        status(t('panCurves.applied', { parameter: t(`automation.param.${lane}`) }));
         return;
       }
       let payload;

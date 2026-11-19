@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.30';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.35';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
-import { PAN_CURVE_PRESETS, generatePanCurvePoints } from './pan-curves.js?v=1.5.0.25';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.35';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -336,36 +336,40 @@ export function createFxModal({ stemInfo, getSaturationTarget, getWidthTarget, g
 }
 
 /** Show ready-made pan curves for the track whose automation control opened it. */
-export function createPanCurveModal({ getTrackLabel, onApply }) {
+export function createPanCurveModal({ getTrackLabel, getActiveLane, onApply }) {
   const modal = document.querySelector('#panCurvesModal');
   const animated = createAnimatedModal(modal, '.pan-curves-close');
   const title = modal.querySelector('#panCurvesTitle');
+  const description = modal.querySelector('.changelog-header p:last-child');
   const content = modal.querySelector('#panCurvesContent');
   let activeTrack = null;
+  let activeLane = 'pan';
   document.addEventListener('dragend', () => modal.classList.remove('is-dragging-pan-curve'));
 
   const open = track => {
     activeTrack = track;
+    activeLane = getActiveLane(track) || 'pan';
     title.textContent = `${t('panCurves.title')} · ${getTrackLabel(track)}`;
-    content.innerHTML = PAN_CURVE_PRESETS.map(preset => {
-      const points = generatePanCurvePoints(preset.id, 100);
+    description.textContent = t('panCurves.description', { parameter: t(`automation.param.${activeLane}`) });
+    content.innerHTML = AUTOMATION_CURVE_PRESETS.map(preset => {
+      const points = generateCurveTemplatePoints(preset.id, 100);
       const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point.time.toFixed(1)} ${(13 - point.pan * 0.1).toFixed(1)}`).join(' ');
       return `<article class="fx-effect-card is-draggable pan-curve-card" role="button" tabindex="0" draggable="true" data-pan-curve-preset="${preset.id}" title="${t('panCurves.dragHint')}"><span class="fx-effect-state">${t('panCurves.drag')}</span><div class="fx-effect-heading"><h3>${t(preset.titleKey)}</h3><svg class="pan-curve-preview" viewBox="0 0 100 26" aria-hidden="true"><path class="pan-curve-midline" d="M2 13H98"/><path class="pan-curve-line" d="${path}"/></svg></div><p>${t(preset.descriptionKey)}</p></article>`;
     }).join('');
     content.querySelectorAll('[data-pan-curve-preset]').forEach(card => {
       card.addEventListener('dragstart', event => {
-        event.dataTransfer.setData('application/x-audiosplit-pan-curve', JSON.stringify({ track: activeTrack, preset: card.dataset.panCurvePreset }));
+        event.dataTransfer.setData('application/x-audiosplit-automation-curve', JSON.stringify({ track: activeTrack, preset: card.dataset.panCurvePreset, lane: activeLane }));
         event.dataTransfer.effectAllowed = 'copy';
         modal.classList.add('is-dragging-pan-curve');
         animated.close();
       });
       card.addEventListener('click', () => {
-        if (onApply(activeTrack, card.dataset.panCurvePreset) !== false) animated.close();
+        if (onApply(activeTrack, card.dataset.panCurvePreset, activeLane) !== false) animated.close();
       });
       card.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          if (onApply(activeTrack, card.dataset.panCurvePreset) !== false) animated.close();
+          if (onApply(activeTrack, card.dataset.panCurvePreset, activeLane) !== false) animated.close();
         }
       });
     });
