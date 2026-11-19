@@ -1,4 +1,4 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.25';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.29';
 import { t } from './i18n.js?v=1.5.0.27';
 import { lucideIcon } from './lucide.js?v=1.5.0.18';
 
@@ -58,7 +58,7 @@ export function renderTracks(names, savedControls = {}) {
     const volume = saved.volume ?? 100, pan = saved.pan ?? 0, muted = saved.muted ?? false, solo = saved.solo ?? false;
     const soloLabel = t(solo ? 'control.unsolo' : 'control.solo', { track: trackTitle });
     const muteLabel = t(muted ? 'control.unmute' : 'control.mute', { track: trackTitle });
-    const automation = `<div class="automation-tools"><div class="automation-lanes" data-automation-lanes="${name}"></div><button type="button" class="pan-curves-trigger" data-button-variant="modal" data-pan-curves="${name}" title="${t('panCurves.open')}"><svg viewBox="0 0 20 16" aria-hidden="true"><path d="M1 13c4 0 4-10 9-10s5 10 9 10"/><path d="M1 8h18" opacity=".32"/></svg><span>${t('panCurves.button')}</span></button><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}" aria-label="${t('automation.remove')}">${lucideIcon('x', { size: 13 })}</button></div>`;
+    const automation = `<div class="automation-tools"><div class="automation-lanes" data-automation-lanes="${name}"></div><span class="automation-time" data-automation-time="${name}">0:00</span><button type="button" class="remove-point" data-automation-remove="${name}" title="${t('automation.remove')}" aria-label="${t('automation.remove')}">${lucideIcon('x', { size: 13 })}</button></div>`;
     return `<article class="track ${name}" data-track="${name}">
       <div class="track-icon">${icon(info.icon)}</div>
       <div class="track-title">
@@ -73,7 +73,7 @@ export function renderTracks(names, savedControls = {}) {
       </div>
       <button type="button" class="fx-button" data-button-variant="primary" data-button-size="fx" data-fx="${name}" aria-label="${t('fx.open', { track: trackTitle })}" title="${t('fx.open', { track: trackTitle })}">Fx</button>
       <div class="wave-area" title="${t('timeline.zoomHint')}"><div class="wave-content" data-wave-content="${name}"><canvas class="waveform" data-waveform="${name}" aria-label="${trackTitle}"></canvas><span class="playhead" data-playhead="${name}" role="slider" tabindex="0" aria-label="${t('playhead.label', { track: trackTitle })}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0:00"></span>${automation}</div></div>
-      <div class="volume-stack"><button class="mute" data-button-variant="primary" data-button-size="mute" data-mute="${name}" aria-pressed="${muted}" aria-label="${muteLabel}" title="${muteLabel}">${speakerIcon(muted)}</button></div>
+      <div class="track-quick-controls"><button class="mute" data-button-variant="primary" data-button-size="mute" data-mute="${name}" aria-pressed="${muted}" aria-label="${muteLabel}" title="${muteLabel}">${speakerIcon(muted)}</button><button type="button" class="mute pan-curves-trigger" data-button-variant="primary" data-button-size="mute" data-pan-curves="${name}" aria-label="${t('panCurves.open')}" title="${t('panCurves.open')}" hidden><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c4 0 4-10 9-10s5 10 9 10"/><path d="M3 12h18" opacity=".35"/></svg></button></div>
       <div class="track-state-inputs" hidden><input aria-label="${t('control.volume', { track: trackTitle })}" data-control="${name}" data-param="volume" type="range" min="0" max="150" value="${volume}"><output id="${name}VolumeOut">${volume}</output><input aria-label="${t('control.pan', { track: trackTitle })}" data-control="${name}" data-param="pan" type="range" min="-100" max="100" value="${pan}"><output id="${name}PanOut">${pan}</output></div>
     </article>`;
   }).join('');

@@ -610,6 +610,8 @@ export function refreshAutomation(name) {
   const automation = automationByTrack[name]; if (!automation) return;
   automation.activeLane ||= 'pan';
   automation.activeEffects ||= [];
+  const panCurveButton = document.querySelector(`[data-pan-curves="${name}"]`);
+  if (panCurveButton) panCurveButton.hidden = automation.activeLane !== 'pan';
   const laneButtons = document.querySelector(`[data-automation-lanes="${name}"]`);
   if (laneButtons) {
     const lanes = ['pan', 'volume', ...automation.activeEffects.flatMap(effect => effectAutomationLanes[effect] || [])];
