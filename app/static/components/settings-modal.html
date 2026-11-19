@@ -12,7 +12,22 @@
       </button>
     </header>
     <div class="settings-content">
-      <button data-button-variant="danger" id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5m4-5v5"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
+      <section class="settings-engine" aria-labelledby="settingsEngineTitle">
+        <h3 id="settingsEngineTitle" data-i18n="engine.settingsTitle">Moteur de séparation</h3>
+        <p data-i18n="engine.settingsDescription">Choisissez le modèle Demucs utilisé pour les prochaines séparations.</p>
+        <label for="separationEngineSelect"><span data-i18n="engine.settingsLabel">Modèle</span>
+          <select id="separationEngineSelect" aria-label="Moteur de séparation" data-i18n-aria-label="engine.settingsTitle">
+            <option value="mdx" data-i18n="engine.mdx">MDX · rapide sur CPU</option>
+            <option value="mdx_extra" data-i18n="engine.mdxExtra">MDX Extra · modèle alternatif</option>
+            <option value="htdemucs" data-i18n="engine.htdemucs">HTDemucs · polyvalent</option>
+            <option value="htdemucs_ft" data-i18n="engine.htdemucsFt">HTDemucs FT · plus précis, plus lent</option>
+          </select>
+        </label>
+        <p class="settings-engine-note" data-i18n="engine.downloadNote">Un modèle peut être téléchargé lors de sa première utilisation.</p>
+      </section>
+      <div class="settings-cache-action">
+        <button data-button-variant="danger" id="clearCacheButton" class="cache-button" type="button" data-i18n-title="cache.title" title="Supprimer les séparations et fichiers audio mis en cache sur ce PC"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5m4-5v5"/></svg><span data-i18n="cache.clear">Vider le cache AudioSplit</span></button>
+      </div>
     </div>
   </section>
 </div>

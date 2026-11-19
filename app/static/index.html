@@ -8,12 +8,12 @@
   <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.39">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.39">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.40">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.41">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.41">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.41">
   <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
   <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.20">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.39">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.41">
 </head>
 <body>
   <main>
@@ -58,7 +58,6 @@
       <div class="upload-icon" aria-hidden="true"><svg class="upload-arrow lucide" viewBox="0 0 24 24" width="28" height="28"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg></div>
       <h3 data-i18n="import.title">Importez votre morceau</h3><p data-i18n="import.formats">MP3, WAV, FLAC, M4A ou OGG</p>
       <fieldset class="split-mode"><legend data-i18n="split.type">Type de séparation</legend><label><input type="radio" name="splitMode" value="simple" checked> <span data-i18n="split.simple">Voix + accompagnement</span></label><label><input type="radio" name="splitMode" value="detailed"> <span data-i18n="split.detailed">Détaillée : voix, batterie, basse, instruments</span></label></fieldset>
-      <fieldset class="split-mode engine-mode"><legend data-i18n="speed.title">Vitesse de séparation</legend><label><input type="radio" name="engine" value="fast" checked> <span data-i18n="speed.fast">Rapide · recommandé sur CPU</span></label><label><input type="radio" name="engine" value="studio"> <span data-i18n="speed.studio">Studio · meilleure précision, plus lent</span></label></fieldset>
       <button data-button-variant="primary" id="chooseButton" data-i18n="file.choose">Choisir un fichier</button><strong id="fileName"></strong>
       <section id="musicAnalysis" class="music-analysis hidden" aria-labelledby="analysisTitle" aria-live="polite">
         <div class="analysis-heading"><div><h4 id="analysisTitle" data-i18n="analysis.title">Analyse musicale</h4><p data-i18n="analysis.description">Estimations locales ; modifiez le tempo ou la tonalité si nécessaire.</p></div><span id="analysisStatus" class="analysis-status" data-i18n="analysis.waiting">Analyse en attente</span></div>
@@ -147,6 +146,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.39"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.41"></script>
 </body>
 </html>

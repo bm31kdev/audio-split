@@ -1,11 +1,11 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.39';
-import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.39';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.39';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.39';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.41';
+import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.41';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.41';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.41';
 import { mountButtonComponent } from './js/button-component.js?v=1.5.0.20';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.39';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.39';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.39';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.41';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.41';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.41';
 import { lucideIcon } from './js/lucide.js?v=1.5.0.18';
 import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.18';
@@ -19,7 +19,7 @@ let panCurvesModal;
 let resolveInteractionModalReady;
 const interactionModalReady = new Promise(resolve => { resolveInteractionModalReady = resolve; });
 const getInteractionModal = () => interactionModal ? Promise.resolve(interactionModal) : interactionModalReady;
-let currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'fast', activeProjectId = null;
+let currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'mdx', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
 let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting';
@@ -67,6 +67,16 @@ window.addEventListener('audiosplit:project-dirty', () => {
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 function formatBytes(value) { let size = Number(value || 0), unit = 'B'; for (const next of ['KiB', 'MiB', 'GiB']) { if (size < 1024) break; size /= 1024; unit = next; } return `${size.toFixed(unit === 'B' ? 0 : 1)} ${unit}`; }
+const separationEngineIds = new Set(['mdx', 'mdx_extra', 'htdemucs', 'htdemucs_ft']);
+function normalizeSeparationEngine(engine) {
+  const aliases = { fast: 'mdx', studio: 'htdemucs' };
+  const normalized = aliases[engine] || engine;
+  return separationEngineIds.has(normalized) ? normalized : 'mdx';
+}
+function getSavedSeparationEngine() {
+  try { return normalizeSeparationEngine(localStorage.getItem('audiosplit.separationEngine') || 'mdx'); }
+  catch { return 'mdx'; }
+}
 function libraryActionIcon(action) {
   const names = { open: 'folder-open', duplicate: 'copy', export: 'download', rename: 'pencil', delete: 'trash-2' };
   return lucideIcon(names[action], { size: 17 });
@@ -222,9 +232,8 @@ async function openSavedProject(projectId) {
     setTransformInputs(currentMixTransform);
     currentSourceName = project.sourceName || project.name;
     setPlaybackLabel(project.name || currentSourceName);
-    currentMode = project.mode || 'simple'; currentEngine = project.engine || 'fast';
+    currentMode = project.mode || 'simple'; currentEngine = normalizeSeparationEngine(project.engine || getSavedSeparationEngine());
     document.querySelector(`input[name="splitMode"][value="${currentMode}"]`).checked = true;
-    document.querySelector(`input[name="engine"][value="${currentEngine}"]`).checked = true;
     currentJobId = null; activeProjectId = project.id; projectDirty = false;
     updateStudioProjectButton();
     $('#fileName').textContent = currentSourceName;
@@ -739,7 +748,7 @@ async function separateAudio() {
   const cacheButton = $('#clearCacheButton');
   const cancelButton = $('#cancelSeparationButton');
   const mode = document.querySelector('input[name="splitMode"]:checked').value;
-  const engine = document.querySelector('input[name="engine"]:checked').value;
+  const engine = normalizeSeparationEngine($('#separationEngineSelect')?.value || getSavedSeparationEngine());
   if (cacheButton) cacheButton.disabled = true;
   separationCancelRequested = false;
   activeSeparationRequestId = window.crypto?.randomUUID
@@ -749,7 +758,8 @@ async function separateAudio() {
   cancelButton.disabled = false;
   cancelButton.classList.remove('hidden');
   startSeparationProgressPolling(requestId);
-  status(engine === 'fast' ? t('status.fast') : t('status.studio'), false, true);
+  const engineNames = { mdx: 'MDX', mdx_extra: 'MDX Extra', htdemucs: 'HTDemucs', htdemucs_ft: 'HTDemucs FT' };
+  status(t('status.separatingEngine', { engine: engineNames[engine] }), false, true);
   const form = new FormData();
   form.append('file', file);
   form.append('mode', mode);
@@ -898,6 +908,12 @@ async function initializeModalComponents() {
     enhanceStyledDropdowns($('#modalRoot'));
     applyTranslations();
     $('#clearCacheButton').onclick = () => { void confirmClearAudioSplitCache(); };
+    const separationEngineSelect = $('#separationEngineSelect');
+    separationEngineSelect.value = getSavedSeparationEngine();
+    separationEngineSelect.onchange = () => {
+      try { localStorage.setItem('audiosplit.separationEngine', separationEngineSelect.value); }
+      catch (error) { console.warn('Could not persist the separation model preference.', error); }
+    };
     transformModal = createTransformModal($('#transformOpenButton'));
     fxModal = createFxModal({
       stemInfo,

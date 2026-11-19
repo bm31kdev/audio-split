@@ -30,6 +30,7 @@ from .project_store import (
     safe_id, validate_folder_manifest, validate_project_manifest, validate_project_state, validate_mix_transform,
     strip_transient_automation_fields, write_json_atomic,
 )
+from .separation_engines import SUPPORTED_ENGINES, normalize_engine
 
 router = APIRouter()
 project_recovery_status = {"restored": 0, "discarded": 0}
@@ -189,8 +190,9 @@ async def save_project(folder_id: str, payload: dict):
         raise HTTPException(400, "Project name must contain 1 to 120 characters.")
     mode = payload.get("mode", "simple")
     engine = payload.get("engine", "fast")
-    if not isinstance(mode, str) or mode not in {"simple", "detailed"} or not isinstance(engine, str) or engine not in {"fast", "studio"}:
+    if not isinstance(mode, str) or mode not in {"simple", "detailed"} or not isinstance(engine, str) or engine not in SUPPORTED_ENGINES:
         raise HTTPException(400, "Project separation settings are invalid.")
+    engine = normalize_engine(engine)
     source_name = str(payload.get("sourceName", source.name))
     if len(source_name) > 1024:
         raise HTTPException(400, "Project source filename is too long.")

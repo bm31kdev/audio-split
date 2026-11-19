@@ -27,6 +27,7 @@ from .runtime import (
     run_demucs_with_progress, serialized_cache_operation, update_separation_state,
 )
 from .project_store import clear_directory_children, localized, safe_id
+from .separation_engines import ENGINE_CONFIGS, SUPPORTED_ENGINES, normalize_engine
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -102,14 +103,16 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     suffix = Path(file.filename or "audio").suffix.lower()
     if suffix not in ALLOWED:
         raise HTTPException(415, localized(language, "Format non pris en charge. Utilisez MP3, WAV, FLAC, M4A ou OGG.", "Unsupported format. Use MP3, WAV, FLAC, M4A, or OGG."))
-    if mode not in {"simple", "detailed"} or engine not in {"fast", "studio"}:
+    if mode not in {"simple", "detailed"} or engine not in SUPPORTED_ENGINES:
         raise HTTPException(400, localized(language, "Mode de séparation invalide.", "Invalid separation mode."))
+    engine = normalize_engine(engine)
     if file.size is not None and file.size > MAX_UPLOAD_BYTES:
         raise HTTPException(413, localized(language, "Le fichier audio dépasse la limite de 512 Mio.", "The audio file exceeds the 512 MiB limit."))
 
-    model_name = "mdx" if engine == "fast" else "htdemucs"
-    segment = "4" if engine == "fast" else "6"
-    overlap = "0.1" if engine == "fast" else "0.15"
+    engine_config = ENGINE_CONFIGS[engine]
+    model_name = engine_config["model"]
+    segment = engine_config["segment"]
+    overlap = engine_config["overlap"]
     filenames = {"vocals": "vocals.wav", "accompaniment": "no_vocals.wav"} if mode == "simple" else {
         "vocals": "vocals.wav", "drums": "drums.wav", "bass": "bass.wav", "other": "other.wav",
     }
@@ -147,12 +150,8 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
         update_separation_state(request_id, status="cancelled", progress=0)
         raise HTTPException(409, localized(language, "Séparation annulée.", "Separation cancelled."))
 
-    # htdemucs is the quality model bundled with Demucs. --two-stems avoids
-    # producing unused drums/bass/other tracks and returns vocals/no_vocals.
-    # `mdx` is the light CPU-friendly, non-quantized model. Its previous
-    # `mdx_q` variant needs the optional DiffQ C++ extension, which is not
-    # installable out of the box on Windows without Visual C++ Build Tools.
-    # htdemucs remains available when precision matters more than speed.
+    # All options use official, non-quantized Demucs checkpoints that work
+    # without DiffQ. --two-stems avoids producing unused stems in simple mode.
     # Smaller CPU chunks prevent a large song from requesting several gigabytes
     # of RAM in one Demucs pass. Disabling random shifts keeps Fast responsive.
     # The model name is part of the cache key because quality modes differ.
@@ -227,8 +226,8 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
         if "not enough memory" in detail.lower() or "defaultcpuallocator" in detail.lower():
             message = localized(
                 language,
-                "Demucs manque de mémoire vive. Fermez les applications lourdes, puis réessayez en mode Rapide.",
-                "Demucs ran out of RAM. Close memory-heavy applications, then retry in Fast mode.",
+                "Demucs manque de mémoire vive. Fermez les applications lourdes, puis choisissez le modèle MDX dans Paramètres.",
+                "Demucs ran out of RAM. Close memory-heavy applications, then select the MDX model in Settings.",
             )
             update_separation_state(request_id, status="failed", progress=0, error="memory")
             shutil.rmtree(stem_dir, ignore_errors=True)

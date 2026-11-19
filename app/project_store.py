@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import HTTPException
 
 from .config import LIBRARY, MAX_MANIFEST_BYTES
+from .separation_engines import SUPPORTED_ENGINES
 
 def clear_directory_children(directory: Path) -> int:
     """Remove only known cache children while preserving the cache directory."""
@@ -248,7 +249,7 @@ def validate_project_manifest(payload: dict, project_dir: Path, folder_id: str) 
     if not isinstance(source_name, str) or len(source_name) > 1024:
         raise HTTPException(500, "Local project metadata has an invalid source filename.")
     mode, engine, stems = payload.get("mode"), payload.get("engine"), payload.get("stems")
-    if not isinstance(mode, str) or mode not in {"simple", "detailed"} or not isinstance(engine, str) or engine not in {"fast", "studio"}:
+    if not isinstance(mode, str) or mode not in {"simple", "detailed"} or not isinstance(engine, str) or engine not in SUPPORTED_ENGINES:
         raise HTTPException(500, "Local project metadata has invalid separation settings.")
     expected_stems = {"vocals", "accompaniment"} if mode == "simple" else {"vocals", "drums", "bass", "other"}
     if not isinstance(stems, list) or any(not isinstance(stem, str) for stem in stems) or len(stems) != len(expected_stems) or set(stems) != expected_stems:
