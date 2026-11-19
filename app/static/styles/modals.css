@@ -62,35 +62,46 @@
 .fx-effect-card h3 { font-size: 16px; }
 .fx-effect-card p { margin-top: 5px; color: #b5bdac; font-size: 12px; line-height: 1.45; }
 
-/* Changelog is a compact two-column dialog with no internal scroll container. */
-.changelog-modal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 48px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
+/* Keep the release history self-contained while giving the current release room to breathe. */
+.changelog-modal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 36px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
 .changelog-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
-.changelog-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609c4; backdrop-filter: blur(3px); transition: opacity 0.22s ease; }
-.changelog-dialog { position: relative; display: flex; flex-direction: column; width: min(650px, calc(100vw - 40px)); max-width: min(680px, calc(100vw - 40px)); max-height: calc(100vh - 96px); opacity: 0; overflow: hidden; background: linear-gradient(145deg, #1b1e25, #111217 68%); border: 1px solid #3b404b; border-radius: 18px; box-shadow: 0 28px 90px #000b; transform: translateY(20px) scale(0.97); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.changelog-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609d4; backdrop-filter: blur(5px); transition: opacity 0.22s ease; }
+.changelog-dialog { position: relative; display: flex; flex-direction: column; width: min(790px, calc(100vw - 40px)); max-width: min(790px, calc(100vw - 40px)); max-height: calc(100vh - 72px); opacity: 0; overflow: hidden; background: radial-gradient(ellipse at 12% 0%, #242a1b 0, transparent 38%), linear-gradient(145deg, #1b1e25, #111217 68%); border: 1px solid #434a3e; border-radius: 22px; box-shadow: 0 32px 100px #000c, inset 0 1px #ffffff0c; transform: translateY(20px) scale(0.97); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .changelog-modal.is-open .changelog-backdrop { opacity: 1; }
 .changelog-modal.is-open .changelog-dialog { opacity: 1; transform: translateY(0) scale(1); }
-.changelog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 24px 18px; border-bottom: 1px solid var(--line); }
-.changelog-header .eyebrow { margin-bottom: 7px; }
-.changelog-header h2 { font-size: 26px; letter-spacing: -1px; }
-.changelog-header p:last-child { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.changelog-header { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex: 0 0 auto; padding: 27px 30px 22px; border-bottom: 1px solid #343943; background: linear-gradient(100deg, #ffffff04, transparent 70%); }
+.changelog-header::after { position: absolute; right: 30px; bottom: -1px; left: 30px; height: 1px; content: ''; background: linear-gradient(90deg, var(--lime), #d7ff5400 78%); opacity: .55; }
+.changelog-header .eyebrow { margin-bottom: 9px; color: var(--lime); font-size: 10px; letter-spacing: .16em; }
+.changelog-header h2 { font-size: 29px; letter-spacing: -1.1px; }
+.changelog-header p:last-child { margin-top: 7px; color: #a8afbb; font-size: 13px; line-height: 1.45; }
 .changelog-close { width: 34px; height: 34px; padding: 0; border-radius: 8px; }
 .changelog-close svg { width: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.release-list { display: grid; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; list-style: none; }
-.release { position: relative; padding: 15px 15px 14px 18px; background: linear-gradient(145deg, #191c22, #14161b); border: 1px solid #313641; border-radius: 13px; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
-.release:hover { transform: translateY(-2px); border-color: #4a515e; box-shadow: 0 10px 24px #0004; }
-.release::before { position: absolute; top: 13px; bottom: 13px; left: 0; width: 3px; content: ''; background: #657080; border-radius: 0 3px 3px 0; }
-.release.current { background: linear-gradient(100deg, #202816, #16191f); border-color: #657e37; }
-.release.current::before { background: var(--lime); }
+.release-list { display: grid; min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 0; padding: 22px 30px 28px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #69774a transparent; list-style: none; }
+.release { position: relative; display: grid; grid-template-rows: auto 1fr auto; min-width: 0; min-height: 168px; padding: 17px 20px; background: linear-gradient(145deg, #1b1e25, #14161b); border: 1px solid #343943; border-radius: 15px; box-shadow: inset 0 1px #ffffff05; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.release:hover { transform: translateY(-2px); border-color: #596144; box-shadow: 0 12px 28px #0005, inset 0 1px #ffffff08; }
+.release::before { position: absolute; top: 14px; bottom: 14px; left: 0; width: 3px; content: ''; background: #64707f; border-radius: 0 3px 3px 0; }
+.release.current { grid-column: 1 / -1; grid-template-columns: minmax(140px, .36fr) minmax(0, 1fr); grid-template-rows: 1fr auto; gap: 0 24px; min-height: 176px; padding: 20px 24px; background: radial-gradient(ellipse at 0% 0%, #d7ff5419, transparent 56%), linear-gradient(110deg, #202817, #171b18 62%, #17191f); border-color: #70874b; box-shadow: 0 12px 34px #0003, inset 0 1px #ffffff10; }
+.release.current::before { top: 18px; bottom: 18px; width: 4px; background: var(--lime); box-shadow: 0 0 15px #d7ff5440; }
 .release-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.release-kicker { display: block; margin-bottom: 4px; color: #89909c; font: 9px Consolas, 'Courier New', monospace; letter-spacing: .09em; }
-.release h3 { font: 600 19px/1.1 Consolas, 'Courier New', monospace; }
-.release-date { display: block; margin-top: 5px; color: #858c99; font: 9px Consolas, 'Courier New', monospace; }
-.release.current h3 { color: var(--lime); }
-.release-tag { padding: 3px 6px; color: #d7ff54; font: 9px Consolas, 'Courier New', monospace; text-transform: uppercase; border: 1px solid #465035; border-radius: 999px; }
-.release p { margin-top: 13px; color: #c0c5ce; font-size: 11px; line-height: 1.55; }
-.release-highlights { margin-top: 12px; }
-.release-highlights span { display: inline-flex; padding: 5px 8px; color: #c7d9a0; font: 9px/1.2 Segoe UI, Arial, sans-serif; background: #20251b; border: 1px solid #38432a; border-radius: 999px; }
-.release.current .release-highlights span { color: var(--lime); background: #252d1b; border-color: #465634; }
+.release-kicker { display: block; margin-bottom: 6px; color: #9299a5; font: 10px Consolas, 'Courier New', monospace; letter-spacing: .12em; }
+.release h3 { font: 650 23px/1.1 Consolas, 'Courier New', monospace; letter-spacing: -.04em; }
+.release-date { display: block; margin-top: 7px; color: #9299a5; font: 11px/1.3 Consolas, 'Courier New', monospace; }
+.release.current .release-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; justify-content: space-between; }
+.release.current h3 { color: var(--lime); font-size: 41px; letter-spacing: -.07em; }
+.release.current p { grid-column: 2; grid-row: 1; align-self: end; margin-top: 0; font-size: 14px; }
+.release-tag { padding: 5px 9px; color: #d7ff54; font: 600 10px/1.1 Segoe UI, Arial, sans-serif; text-transform: uppercase; letter-spacing: .07em; background: #d7ff5410; border: 1px solid #687d44; border-radius: 999px; }
+.release p { align-self: start; margin-top: 12px; color: #d0d4dc; font-size: 13px; line-height: 1.55; }
+.release-highlights { margin-top: 13px; }
+.release.current .release-highlights { grid-column: 2; grid-row: 2; align-self: start; margin-top: 15px; }
+.release-highlights span { display: inline-flex; max-width: 100%; padding: 6px 9px; color: #d4e6aa; font: 11px/1.3 Segoe UI, Arial, sans-serif; background: #20251b; border: 1px solid #39442c; border-radius: 999px; }
+.release.current .release-highlights span { color: var(--lime); background: #d7ff540d; border-color: #566b3a; }
+.release:not(.current) { grid-template-columns: minmax(110px, .25fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 0 24px; min-height: 128px; padding: 16px 20px; }
+.release:not(.current) .release-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; justify-content: center; }
+.release:not(.current) p { grid-column: 2; grid-row: 1; margin: 0; font-size: 14px; line-height: 1.5; }
+.release:not(.current) .release-highlights { grid-column: 2; grid-row: 2; align-self: start; margin-top: 10px; }
+.release-list::-webkit-scrollbar { width: 9px; }
+.release-list::-webkit-scrollbar-thumb { background: #69774a; border: 3px solid transparent; border-radius: 999px; background-clip: content-box; }
+.release-list::-webkit-scrollbar-track { background: transparent; }
 
 /* Confirmations and text prompts use the same framed dialog as version history. */
 .interaction-dialog { width: min(540px, calc(100vw - 40px)); }
@@ -157,8 +168,8 @@
 .save-project-controls input { flex: 1; }
 .save-project-controls button { color: #101407; background: var(--lime); border-color: var(--lime); }
 
-/* Match every modal to the changelog frame, fixed title bar, and inner content scroll. */
-.fx-dialog, .language-dialog, .changelog-dialog { border-color: #3b404b; background: linear-gradient(145deg, #1b1e25, #111217 68%); }
+/* Match compact utility dialogs to the shared frame while the changelog keeps its featured surface. */
+.fx-dialog, .language-dialog { border-color: #3b404b; background: linear-gradient(145deg, #1b1e25, #111217 68%); }
 .fx-dialog-top, .language-dialog-top { flex: 0 0 auto; padding: 24px 24px 18px; border-bottom: 1px solid var(--line); }
 .fx-dialog-top .eyebrow, .language-dialog-top .eyebrow { margin-bottom: 7px; }
 .fx-dialog h2, .language-dialog h2 { font-size: 26px; letter-spacing: -1px; }
@@ -210,11 +221,12 @@
 }
 
 /* All dialogs share one title block and one full-width separator. */
-.fx-dialog, .language-dialog, .changelog-dialog {
+.fx-dialog, .language-dialog {
   width: min(650px, calc(100vw - 40px));
   max-width: min(650px, calc(100vw - 40px));
   max-height: calc(100vh - 96px);
 }
+.changelog-dialog { width: min(790px, calc(100vw - 40px)); max-width: min(790px, calc(100vw - 40px)); max-height: calc(100vh - 72px); }
 .fx-dialog, .language-dialog { padding: 0; }
 .fx-dialog-top, .language-dialog-top { display: contents; }
 .fx-modal-content { padding: 0 24px; }
@@ -224,6 +236,21 @@
 
 @media (max-width: 540px) {
   .fx-dialog, .language-dialog, .changelog-dialog { max-height: calc(100vh - 64px); }
+  .changelog-dialog { max-height: calc(100vh - 48px); }
+  .changelog-header { padding: 20px 19px 17px; }
+  .changelog-header h2 { font-size: 24px; }
+  .changelog-header p:last-child { font-size: 12px; }
+  .release-list { grid-template-columns: 1fr; gap: 10px; padding: 15px 17px 20px; }
+  .release { min-height: unset; padding: 15px 15px 14px 18px; }
+  .release:not(.current) { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 9px; min-height: unset; padding: 15px 16px; }
+  .release:not(.current) .release-top { grid-column: 1; grid-row: 1; flex-direction: row; justify-content: space-between; }
+  .release:not(.current) p { grid-column: 1; grid-row: 2; font-size: 13px; }
+  .release:not(.current) .release-highlights { grid-column: 1; grid-row: 3; margin-top: 0; }
+  .release.current { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; gap: 12px; min-height: unset; padding: 17px 18px; }
+  .release.current .release-top { grid-column: 1; grid-row: 1; flex-direction: row; align-items: flex-start; }
+  .release.current h3 { font-size: 34px; }
+  .release.current p { grid-column: 1; grid-row: 2; }
+  .release.current .release-highlights { grid-column: 1; grid-row: 3; margin-top: 0; }
   .fx-modal-content { padding: 0 18px; }
   .fx-done { margin: 0 18px 16px; }
   .language-options { padding: 0 18px 18px; }
