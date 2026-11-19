@@ -1,11 +1,11 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.38';
-import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.38';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.38';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.38';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.39';
+import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.39';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.39';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.39';
 import { mountButtonComponent } from './js/button-component.js?v=1.5.0.20';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.38';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.38';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.38';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.39';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.39';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.39';
 import { lucideIcon } from './js/lucide.js?v=1.5.0.18';
 import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.18';
@@ -740,7 +740,7 @@ async function separateAudio() {
   const cancelButton = $('#cancelSeparationButton');
   const mode = document.querySelector('input[name="splitMode"]:checked').value;
   const engine = document.querySelector('input[name="engine"]:checked').value;
-  cacheButton.disabled = true;
+  if (cacheButton) cacheButton.disabled = true;
   separationCancelRequested = false;
   activeSeparationRequestId = window.crypto?.randomUUID
     ? window.crypto.randomUUID().replaceAll('-', '')
@@ -816,7 +816,7 @@ async function separateAudio() {
     cancelButton.disabled = true;
     cancelButton.classList.add('hidden');
     button.disabled = !$('#fileInput').files[0];
-    cacheButton.disabled = false;
+    if (cacheButton) cacheButton.disabled = false;
   }
 }
 
@@ -837,7 +837,7 @@ $('#cancelSeparationButton').onclick = async () => {
 
 async function clearAudioSplitCache() {
   const button = $('#clearCacheButton');
-  button.disabled = true;
+  if (button) button.disabled = true;
   try {
     const data = await apiJson(`/api/cache?lang=${getLanguage()}`, { method: 'DELETE' });
     const total = data.removedJobs + data.removedUploads;
@@ -846,12 +846,11 @@ async function clearAudioSplitCache() {
     console.error('AudioSplit cache could not be cleared.', error);
     status(userFacingError(error, 'status.actionError'), true);
   } finally {
-    button.disabled = false;
+    if (button) button.disabled = false;
   }
 }
 
-$('#separateButton').onclick = () => { void separateAudio(); };
-$('#clearCacheButton').onclick = async () => {
+async function confirmClearAudioSplitCache() {
   let confirmationText = t('cache.confirm').split('\n\n').slice(1).join('\n\n');
   try {
     const { storage = {} } = await apiJson('/api/library');
@@ -862,7 +861,9 @@ $('#clearCacheButton').onclick = async () => {
   } catch (error) { console.warn('Could not read cache size before confirmation.', error); }
   const dialogs = await getInteractionModal();
   if (await dialogs.confirm({ title: t('cache.clear'), description: t('interaction.cacheDescription'), message: confirmationText, preserveLines: true, danger: true, acceptLabel: t('cache.clear') })) void clearAudioSplitCache();
-};
+}
+
+$('#separateButton').onclick = () => { void separateAudio(); };
 $('#playButton').onclick = () => { void playMix(); };
 $('#stopButton').onclick = stop;
 $('#exportButton').onclick = exportMix;
@@ -896,6 +897,7 @@ async function initializeModalComponents() {
     await mountModalComponents($('#modalRoot'));
     enhanceStyledDropdowns($('#modalRoot'));
     applyTranslations();
+    $('#clearCacheButton').onclick = () => { void confirmClearAudioSplitCache(); };
     transformModal = createTransformModal($('#transformOpenButton'));
     fxModal = createFxModal({
       stemInfo,

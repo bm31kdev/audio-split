@@ -65,13 +65,13 @@
 /* Keep the release history self-contained while giving the current release room to breathe. */
 .changelog-modal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 36px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
 .settings-modal { z-index: 40; }
-.changelog-dialog.settings-dialog { width: min(440px, calc(100vw - 40px)); max-width: min(440px, calc(100vw - 40px)); min-height: 174px; }
 .changelog-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
 .changelog-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609d4; backdrop-filter: blur(5px); transition: opacity 0.22s ease; }
 .changelog-dialog { position: relative; display: flex; flex-direction: column; width: min(650px, calc(100vw - 40px)); max-width: min(650px, calc(100vw - 40px)); max-height: calc(100vh - 72px); opacity: 0; overflow: hidden; background: radial-gradient(ellipse at 12% 0%, #242a1b 0, transparent 38%), linear-gradient(145deg, #1b1e25, #111217 68%); border: 1px solid #434a3e; border-radius: 22px; box-shadow: 0 32px 100px #000c, inset 0 1px #ffffff0c; transform: translateY(20px) scale(0.97); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .changelog-modal.is-open .changelog-backdrop { opacity: 1; }
 .changelog-modal.is-open .changelog-dialog { opacity: 1; transform: translateY(0) scale(1); }
 .changelog-header { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex: 0 0 auto; padding: 27px 30px 22px; border-bottom: 1px solid #343943; background: linear-gradient(100deg, #ffffff04, transparent 70%); }
+.settings-content { display: flex; align-items: center; justify-content: flex-end; padding: 22px 30px 28px; }
 .changelog-header::after { position: absolute; right: 30px; bottom: -1px; left: 30px; height: 1px; content: ''; background: linear-gradient(90deg, var(--lime), #d7ff5400 78%); opacity: .55; }
 .changelog-header .eyebrow { margin-bottom: 9px; color: var(--lime); font-size: 10px; letter-spacing: .16em; }
 .changelog-header h2 { font-size: 29px; letter-spacing: -1.1px; }
@@ -240,6 +240,7 @@
   .fx-dialog, .language-dialog, .changelog-dialog { max-height: calc(100vh - 64px); }
   .changelog-dialog { max-height: calc(100vh - 48px); }
   .changelog-header { padding: 20px 19px 17px; }
+  .settings-content { padding: 18px 19px 20px; }
   .changelog-header h2 { font-size: 24px; }
   .changelog-header p:last-child { font-size: 12px; }
   .release-list { grid-template-columns: 1fr; gap: 10px; padding: 15px 17px 20px; }
