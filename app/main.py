@@ -38,6 +38,8 @@ class RequestBodyLimitMiddleware:
         method, path = scope.get("method"), scope.get("path", "")
         if method == "POST" and path == "/api/separate":
             limit = MAX_UPLOAD_BYTES + 1_000_000  # File plus multipart fields/boundaries.
+        elif method == "POST" and path.endswith("/mixes"):
+            limit = MAX_PROJECT_ARCHIVE_BYTES + 1_000_000
         elif method == "POST" and path.endswith("/projects/import"):
             limit = MAX_PROJECT_ARCHIVE_BYTES + 1_000_000
         elif path.startswith("/api/library/") and method in {"POST", "PUT", "PATCH"}:
@@ -54,7 +56,7 @@ class RequestBodyLimitMiddleware:
                 if declared_size > limit:
                     await self._reject(send, limit)
                     return
-                if method == "POST" and (path == "/api/separate" or path.endswith("/projects/import")):
+                if method == "POST" and (path == "/api/separate" or path.endswith("/projects/import") or path.endswith("/mixes")):
                     spool_free = shutil.disk_usage(tempfile.gettempdir()).free
                     if spool_free < declared_size * 2 + MIN_FREE_DISK_BYTES:
                         await self._reject(send, limit, status=507, detail="There is not enough temporary disk space for this upload.")

@@ -13,7 +13,7 @@ import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
@@ -115,6 +115,7 @@ def list_library():
             warnings.append({"kind": "folder", "id": path.name})
             continue
         projects = []
+        mixes = []
         folder_bytes = 0
         for project_dir in (path / "projects").glob("*/"):
             metadata = project_dir / "project.json"
@@ -130,7 +131,25 @@ def list_library():
                     projects.append(project)
                 except HTTPException:
                     warnings.append({"kind": "project", "id": project_dir.name, "folderId": folder["id"]})
+        mixes_dir = path / "mixes"
+        if mixes_dir.is_dir() and not mixes_dir.is_symlink():
+            for mix_dir in mixes_dir.iterdir():
+                manifest = mix_dir / "mix.json"
+                if mix_dir.is_symlink() or not mix_dir.is_dir() or not manifest.is_file():
+                    continue
+                try:
+                    mix = read_json(manifest)
+                    if mix.get("id") != mix_dir.name or mix.get("folderId") != folder["id"] or not safe_id(mix.get("id", "")):
+                        raise HTTPException(500, "Mix metadata has an invalid identifier.")
+                    if any(not (mix_dir / f"deck_{deck}.wav").is_file() for deck in ("a", "b")):
+                        raise HTTPException(500, "Mix audio files are missing.")
+                    mix["sizeBytes"] = measure_tree_bytes(mix_dir)
+                    folder_bytes += mix["sizeBytes"]
+                    mixes.append(mix)
+                except HTTPException:
+                    warnings.append({"kind": "mix", "id": mix_dir.name, "folderId": folder["id"]})
         folder["projects"] = sorted(projects, key=lambda project: project.get("updatedAt", ""), reverse=True)
+        folder["mixes"] = sorted(mixes, key=lambda mix: mix.get("updatedAt", ""), reverse=True)
         folder["sizeBytes"] = folder_bytes
         folders.append(folder)
     preset_bytes = measure_tree_bytes(PRESETS)
@@ -147,9 +166,10 @@ def create_folder(payload: dict):
     folder_id = uuid.uuid4().hex
     path = LIBRARY / folder_id
     (path / "projects").mkdir(parents=True)
+    (path / "mixes").mkdir()
     now = datetime.now(timezone.utc).isoformat()
     write_json_atomic(path / "folder.json", {"id": folder_id, "name": name, "createdAt": now})
-    return {"id": folder_id, "name": name, "createdAt": now, "projects": []}
+    return {"id": folder_id, "name": name, "createdAt": now, "projects": [], "mixes": []}
 
 
 @router.patch("/api/library/folders/{folder_id}")
@@ -382,6 +402,151 @@ def load_project(project_id: str):
     except OSError as exc:
         raise HTTPException(500, "One or more saved project audio files are missing.") from exc
     return metadata
+
+
+def mix_path(mix_id: str) -> Path:
+    """Find a saved two-deck mix without trusting a client-provided path."""
+    if not safe_id(mix_id):
+        raise HTTPException(404, "Mix not found.")
+    for folder in LIBRARY.iterdir():
+        candidate = folder / "mixes" / mix_id
+        if candidate.is_dir() and not candidate.is_symlink() and (candidate / "mix.json").is_file():
+            manifest = read_json(candidate / "mix.json")
+            if manifest.get("id") == mix_id and manifest.get("folderId") == folder.name:
+                return candidate
+    raise HTTPException(404, "Mix not found.")
+
+
+@router.post("/api/library/folders/{folder_id}/mixes")
+@serialized_cache_operation
+async def save_saved_mix(
+    folder_id: str,
+    manifest: str = Form(...),
+    deck_a: UploadFile = File(...),
+    deck_b: UploadFile = File(...),
+):
+    """Save two flattened stereo WAV decks and their editable transition settings."""
+    parent = folder_path(folder_id)
+    try:
+        metadata = json.loads(manifest)
+        if not isinstance(metadata, dict):
+            raise ValueError("Manifest must be an object")
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise HTTPException(400, "Mix metadata is invalid.") from exc
+    title = str(metadata.get("name", "")).strip()
+    if not title or len(title) > 120:
+        raise HTTPException(400, "Mix name must contain 1 to 120 characters.")
+    transition = metadata.get("transition", {})
+    if not isinstance(transition, dict):
+        raise HTTPException(400, "Mix transition settings are invalid.")
+    duration = transition.get("duration", 16)
+    if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not 1 <= duration <= 120:
+        raise HTTPException(400, "Transition duration must be between 1 and 120 seconds.")
+    style = transition.get("style", "crossfade")
+    if not isinstance(style, str) or style not in {"crossfade", "filter", "eq"}:
+        raise HTTPException(400, "Unknown mix transition style.")
+    decks = metadata.get("decks", {})
+    if not isinstance(decks, dict) or any(not isinstance(decks.get(key), dict) for key in ("a", "b")):
+        raise HTTPException(400, "Mix must contain two deck descriptions.")
+    if len(json.dumps(metadata, ensure_ascii=False).encode("utf-8")) > MAX_MANIFEST_BYTES:
+        raise HTTPException(413, "Mix metadata is too large.")
+    uploads = {"a": deck_a, "b": deck_b}
+    if any(upload.filename and not upload.filename.lower().endswith(".wav") for upload in uploads.values()):
+        raise HTTPException(400, "Mix decks must be WAV audio.")
+    declared_sizes = [upload.size or 0 for upload in uploads.values()]
+    if any(size <= 44 for size in declared_sizes):
+        raise HTTPException(400, "Both mix decks must contain audio.")
+    audio_size = sum(declared_sizes)
+    if audio_size > MAX_PROJECT_ARCHIVE_BYTES:
+        raise HTTPException(413, "Saved mix audio exceeds the 2 GiB limit.")
+    if measure_tree_bytes(LIBRARY) + audio_size > MAX_LIBRARY_BYTES:
+        raise HTTPException(507, "Saving this mix would exceed the 20 GiB local library limit.")
+    if shutil.disk_usage(parent).free < audio_size + MIN_FREE_DISK_BYTES:
+        raise HTTPException(507, "There is not enough free disk space to save this mix.")
+
+    mix_id = uuid.uuid4().hex
+    mixes_dir = parent / "mixes"
+    mixes_dir.mkdir(exist_ok=True)
+    staging, destination = mixes_dir / f".save-{mix_id}", mixes_dir / mix_id
+    try:
+        staging.mkdir()
+        for key, upload in uploads.items():
+            target = staging / f"deck_{key}.wav"
+            written = 0
+            with target.open("wb") as stream:
+                while chunk := await upload.read(1024 * 1024):
+                    written += len(chunk)
+                    if written > MAX_PROJECT_ARCHIVE_BYTES:
+                        raise HTTPException(413, "Saved mix audio exceeds the 2 GiB limit.")
+                    stream.write(chunk)
+            if written <= 44:
+                raise HTTPException(400, "Both mix decks must contain audio.")
+            with target.open("rb") as stream:
+                header = stream.read(12)
+            if len(header) < 12 or header[:4] != b"RIFF" or header[8:12] != b"WAVE":
+                raise HTTPException(400, "Mix deck is not a valid WAV file.")
+        now = datetime.now(timezone.utc).isoformat()
+        saved = {
+            "schemaVersion": 1, "kind": "mix", "id": mix_id, "folderId": folder_id,
+            "name": title, "decks": decks,
+            "transition": {"style": style, "duration": float(duration)},
+            "createdAt": now, "updatedAt": now,
+        }
+        write_json_atomic(staging / "mix.json", saved, keep_backup=False)
+        os.replace(staging, destination)
+        saved["sizeBytes"] = measure_tree_bytes(destination)
+        return saved
+    except BaseException:
+        await run_in_threadpool(shutil.rmtree, staging, ignore_errors=True)
+        raise
+
+
+@router.get("/api/library/mixes/{mix_id}")
+def load_saved_mix(mix_id: str):
+    path = mix_path(mix_id)
+    metadata = read_json(path / "mix.json")
+    metadata["audio"] = {key: f"/api/library/mixes/{mix_id}/deck_{key}.wav" for key in ("a", "b")}
+    metadata["fileBytes"] = {key: (path / f"deck_{key}.wav").stat().st_size for key in ("a", "b")}
+    return metadata
+
+
+@router.get("/api/library/mixes/{mix_id}/{asset}")
+def saved_mix_audio(mix_id: str, asset: str):
+    if asset not in {"deck_a.wav", "deck_b.wav"}:
+        raise HTTPException(404, "Mix audio not found.")
+    path = mix_path(mix_id) / asset
+    if not path.is_file():
+        raise HTTPException(404, "Mix audio not found.")
+    return FileResponse(path, media_type="audio/wav", filename=asset)
+
+
+@router.patch("/api/library/mixes/{mix_id}")
+def update_saved_mix(mix_id: str, payload: dict):
+    path = mix_path(mix_id)
+    metadata = read_json(path / "mix.json")
+    name = str(payload.get("name", metadata["name"])).strip()
+    transition = payload.get("transition", metadata["transition"])
+    if not name or len(name) > 120 or not isinstance(transition, dict):
+        raise HTTPException(400, "Mix name or transition settings are invalid.")
+    duration, style = transition.get("duration"), transition.get("style")
+    if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not 1 <= duration <= 120 or not isinstance(style, str) or style not in {"crossfade", "filter", "eq"}:
+        raise HTTPException(400, "Mix transition settings are invalid.")
+    metadata["name"] = name
+    metadata["transition"] = {"style": style, "duration": float(duration)}
+    metadata["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    write_json_atomic(path / "mix.json", metadata)
+    return metadata
+
+
+@router.delete("/api/library/mixes/{mix_id}")
+@serialized_cache_operation
+async def delete_saved_mix(mix_id: str, payload: dict):
+    path = mix_path(mix_id)
+    metadata = read_json(path / "mix.json")
+    if payload.get("confirmation") != metadata["name"]:
+        raise HTTPException(409, "Type the exact mix name to confirm its permanent deletion.")
+    await run_in_threadpool(shutil.rmtree, path)
+    return {"deleted": True}
 
 
 @router.patch("/api/library/projects/{project_id}")

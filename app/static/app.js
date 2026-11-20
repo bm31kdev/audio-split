@@ -12,6 +12,7 @@ import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.18'
 import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.18';
 import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.18';
 import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.25';
+import { createMixStudio } from './js/mix-studio.js?v=1.5.0.45';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal;
@@ -20,19 +21,25 @@ let resolveInteractionModalReady;
 const interactionModalReady = new Promise(resolve => { resolveInteractionModalReady = resolve; });
 const getInteractionModal = () => interactionModal ? Promise.resolve(interactionModal) : interactionModalReady;
 let currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'mdx', activeProjectId = null;
+let mixStudio = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
 let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting';
 let currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
 let renderedTransform = { ...currentMixTransform }, transformBusy = false;
 function showAppPage(page, { updateHash = true } = {}) {
-  const requested = ['home', 'projects', 'studio'].includes(page) ? page : 'projects';
+  const requested = ['home', 'projects', 'studio', 'mix'].includes(page) ? page : 'projects';
   // Audio buffers only live in memory. After a browser reload, never reveal an empty studio shell.
   const emptyStudio = requested === 'studio' && !Object.keys(tracks).length;
   const target = emptyStudio ? 'projects' : requested;
-  $('#homePage')?.classList.toggle('hidden', target !== 'home');
-  $('#studioPage')?.classList.toggle('hidden', target !== 'studio');
-  $('#libraryModal')?.classList.toggle('hidden', target !== 'projects');
+  const pageVisibility = { home: '#homePage', studio: '#studioPage', mix: '#mixPage', projects: '#libraryModal' };
+  Object.entries(pageVisibility).forEach(([pageName, selector]) => {
+    const pageElement = $(selector);
+    if (!pageElement) return;
+    const hidden = pageName !== target;
+    pageElement.hidden = hidden;
+    pageElement.classList.toggle('hidden', hidden);
+  });
   document.querySelectorAll('[data-page]').forEach(button => {
     const active = button.dataset.page === target;
     button.classList.toggle('is-current', active);
@@ -58,6 +65,7 @@ document.querySelectorAll('[data-page]').forEach(button => button.addEventListen
     return;
   }
   showAppPage(page);
+  if (page === 'mix') void mixStudio?.enter();
 }));
 function markProjectDirty() { window.dispatchEvent(new Event('audiosplit:project-dirty')); }
 window.addEventListener('audiosplit:project-dirty', () => {
@@ -112,7 +120,7 @@ function renderLibrary() {
   $('#saveProjectButton').textContent = activeProjectId ? labels.update : labels.save;
   $('#saveProjectPanel').classList.toggle('hidden', !Object.keys(tracks).length || (!currentJobId && !activeProjectId));
   const storage = libraryData.storage || {};
-  const storageLabel = getLanguage() === 'en' ? 'Projects + presets' : 'Projets + préréglages';
+  const storageLabel = getLanguage() === 'en' ? 'Projects + mixes + presets' : 'Projets + mixages + préréglages';
   $('#libraryStorage').innerHTML = `<span>${storageLabel} : <strong>${formatBytes(storage.libraryBytes)}</strong> / ${formatBytes(storage.libraryLimitBytes)}</span><span>${getLanguage() === 'en' ? 'Separations to clear' : 'Séparations temporaires'} : <strong>${formatBytes(storage.jobBytes)}</strong></span><span>${getLanguage() === 'en' ? 'Imported audio copies to clear' : 'Copies audio temporaires'} : <strong>${formatBytes(storage.uploadBytes)}</strong> / ${formatBytes(storage.cacheLimitBytes)} ${getLanguage() === 'en' ? 'cache limit total' : 'limite cache totale'}</span><span>${getLanguage() === 'en' ? 'Free disk space' : 'Espace disque libre'} : <strong>${formatBytes(storage.freeBytes)}</strong></span>`;
   $('#projectSearchInput').placeholder = getLanguage() === 'en' ? 'Search projects…' : 'Rechercher un projet…';
   const sortSelect = $('#projectSortSelect');
@@ -144,7 +152,9 @@ function renderLibrary() {
   const projectsWithFolder = projectCards.map(project => ({ ...project, folderName: project.folderName || current.name }));
   const actionButton = (projectId, action, label, variant = 'modal') => `<button type="button" class="library-action" data-button-size="library-action" data-button-variant="${variant}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}" data-${action}-project="${projectId}">${libraryActionIcon(action)}</button>`;
   const projectHtml = projectsWithFolder.length ? projectsWithFolder.map(project => `<article class="library-project"><div class="library-project-info"><h4>${escapeHtml(project.name)}</h4><p>${escapeHtml(project.folderName)} · ${escapeHtml(project.sourceName || '')} · ${formatBytes(project.sizeBytes)} · ${new Date(project.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')}</p></div><div class="library-project-actions">${actionButton(project.id, 'open', labels.open)}${actionButton(project.id, 'duplicate', getLanguage() === 'en' ? 'Duplicate project' : 'Dupliquer le projet')}${actionButton(project.id, 'export', labels.exportArchive)}${actionButton(project.id, 'rename', labels.rename)}${actionButton(project.id, 'delete', labels.remove, 'danger')}</div></article>`).join('') : `<p class="library-empty">${query ? (getLanguage() === 'en' ? 'No projects match your search.' : 'Aucun projet ne correspond à cette recherche.') : labels.noProjects}</p>`;
-  workspace.innerHTML = `${warningHtml}${recoveryHtml}<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-button-variant="modal" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${query ? (getLanguage() === 'en' ? 'Search results' : 'Résultats de recherche') : escapeHtml(current.name)}</h3><div>${!query ? `<button type="button" data-button-variant="modal" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-folder="${current.id}">${labels.remove}</button>` : ''}</div></div>${projectHtml}</section>`;
+  const folderMixes = query ? [] : (current.mixes || []);
+  const mixHtml = folderMixes.length ? `<section class="library-mix-section"><h3>${getLanguage() === 'en' ? 'Mixes' : 'Mixages'}</h3>${folderMixes.map(mix => `<article class="library-project library-mix"><div class="library-project-info"><h4>${escapeHtml(mix.name)}</h4><span class="library-mix-badge">${getLanguage() === 'en' ? 'MIX' : 'MIXAGE'}</span><p>${escapeHtml(current.name)} · ${new Date(mix.updatedAt).toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR')} · ${formatBytes(mix.sizeBytes)}</p></div><div class="library-project-actions"><button type="button" data-button-variant="secondary" data-open-mix="${mix.id}">${getLanguage() === 'en' ? 'Open in Mix' : 'Ouvrir dans Mix'}</button><button type="button" data-button-variant="danger" data-delete-mix="${mix.id}" aria-label="${getLanguage() === 'en' ? 'Delete mix' : 'Supprimer le mixage'}">${getLanguage() === 'en' ? 'Delete' : 'Supprimer'}</button></div></article>`).join('')}</section>` : '';
+  workspace.innerHTML = `${warningHtml}${recoveryHtml}<nav class="library-folders">${libraryData.folders.map(folder => `<button type="button" data-button-variant="modal" data-folder="${folder.id}" class="library-folder ${folder.id === current.id ? 'active' : ''}"><span>${escapeHtml(folder.name)}</span><small>${folder.projects.length + (folder.mixes || []).length}</small></button>`).join('')}</nav><section class="library-projects"><div class="library-folder-heading"><h3>${query ? (getLanguage() === 'en' ? 'Search results' : 'Résultats de recherche') : escapeHtml(current.name)}</h3><div>${!query ? `<button type="button" data-button-variant="modal" data-rename-folder="${current.id}">${labels.rename}</button><button type="button" data-button-variant="danger" data-delete-folder="${current.id}">${labels.remove}</button>` : ''}</div></div>${projectHtml}${mixHtml}</section>`;
   workspace.querySelectorAll('[data-folder]').forEach(button => button.onclick = () => { selectedFolderId = button.dataset.folder; renderLibrary(); });
   workspace.querySelectorAll('[data-rename-folder]').forEach(button => button.onclick = () => void renameLibraryItem(`/api/library/folders/${button.dataset.renameFolder}`, current.name));
   workspace.querySelectorAll('[data-delete-folder]').forEach(button => button.onclick = async () => {
@@ -159,6 +169,7 @@ function renderLibrary() {
     } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
   });
   workspace.querySelectorAll('[data-open-project]').forEach(button => button.onclick = () => void openSavedProject(button.dataset.openProject));
+  workspace.querySelectorAll('[data-open-mix]').forEach(button => button.onclick = () => { showAppPage('mix'); void mixStudio?.openSavedMix(button.dataset.openMix); });
   workspace.querySelectorAll('[data-export-project]').forEach(button => button.onclick = () => { window.location.href = `/api/library/projects/${button.dataset.exportProject}/archive`; });
   workspace.querySelectorAll('[data-rename-project]').forEach(button => button.onclick = () => { const project = allProjects.find(item => item.id === button.dataset.renameProject); void renameLibraryItem(`/api/library/projects/${project.id}`, project.name); });
   workspace.querySelectorAll('[data-duplicate-project]').forEach(button => button.onclick = async () => { try { if (activeProjectId === button.dataset.duplicateProject && projectDirty && !(await saveCurrentProject())) return; const copy = await apiJson(`/api/library/projects/${button.dataset.duplicateProject}/duplicate`, { method: 'POST', body: '{}' }); selectedFolderId = copy.folderId; await refreshLibrary(); status(getLanguage() === 'en' ? 'Project duplicated.' : 'Projet dupliqué.'); } catch (error) { status(userFacingError(error, 'status.actionError'), true); } });
@@ -173,6 +184,14 @@ function renderLibrary() {
       if (activeProjectId === project.id) { activeProjectId = null; currentJobId = null; projectDirty = false; }
       await refreshLibrary();
     } catch (error) { status(userFacingError(error, 'status.actionError'), true); }
+  });
+  workspace.querySelectorAll('[data-delete-mix]').forEach(button => button.onclick = async () => {
+    const mix = folderMixes.find(item => item.id === button.dataset.deleteMix); if (!mix) return;
+    const dialogs = await getInteractionModal();
+    const confirmation = await dialogs.prompt({ title: getLanguage() === 'en' ? 'Delete mix' : 'Supprimer le mixage', description: getLanguage() === 'en' ? 'Permanently delete this mix and both stereo decks?' : 'Supprimer définitivement ce mixage et ses deux pistes stéréo ?', inputLabel: t('interaction.projectExact'), expectedValue: mix.name, exactHint: t('interaction.exactHint'), danger: true, acceptLabel: labels.remove });
+    if (confirmation !== mix.name) return;
+    try { await apiJson(`/api/library/mixes/${mix.id}`, { method: 'DELETE', body: JSON.stringify({ confirmation }) }); await refreshLibrary(); }
+    catch (error) { status(userFacingError(error, 'status.actionError'), true); }
   });
 }
 async function renameLibraryItem(url, oldName) {
@@ -956,6 +975,7 @@ async function initializeModalComponents() {
     interactionModal = createInteractionModal();
     resolveInteractionModalReady(interactionModal);
     $('#libraryButton').textContent = getLanguage() === 'en' ? 'Projects' : 'Projets';
+    mixStudio = createMixStudio({ apiJson, getLibrary: () => libraryData, refreshLibrary, status, language: getLanguage });
     $('#projectsBackButton').onclick = () => showAppPage('home');
     $('#projectsBackButton').onclick = () => showAppPage('home');
     $('#projectNameInput').value = currentSourceName.replace(/\.[^.]+$/, '');
@@ -999,6 +1019,7 @@ async function initializeModalComponents() {
     bindFxButtons();
     try { await refreshLibrary(); } catch (error) { console.info('Local project library is not available yet.', error); }
     showAppPage(location.hash.slice(1) || 'projects');
+    if (location.hash === '#mix') void mixStudio.enter();
   } catch (error) {
     // A missing component should not block audio separation or mixing.
     console.error('Modal components could not be loaded.', error);
@@ -1015,6 +1036,8 @@ onLanguageChange(() => {
   if (activeProjectId) autosaveNotice(projectDirty ? 'dirty' : 'ready');
   else if (currentJobId) autosaveNotice('waiting');
   if ($('#libraryModal')) renderLibrary();
+  mixStudio?.setLanguage();
+  if ($('#mixPage') && !$('#mixPage').classList.contains('hidden')) void mixStudio?.enter();
   const names = Object.keys(tracks);
   if (names.length) {
     const savedControls = snapshotTrackControls(names);
