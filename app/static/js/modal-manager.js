@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.58';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.58';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.58';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.59';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.59';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.59';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -22,7 +22,7 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, musicAnalysisModal, settingsModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, musicAnalysisModal, settingsModal, releaseDetailsModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
@@ -33,8 +33,9 @@ export async function mountModalComponents(root) {
     loadComponent('automation-effect-modal.html'),
     loadComponent('music-analysis-modal.html'),
     loadComponent('settings-modal.html'),
+    loadComponent('release-details-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${musicAnalysisModal}${settingsModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${musicAnalysisModal}${settingsModal}${releaseDetailsModal}`;
 }
 
 /**
@@ -481,4 +482,12 @@ export function createSettingsModal(trigger) {
   const animated = createAnimatedModal(modal, '.settings-close', trigger);
   trigger.onclick = animated.show;
   return { close: animated.close };
+}
+
+/** Open detailed 1.6.0 notes from the settings footer. */
+export function createReleaseDetailsModal(trigger) {
+  const modal = document.querySelector('#releaseDetailsModal');
+  const animated = createAnimatedModal(modal, '.release-details-close', trigger);
+  trigger.onclick = animated.show;
+  return { open: animated.show, close: animated.close };
 }

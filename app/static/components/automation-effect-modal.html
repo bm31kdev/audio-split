@@ -11,17 +11,12 @@
         <svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
       </button>
     </header>
-    <div class="automation-effect-actions">
-      <article class="fx-effect-card automation-effect-card">
-        <span class="fx-effect-state" data-i18n="automation.effectAction">ACTION</span>
-        <div class="fx-effect-heading"><h3 data-i18n="automation.effectRemoveTitle">Supprimer cet effet ?</h3></div>
-        <p data-i18n="automation.effectRemoveHint">L’effet et ses points d’automatisation seront retirés de cette piste.</p>
-        <button type="button" class="audio-button automation-effect-remove" data-button-variant="danger" data-automation-effect-action="remove">
-          <svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg>
-          <span data-i18n="automation.effectRemove">Supprimer l’effet</span>
-        </button>
-      </article>
+    <div class="interaction-content automation-effect-content">
+      <p id="automationEffectMessage" class="interaction-message" data-i18n="automation.effectRemoveHint">L’effet et ses points d’automatisation seront retirés de cette piste.</p>
     </div>
-    <button type="button" class="fx-done" data-button-variant="modal" data-modal-close data-i18n="interaction.cancel">Annuler</button>
+    <footer class="interaction-actions automation-effect-actions">
+      <button type="button" data-button-variant="modal" data-modal-close data-i18n="interaction.cancel">Annuler</button>
+      <button type="button" class="audio-button" data-button-variant="danger" data-automation-effect-action="remove"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg><span data-i18n="automation.effectRemove">Supprimer l’effet</span></button>
+    </footer>
   </section>
 </div>

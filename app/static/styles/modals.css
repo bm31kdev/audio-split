@@ -28,16 +28,12 @@
 .fx-empty-state span { color: #d8ccff; }
 .fx-done { display: flex; margin-left: auto; color: #101407; background: var(--lime); border-color: var(--lime); }
 
-/* Match the effect library's compact card layout for the delete confirmation. */
-.automation-effect-dialog { width: min(480px, calc(100vw - 40px)); }
-.automation-effect-actions { display: flex; justify-content: center; margin: 22px 0; }
-.automation-effect-card { width: min(100%, 340px); padding: 17px; }
-.automation-effect-card .fx-effect-state { color: #ffc3b9; background: #2d201f; border-color: #59403d; }
-.automation-effect-card .fx-effect-state::before { background: var(--orange); }
-.automation-effect-card h3 { font-size: 15px; }
-.automation-effect-card p { min-height: 38px; margin-top: 8px; }
-.automation-effect-remove { width: 100%; min-height: 42px; justify-content: center; margin-top: 15px; padding: 0 14px; }
-.automation-effect-remove svg { width: 16px; height: 16px; }
+/* Effect removal uses the same plain confirmation layout as cache cleanup. */
+.automation-effect-dialog { width: min(540px, calc(100vw - 40px)); }
+.automation-effect-content { padding: 20px 24px 8px; }
+.automation-effect-actions { margin-top: 0; }
+.automation-effect-actions button[data-automation-effect-action="remove"] { display: inline-flex; align-items: center; gap: 8px; }
+.automation-effect-actions button svg { width: 16px; height: 16px; }
 
 /* The language picker mirrors the existing modal motion at a compact size. */
 .language-modal { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 48px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
@@ -77,6 +73,7 @@
 .changelog-modal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 36px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
 .settings-modal { z-index: 40; }
 .interaction-modal { z-index: 50; }
+.release-details-modal { z-index: 60; }
 .changelog-modal[aria-hidden=false] { visibility: visible; transition-delay: 0s; }
 .changelog-backdrop { position: absolute; inset: 0; opacity: 0; background: #050609d4; backdrop-filter: blur(5px); transition: opacity 0.22s ease; }
 .changelog-dialog { position: relative; display: flex; flex-direction: column; width: min(650px, calc(100vw - 40px)); max-width: min(650px, calc(100vw - 40px)); max-height: calc(100vh - 72px); opacity: 0; overflow: hidden; background: radial-gradient(ellipse at 12% 0%, #242a1b 0, transparent 38%), linear-gradient(145deg, #1b1e25, #111217 68%); border: 1px solid #434a3e; border-radius: 22px; box-shadow: 0 32px 100px #000c, inset 0 1px #ffffff0c; transform: translateY(20px) scale(0.97); transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
@@ -91,6 +88,9 @@
 .settings-engine .styled-select { width: 100%; }
 .settings-engine-note { padding-top: 1px; font-size: 11px !important; }
 .settings-cache-action { display: flex; justify-content: center; padding-top: 18px; border-top: 1px solid #343943; }
+.settings-version-link { align-self: center; margin-top: -13px; padding: 5px 8px; color: #89919f; background: transparent; border: 0; border-radius: 6px; cursor: pointer; font: 10px Consolas, 'Courier New', monospace; transition: color .16s ease, background .16s ease; }
+.settings-version-link:hover { color: var(--lime); background: #d7ff540c; }
+.settings-version-link:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 .changelog-header::after { position: absolute; right: 30px; bottom: -1px; left: 30px; height: 1px; content: ''; background: linear-gradient(90deg, var(--lime), #d7ff5400 78%); opacity: .55; }
 .changelog-header .eyebrow { margin-bottom: 9px; color: var(--lime); font-size: 10px; letter-spacing: .16em; }
 .changelog-header h2 { font-size: 29px; letter-spacing: -1.1px; }
@@ -317,4 +317,19 @@
 .pan-curve-preview path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .pan-curve-preview .pan-curve-midline { stroke: #737987; stroke-width: 1; stroke-dasharray: 2 3; opacity: .5; }
 .pan-curve-preview .pan-curve-line { stroke: #b9a5ff; stroke-width: 2.4; filter: drop-shadow(0 0 2px #b9a5ff66); }
+
+/* Detailed release notes keep a fixed title and scroll only the change cards. */
+.release-details-dialog { width: min(820px, calc(100vw - 40px)); max-width: min(820px, calc(100vw - 40px)); }
+.release-details-content { display: grid; min-height: 0; gap: 13px; padding: 18px 24px 24px; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #525b67 transparent; }
+.release-details-intro { padding: 12px 14px; color: #d7dfc5; background: #1b2117; border: 1px solid #39452c; border-radius: 10px; font-size: 12px; line-height: 1.55; }
+.release-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.release-detail-card { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-content: start; gap: 10px; min-width: 0; padding: 14px; background: #17191e; border: 1px solid #343943; border-radius: 11px; }
+.release-detail-index { display: grid; width: 29px; height: 29px; place-items: center; color: var(--lime); background: #242a1c; border: 1px solid #3d4a2b; border-radius: 8px; font: 10px Consolas, 'Courier New', monospace; }
+.release-detail-card h3 { color: #eef0f5; font-size: 13px; line-height: 1.4; }
+.release-detail-card p { margin-top: 6px; color: #a8afbb; font-size: 11px; line-height: 1.55; }
+
+@media (max-width: 620px) {
+  .release-details-content { padding: 15px 18px 20px; }
+  .release-details-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 520px) { .pan-curve-grid { grid-template-columns: 1fr; } }
