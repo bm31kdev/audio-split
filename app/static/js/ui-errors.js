@@ -1,4 +1,4 @@
-import { t } from './i18n.js?v=1.5.0.64';
+import { t } from './i18n.js?v=1.5.0.65';
 
 // Keep UI errors concise while preserving actionable server validation messages.
 export function userFacingError(error, fallbackKey) {
