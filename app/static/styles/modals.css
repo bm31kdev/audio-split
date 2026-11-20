@@ -328,6 +328,11 @@
 .release-detail-card h3 { color: #eef0f5; font-size: 13px; line-height: 1.4; }
 .release-detail-card p { margin-top: 6px; color: #a8afbb; font-size: 11px; line-height: 1.55; }
 
+.shortcuts-modal-content { min-height: 0; padding: 18px 26px 25px; overflow: auto; overscroll-behavior: contain; }
+.shortcuts-modal-content .shortcuts-list { grid-template-columns: 1fr; gap: 8px; margin: 0; }
+.shortcuts-modal-content .shortcuts-list > div { min-height: 48px; gap: 14px; padding: 8px 12px; color: #d8dce4; background: #17191e; border: 1px solid #343943; border-radius: 10px; font-size: 12px; }
+.shortcuts-modal-content .shortcuts-list kbd { min-width: 116px; padding: 7px 9px; color: var(--lime); background: #20251b; border-color: #3c4730; border-radius: 7px; font-size: 10px; }
+
 /* Every dialog uses one shared frame; only its body content remains specialized. */
 section.app-modal-dialog[role="dialog"] {
   width: min(680px, calc(100vw - 40px));
@@ -357,5 +362,8 @@ section.app-modal-dialog[role="dialog"] .changelog-header {
     max-height: calc(100dvh - 48px);
   }
   section.app-modal-dialog[role="dialog"] .changelog-header { padding: 19px 18px 15px; }
+  .shortcuts-modal-content { padding: 15px 18px 20px; }
+  .shortcuts-modal-content .shortcuts-list > div { gap: 10px; padding: 8px; font-size: 11px; }
+  .shortcuts-modal-content .shortcuts-list kbd { min-width: 100px; }
 }
 @media (max-width: 520px) { .pan-curve-grid { grid-template-columns: 1fr; } }

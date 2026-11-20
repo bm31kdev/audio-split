@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.60';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.60';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.60';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.61';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.61';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.61';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -22,7 +22,7 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, musicAnalysisModal, settingsModal, releaseDetailsModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, musicAnalysisModal, settingsModal, releaseDetailsModal, shortcutsModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
@@ -34,8 +34,9 @@ export async function mountModalComponents(root) {
     loadComponent('music-analysis-modal.html'),
     loadComponent('settings-modal.html'),
     loadComponent('release-details-modal.html'),
+    loadComponent('shortcuts-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${musicAnalysisModal}${settingsModal}${releaseDetailsModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${musicAnalysisModal}${settingsModal}${releaseDetailsModal}${shortcutsModal}`;
 }
 
 /**
@@ -473,6 +474,14 @@ export function createLanguageModal(trigger) {
   modal.querySelectorAll('[data-language-choice]').forEach((button) => {
     button.onclick = () => { setLanguage(button.dataset.languageChoice); refresh(); animated.close(); };
   });
+  return { close: animated.close };
+}
+
+/** Show the keyboard shortcut reference from the application header. */
+export function createShortcutsModal(trigger) {
+  const modal = document.querySelector('#shortcutsModal');
+  const animated = createAnimatedModal(modal, '.shortcuts-close', trigger);
+  trigger.onclick = animated.show;
   return { close: animated.close };
 }
 

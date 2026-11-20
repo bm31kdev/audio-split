@@ -1,0 +1,25 @@
+<!-- Keyboard and timeline controls are listed here, beside the shared studio dialog frame. -->
+<div id="shortcutsModal" class="changelog-modal shortcuts-modal" aria-hidden="true">
+  <div class="changelog-backdrop" data-modal-close></div>
+  <section class="changelog-dialog app-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle" aria-describedby="shortcutsDescription">
+    <header class="changelog-header">
+      <div>
+        <p class="eyebrow" data-i18n="shortcuts.eyebrow">AUDIO SPLIT STUDIO</p>
+        <h2 id="shortcutsTitle" data-i18n="shortcuts.title">Raccourcis clavier</h2>
+        <p id="shortcutsDescription" data-i18n="shortcuts.description">Commandes disponibles dans le studio lorsqu’un mix est chargé.</p>
+      </div>
+      <button type="button" data-button-variant="modal" class="changelog-close shortcuts-close" data-modal-close data-i18n-title="close" data-i18n-aria-label="close" aria-label="Fermer" title="Fermer">
+        <svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
+      </button>
+    </header>
+    <div class="shortcuts-modal-content">
+      <div class="shortcuts-list">
+        <div><kbd data-i18n="shortcuts.space">Espace</kbd><span data-i18n="shortcuts.play">Lecture / pause</span></div>
+        <div><kbd>← / →</kbd><span data-i18n="shortcuts.seek">Reculer / avancer de 10 s</span></div>
+        <div><kbd data-i18n="shortcuts.shiftArrows">Maj + ← / →</kbd><span data-i18n="shortcuts.seekLarge">Reculer / avancer de 30 s</span></div>
+        <div><kbd data-i18n="shortcuts.homeEnd">Début / Fin</kbd><span data-i18n="shortcuts.ends">Aller au début / à la fin</span></div>
+        <div><kbd data-i18n="shortcuts.ctrlWheel">Ctrl + molette</kbd><span data-i18n="shortcuts.zoom">Zoomer la piste sous le pointeur</span></div>
+      </div>
+    </div>
+  </section>
+</div>

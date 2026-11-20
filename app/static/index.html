@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.60">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.60">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.61">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.61">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.60">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.60">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.60">
-  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.60">
-  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.60">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.60">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.61">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.61">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.61">
+  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.61">
+  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.61">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.61">
 </head>
 <body>
   <main>
@@ -27,6 +27,7 @@
       <div class="header-tools">
         <div class="header-utilities">
           <button data-button-variant="primary" data-button-size="header-icon" id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg><span data-i18n="language.trigger">FR</span></button>
+          <button data-button-variant="primary" data-button-size="small-icon" id="shortcutsButton" class="shortcuts-button" type="button" data-i18n-title="shortcuts.triggerTitle" data-i18n-aria-label="shortcuts.triggerTitle" title="Raccourcis clavier" aria-label="Raccourcis clavier"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M7 13h.01M11 13h.01M15 13h.01M8 16h8"/></svg></button>
           <button data-button-variant="primary" data-button-size="small-icon" id="settingsButton" class="settings-button" type="button" data-i18n-title="settings.triggerTitle" data-i18n-aria-label="settings.triggerTitle" title="Paramètres" aria-label="Paramètres"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.35a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.65a1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51.97Z"/></svg></button>
         </div>
       </div>
@@ -47,7 +48,6 @@
 
     <!-- Import settings stay in the shell because they are not mixer-specific. -->
     <section id="homePage" class="app-page"><section class="hero"><p class="eyebrow" data-i18n="hero.eyebrow">STUDIO DE STEMS</p><h2 data-i18n-html="hero.title">Redonnez de l’espace<br>à votre musique.</h2><p data-i18n="hero.description">Extrayez la voix, ajustez chaque piste et créez votre version stéréo.</p></section>
-    <aside class="shortcuts-card" aria-labelledby="shortcutsTitle"><h3 id="shortcutsTitle" data-i18n="shortcuts.title">Raccourcis du lecteur</h3><p class="shortcuts-description" data-i18n="shortcuts.description">Disponibles dans le studio lorsqu’un mix est chargé.</p><div class="shortcuts-list"><div><kbd>Espace</kbd><span data-i18n="shortcuts.play">Lecture / pause</span></div><div><kbd>← / →</kbd><span data-i18n="shortcuts.seek">Reculer / avancer de 10 s</span></div><div><kbd>Maj + ← / →</kbd><span data-i18n="shortcuts.seekLarge">Reculer / avancer de 30 s</span></div><div><kbd>Début / Fin</kbd><span data-i18n="shortcuts.ends">Aller au début / à la fin</span></div></div></aside>
     <section id="importCard" class="card import-card">
       <input id="fileInput" type="file" accept="audio/mpeg,audio/wav,audio/flac,audio/mp4,audio/ogg,.mp3,.wav,.flac,.m4a,.ogg" hidden>
       <div class="upload-icon" aria-hidden="true"><svg class="upload-arrow lucide" viewBox="0 0 24 24" width="28" height="28"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></svg></div>
@@ -122,6 +122,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.60"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.61"></script>
 </body>
 </html>
