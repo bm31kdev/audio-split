@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.53';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.53';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.53';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.54';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.54';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.54';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -389,13 +389,12 @@ export function createPanCurveModal({ getTrackLabel, getActiveLane, onApply }) {
   return { open, close: animated.close };
 }
 
-/** Offer curve editing and removal actions for an effect lane on one track. */
-export function createAutomationEffectModal({ getTrackLabel, onEdit, onRemove }) {
+/** Confirm removal of an effect lane and all its automation on a track. */
+export function createAutomationEffectModal({ getTrackLabel, onRemove }) {
   const modal = document.querySelector('#automationEffectModal');
   const animated = createAnimatedModal(modal, '.automation-effect-close');
   const title = modal.querySelector('#automationEffectTitle');
   const description = modal.querySelector('#automationEffectDescription');
-  const editButton = modal.querySelector('[data-automation-effect-action="edit"]');
   const removeButton = modal.querySelector('[data-automation-effect-action="remove"]');
   let activeTrack = null;
   let activeLane = null;
@@ -404,12 +403,8 @@ export function createAutomationEffectModal({ getTrackLabel, onEdit, onRemove })
     activeTrack = track;
     activeLane = lane;
     const parameter = t(`automation.param.${lane}`);
-    title.textContent = parameter;
-    description.textContent = t('automation.effectDescription', { track: getTrackLabel(track) });
-    editButton.onclick = () => {
-      onEdit(activeTrack, activeLane);
-      animated.close();
-    };
+    title.textContent = t('automation.effectRemoveTitle');
+    description.textContent = t('automation.effectRemoveConfirm', { effect: parameter, track: getTrackLabel(track) });
     removeButton.onclick = () => {
       onRemove(activeTrack, activeLane);
       animated.close();

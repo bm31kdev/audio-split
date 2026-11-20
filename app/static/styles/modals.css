@@ -28,20 +28,16 @@
 .fx-empty-state span { color: #d8ccff; }
 .fx-done { display: flex; margin-left: auto; color: #101407; background: var(--lime); border-color: var(--lime); }
 
-/* Effect chips open a compact action dialog that shares the Fx modal frame. */
-.automation-effect-dialog { width: min(520px, calc(100vw - 40px)); }
-.automation-effect-actions { display: grid; gap: 10px; margin: 22px 0; }
-.automation-effect-action { display: grid; grid-template-columns: 42px minmax(0, 1fr) 16px; align-items: center; gap: 12px; width: 100%; min-height: 76px; padding: 12px 14px; color: var(--text); text-align: left; background: #17191e; border: 1px solid #363c2e; border-radius: 12px; cursor: pointer; transition: background .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
-.automation-effect-action:hover { background: #202816; border-color: #667a3f; box-shadow: 0 0 16px #d7ff542b; transform: translateY(-1px); }
-.automation-effect-action.is-danger:hover { background: #33201f; border-color: #96515c; box-shadow: 0 0 16px #ff785522; }
-.automation-effect-action-icon { display: grid; width: 38px; height: 38px; place-items: center; color: var(--lime); background: #242a1c; border: 1px solid #3d4a2b; border-radius: 10px; }
-.automation-effect-action.is-danger .automation-effect-action-icon { color: #ff9f90; background: #302020; border-color: #533333; }
-.automation-effect-action-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.automation-effect-action strong, .automation-effect-action small { display: block; }
-.automation-effect-action strong { font-size: 13px; }
-.automation-effect-action small { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.45; }
-.automation-effect-chevron { color: #8f96a4; font-size: 23px; }
-.automation-effect-action:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+/* Keep effect removal clear, compact, and comfortably padded inside its dialog. */
+.automation-effect-dialog { width: min(480px, calc(100vw - 40px)); }
+.automation-effect-actions { display: flex; justify-content: center; margin: 28px 0 10px; }
+.automation-effect-action { display: inline-flex; align-items: center; justify-content: center; gap: 11px; width: fit-content; min-width: min(230px, 100%); min-height: 50px; padding: 0 22px; color: #e8eaf0; text-align: center; background: #222630; border: 1px solid #414653; border-radius: 11px; cursor: pointer; transition: background .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
+.automation-effect-action:hover { background: #382522; border-color: #a6564d; box-shadow: 0 0 18px #ff785526; transform: translateY(-1px); }
+.automation-effect-action-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; color: #ff9f90; background: #302020; border: 1px solid #533333; border-radius: 8px; }
+.automation-effect-action-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.automation-effect-action strong { font-size: 12px; }
+.automation-effect-note { max-width: 360px; margin: 0 auto 18px; color: var(--muted); font-size: 11px; line-height: 1.5; text-align: center; }
+.automation-effect-action:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 
 /* The language picker mirrors the existing modal motion at a compact size. */
 .language-modal { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 48px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }

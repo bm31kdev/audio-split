@@ -4,24 +4,19 @@
     <header class="changelog-header">
       <div>
         <p class="eyebrow">AUDIO SPLIT STUDIO</p>
-        <h2 id="automationEffectTitle">Effet</h2>
-        <p id="automationEffectDescription">Actions disponibles pour cet effet.</p>
+        <h2 id="automationEffectTitle" data-i18n="automation.effectRemoveTitle">Supprimer cet effet ?</h2>
+        <p id="automationEffectDescription">Effet actif sur cette piste.</p>
       </div>
       <button type="button" data-button-variant="modal" class="changelog-close automation-effect-close" data-modal-close data-i18n-title="close" data-i18n-aria-label="close" aria-label="Fermer" title="Fermer">
         <svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
       </button>
     </header>
     <div class="automation-effect-actions">
-      <button type="button" class="automation-effect-action" data-automation-effect-action="edit">
-        <span class="automation-effect-action-icon"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="m9 10 2 2 4-4"/></svg></span>
-        <span><strong data-i18n="automation.effectEdit">Modifier la courbe</strong><small data-i18n="automation.effectEditHint">Afficher et régler cet effet sur l’onde.</small></span>
-        <span class="automation-effect-chevron">›</span>
-      </button>
       <button type="button" class="automation-effect-action is-danger" data-automation-effect-action="remove">
         <span class="automation-effect-action-icon"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg></span>
-        <span><strong data-i18n="automation.effectRemove">Supprimer l’effet</strong><small data-i18n="automation.effectRemoveHint">Retirer l’effet et ses points d’automatisation de cette piste.</small></span>
-        <span class="automation-effect-chevron">›</span>
+        <strong data-i18n="automation.effectRemove">Supprimer l’effet</strong>
       </button>
+      <p class="automation-effect-note" data-i18n="automation.effectRemoveHint">L’effet et ses points d’automatisation seront retirés de cette piste.</p>
     </div>
     <button type="button" class="fx-done" data-button-variant="modal" data-modal-close data-i18n="interaction.cancel">Annuler</button>
   </section>

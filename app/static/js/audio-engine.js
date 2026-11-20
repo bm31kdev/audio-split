@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.53';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.53';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.53';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.53';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.53';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.53';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.53';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.53';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.53';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.53';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.53';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.53';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.53';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.53';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.53';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.53';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.53';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.53';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.53';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.53';
-import { lucideIcon } from './lucide.js?v=1.5.0.53';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.53';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.54';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.54';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.54';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.54';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.54';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.54';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.54';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.54';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.54';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.54';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.54';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.54';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.54';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.54';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.54';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.54';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.54';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.54';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.54';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.54';
+import { lucideIcon } from './lucide.js?v=1.5.0.54';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.54';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -648,10 +648,21 @@ export function moveAutomationPoint(event) {
   if (!automationDragging) return;
   const canvas = event.currentTarget, name = canvas.dataset.waveform, automation = automationByTrack[name], drag = automationDragState;
   if (!drag || drag.canvas !== canvas || drag.pointerId !== event.pointerId) return;
-  const { lane, point } = drag, points = automationPointsFor(name, lane), { time, value } = automationCoordinates(event, canvas), pointIndex = points.indexOf(point), last = points.length - 1;
+  const deltaX = event.clientX - drag.startX, deltaY = event.clientY - drag.startY;
+  if (!drag.moved && Math.hypot(deltaX, deltaY) < 5) return;
+  drag.moved = true;
+  const { lane, point } = drag, points = automationPointsFor(name, lane), pointIndex = points.indexOf(point), last = points.length - 1;
   if (!point) return;
+  const [min, max] = automationRanges[lane] || [0, 100];
+  const graphHeight = Math.max(1, drag.rect.height - 20);
+  const step = lane === 'pan' ? 5 : lane.startsWith('eq') ? .5 : 1;
+  const nextValue = Math.max(min, Math.min(max, drag.startValue - deltaY / graphHeight * (max - min)));
+  const value = Math.round(nextValue / step) * step;
   if (lane === 'pan') point.pan = value; else point.value = value;
-  if (pointIndex > 0 && pointIndex < last) point.time = Math.max(points[pointIndex - 1].time + .05, Math.min(points[pointIndex + 1].time - .05, time));
+  if (pointIndex > 0 && pointIndex < last) {
+    const nextTime = drag.startTime + deltaX / Math.max(1, drag.rect.width) * tracks[name].duration;
+    point.time = Math.max(points[pointIndex - 1].time + .05, Math.min(points[pointIndex + 1].time - .05, nextTime));
+  }
   refreshAutomation(name);
   markProjectDirty();
 }
@@ -675,7 +686,8 @@ export function refreshAutomation(name) {
     if (laneButtons.dataset.renderedLanes !== laneSignature) {
       laneButtons.innerHTML = lanes.map(lane => `<button type="button" class="automation-lane" data-select-automation-lane="${name}" data-lane="${lane}">${t(`automation.param.${lane}`)}</button>`).join('');
       laneButtons.dataset.renderedLanes = laneSignature;
-      laneButtons.querySelectorAll('[data-select-automation-lane]').forEach(button => button.onclick = () => {
+      laneButtons.querySelectorAll('[data-select-automation-lane]').forEach(button => button.onclick = event => {
+        if (event.button !== 0) return;
         const currentAutomation = automationByTrack[name];
         if (!currentAutomation) return;
         const lane = button.dataset.lane;
@@ -709,8 +721,15 @@ export function bindAutomation() {
       selectAutomationPoint(event);
       const name = canvas.dataset.waveform, automation = automationByTrack[name], lane = automation?.activeLane || 'pan';
       const points = automation ? automationPointsFor(name, lane) : [];
-      automationDragState = { canvas, pointerId: event.pointerId, lane, point: points[automation?.selected] };
-      automationDragging = Boolean(automationDragState.point);
+      const point = points[automation?.selected];
+      automationDragState = point ? {
+        canvas, pointerId: event.pointerId, lane, point,
+        startX: event.clientX, startY: event.clientY,
+        startTime: point.time,
+        startValue: lane === 'pan' ? point.pan : point.value,
+        rect: canvas.getBoundingClientRect(), moved: false,
+      } : null;
+      automationDragging = Boolean(automationDragState?.point);
       if (automationDragging) {
         try { canvas.setPointerCapture(event.pointerId); } catch {}
       }
