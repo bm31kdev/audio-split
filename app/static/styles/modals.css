@@ -328,8 +328,34 @@
 .release-detail-card h3 { color: #eef0f5; font-size: 13px; line-height: 1.4; }
 .release-detail-card p { margin-top: 6px; color: #a8afbb; font-size: 11px; line-height: 1.55; }
 
+/* Every dialog uses one shared frame; only its body content remains specialized. */
+section.app-modal-dialog[role="dialog"] {
+  width: min(680px, calc(100vw - 40px));
+  max-width: min(680px, calc(100vw - 40px));
+  max-height: calc(100vh - 72px);
+  max-height: calc(100dvh - 72px);
+  padding: 0;
+  border: 1px solid #434a3e;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 12% 0%, #242a1b 0, transparent 38%), linear-gradient(145deg, #1b1e25, #111217 68%);
+  box-shadow: 0 32px 100px #000c, inset 0 1px #ffffff0c;
+}
+
+section.app-modal-dialog[role="dialog"] .changelog-header {
+  padding: 24px 26px 19px;
+}
+
 @media (max-width: 620px) {
   .release-details-content { padding: 15px 18px 20px; }
   .release-details-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 540px) {
+  section.app-modal-dialog[role="dialog"] {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+  }
+  section.app-modal-dialog[role="dialog"] .changelog-header { padding: 19px 18px 15px; }
 }
 @media (max-width: 520px) { .pan-curve-grid { grid-template-columns: 1fr; } }

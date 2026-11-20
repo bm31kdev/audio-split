@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.59';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.59';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.59';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.60';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.60';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.60';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.

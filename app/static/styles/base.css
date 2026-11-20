@@ -134,17 +134,6 @@ header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .eyebrow { margin-bottom: 12px; font: 500 11px Consolas, 'Courier New', monospace; letter-spacing: 1.5px; }
 .hero h2, .mixer h2 { font-size: clamp(35px, 6vw, 62px); line-height: 1.02; letter-spacing: -2.5px; }
 .hero > p:last-child { max-width: 470px; margin-top: 19px; color: var(--muted); line-height: 1.6; }
-.release-highlight { display: flex; align-items: flex-start; gap: 15px; margin: 0 0 14px; padding: 17px 18px; overflow: hidden; border: 1px solid #3b472b; border-radius: 14px; background: linear-gradient(105deg, #1a2017, #15171d 72%); box-shadow: inset 0 1px #ffffff08; }
-.release-highlight-mark { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; color: var(--lime); border: 1px solid #526638; border-radius: 12px; background: #252f1c; }
-.release-highlight-mark svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.release-highlight-copy { min-width: 0; flex: 1; }
-.release-highlight-kicker { color: var(--lime); font: 500 9px Consolas, 'Courier New', monospace; letter-spacing: 1.3px; }
-.release-highlight-copy h3 { margin-top: 4px; font-size: 15px; line-height: 1.25; }
-.release-highlight-copy > p { margin-top: 6px; color: var(--muted); font-size: 11px; }
-.release-feature-list { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 11px 0 0; padding: 0; list-style: none; }
-.release-feature-list li { display: flex; align-items: flex-start; gap: 7px; color: #d5d9cc; font-size: 10px; line-height: 1.45; }
-.release-feature-list li::before { width: 5px; height: 5px; flex: 0 0 auto; margin-top: 4px; border-radius: 50%; background: var(--lime); content: ''; }
-.release-highlight-version { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; color: var(--lime); font: 600 11px Consolas, 'Courier New', monospace; border: 1px solid #435232; border-radius: 50%; background: #202719; }
 .shortcuts-card { margin: 0 0 22px; padding: 15px 18px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(135deg, #17191e, #111216); }
 .shortcuts-card h3 { font-size: 13px; }
 .shortcuts-description { margin-top: 5px; color: var(--muted); font-size: 10px; }
@@ -231,11 +220,6 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .projects-page-header { align-items: flex-start; }
   .cache-button { max-width: 100%; padding: 9px 11px; font-size: 9px; }
   .hero { padding: 44px 0 31px; }
-  .release-highlight { gap: 11px; padding: 13px; }
-  .release-highlight-mark { width: 37px; height: 37px; border-radius: 10px; }
-  .release-highlight-copy h3 { font-size: 13px; }
-  .release-highlight-version { width: 34px; height: 34px; }
-  .release-feature-list { display: grid; gap: 6px; }
   .shortcuts-card { padding: 13px; }
   .shortcuts-list { grid-template-columns: 1fr; gap: 7px; }
 }
