@@ -12,7 +12,7 @@ import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.18'
 import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.18';
 import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.18';
 import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.26';
-import { createMixStudio } from './js/mix-studio.js?v=1.5.0.46';
+import { createMixStudio } from './js/mix-studio.js?v=1.5.0.47';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal;

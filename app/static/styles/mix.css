@@ -4,7 +4,6 @@
 .mix-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 5px 0 4px; }
 .mix-page-heading h2 { margin-top: 6px; font-size: clamp(28px, 4vw, 38px); letter-spacing: -1.5px; }
 .mix-page-heading p:last-child { max-width: 620px; margin-top: 7px; color: var(--muted); font-size: 13px; line-height: 1.5; }
-.mix-heading-mark { display: grid; width: 72px; height: 72px; flex: 0 0 auto; place-items: center; color: var(--lime); background: radial-gradient(circle at 70% 30%, #d7ff5420, transparent 65%), #15181d; border: 1px solid #39432b; border-radius: 22px; font: 600 16px Consolas, monospace; transform: rotate(-5deg); }
 .mix-decks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .mix-deck, .mix-transition-card, .mix-save-card { min-width: 0; padding: 18px; background: linear-gradient(145deg, #171a20, #121419); border: 1px solid #303540; border-radius: 15px; box-shadow: inset 0 1px #ffffff06; }
 .mix-deck { display: grid; min-height: 205px; grid-template-rows: auto 1fr; gap: 13px; border-top: 2px solid #d7ff5480; }
@@ -18,6 +17,7 @@
 .mix-remove { display: none; width: 30px; height: 30px; flex: 0 0 auto; padding: 0; color: #aeb4c0; background: #222630; border: 1px solid #363c48; border-radius: 8px; font-size: 20px; line-height: 1; }
 .mix-deck.has-audio .mix-remove { display: grid; place-items: center; }
 .mix-empty { display: grid; align-content: center; justify-items: center; gap: 12px; padding: 16px; text-align: center; background: #101216; border: 1px dashed #343a44; border-radius: 11px; }
+.mix-empty.hidden, .mix-loaded.hidden { display: none !important; }
 .mix-empty p { max-width: 370px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .mix-empty button { min-height: 36px; padding: 0 14px; font-size: 11px; }
 .mix-loaded { min-width: 0; align-self: end; }
@@ -63,7 +63,6 @@
 }
 @media (max-width: 520px) {
   .mix-page-heading { align-items: flex-start; }
-  .mix-heading-mark { width: 54px; height: 54px; border-radius: 16px; }
   .mix-deck, .mix-transition-card, .mix-save-card { padding: 14px; }
   .mix-picker-list { padding: 16px; }
   .mix-transition-controls, .mix-save-controls { grid-template-columns: 1fr; }

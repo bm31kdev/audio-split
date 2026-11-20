@@ -256,7 +256,7 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
     $('#mixPickerTitle').textContent = label(`Choisir un projet pour ${targetName}`, `Choose a project for ${targetName}`);
     $('#mixPickerList').innerHTML = projects.length ? projects.map(project => `<button class="mix-picker-item" type="button" data-pick-project="${project.id}"><strong>${escapeHtml(project.name)}</strong><span>${escapeHtml(project.folderName)} · ${escapeHtml(project.sourceName || '')}</span><small>${escapeHtml(project.mode === 'detailed' ? label('Séparation détaillée', 'Detailed stems') : label('Voix + accompagnement', 'Vocals + accompaniment'))}</small></button>`).join('') : `<p class="mix-empty">${label('Aucun projet enregistré. Enregistrez d’abord une séparation dans Projets.', 'No saved projects. Save a separation in Projects first.')}</p>`;
     closeStyledDropdowns();
-    const modal = $('#mixPickerModal'); modal.hidden = false; modal.setAttribute('aria-hidden', 'false');
+    const modal = $('#mixPickerModal'); modal.hidden = false; modal.inert = false; modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open'); requestAnimationFrame(() => modal.classList.add('is-open'));
     $('#mixPickerList').querySelectorAll('[data-pick-project]').forEach(button => button.onclick = async () => {
       if (loadingDeck) return;
@@ -275,9 +275,10 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
 
   function closePicker() {
     const modal = $('#mixPickerModal');
-    modal.setAttribute('aria-hidden', 'true'); modal.classList.remove('is-open');
+    pickerOpener?.focus({ preventScroll: true });
+    modal.inert = true; modal.setAttribute('aria-hidden', 'true'); modal.classList.remove('is-open');
     document.body.classList.remove('modal-open');
-    setTimeout(() => { modal.hidden = true; pickerOpener?.focus(); }, 240);
+    setTimeout(() => { modal.hidden = true; }, 240);
   }
 
   function encodeWav(buffer) {
