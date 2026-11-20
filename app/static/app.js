@@ -1,17 +1,17 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.61';
-import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.61';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.61';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.61';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.61';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.61';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.61';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.61';
-import { lucideIcon } from './js/lucide.js?v=1.5.0.61';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.61';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.61';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.61';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.61';
-import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.61';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.62';
+import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.62';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.62';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.62';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.62';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.62';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.62';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.62';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.62';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.62';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.62';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.62';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.62';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.62';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal, musicAnalysisModal, shortcutsModal;
@@ -23,6 +23,7 @@ const analysisModalReady = new Promise(resolve => { resolveAnalysisModalReady = 
 const getInteractionModal = () => interactionModal ? Promise.resolve(interactionModal) : interactionModalReady;
 let currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'mdx', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
+let vocalCutStart = null;
 let activeSeparationRequestId = null, separationCancelRequested = false;
 let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting', currentAnalysisFile = null, analysisPromise = Promise.resolve(null);
 let currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
@@ -327,7 +328,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.61', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.62', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {
@@ -905,13 +906,46 @@ $('#playButton').onclick = () => { void playMix(); };
 $('#stopButton').onclick = stop;
 $('#exportButton').onclick = exportMix;
 document.addEventListener('keydown', event => {
-  if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || event.key === 'Escape') return;
+  if (event.defaultPrevented || event.repeat || event.ctrlKey || event.altKey || event.metaKey || event.key === 'Escape') return;
   const target = event.target instanceof HTMLElement ? event.target : null;
-  if (target?.closest('input, textarea, select, button, a, [contenteditable="true"], [role="slider"]')) return;
+  if (target?.closest('input, textarea, select, [contenteditable="true"], [role="slider"]')) return;
+  if (event.code !== 'KeyR' && target?.closest('button, a')) return;
   if (document.querySelector('.fx-modal[aria-hidden="false"], .language-modal[aria-hidden="false"], .changelog-modal[aria-hidden="false"], .interaction-modal[aria-hidden="false"], .key-modal[aria-hidden="false"]')) return;
   if ($('#studioPage')?.classList.contains('hidden') || $('#mixer')?.classList.contains('hidden') || !Object.keys(tracks).length) return;
 
-  if (event.code === 'Space') {
+  if (event.code === 'KeyR') {
+    // Two presses define a vocal-only cut while playback continues.
+    if (!playing || paused || !tracks.vocals || !audioCtx) { vocalCutStart = null; return; }
+    const duration = tracks.vocals.duration;
+    const now = Math.max(0, Math.min(duration, audioCtx.currentTime - playStartedAt));
+    if (vocalCutStart === null) { vocalCutStart = now; return; }
+
+    const start = vocalCutStart;
+    vocalCutStart = null;
+    const end = now;
+    if (end - start < 0.06) return;
+
+    const volumeInput = document.querySelector('[data-control="vocals"][data-param="volume"]');
+    const automation = automationByTrack.vocals;
+    if (!volumeInput || !automation) return;
+    automation.lanes ||= {};
+    const lane = automation.lanes.volume || [];
+    const baseAtStart = automationValue('vocals', 'volume', start, Number(volumeInput.value));
+    const baseAtEnd = automationValue('vocals', 'volume', end, Number(volumeInput.value));
+    const fade = Math.min(0.045, (end - start) / 3);
+    const cutPoints = [
+      { time: start, value: baseAtStart },
+      { time: start + fade, value: 0 },
+      { time: end - fade, value: 0 },
+      { time: end, value: baseAtEnd },
+    ];
+    automation.lanes.volume = lane.filter(point => point.time < start || point.time > end).concat(cutPoints).sort((a, b) => a.time - b.time);
+    automation.activeLane = 'volume';
+    automation.selected = automation.lanes.volume.indexOf(cutPoints[0]);
+    refreshAutomation('vocals');
+    markProjectDirty();
+    status(t('shortcuts.cutApplied'));
+  } else if (event.code === 'Space') {
     event.preventDefault();
     void playMix();
   } else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {

@@ -332,6 +332,7 @@
 .shortcuts-modal-content .shortcuts-list { grid-template-columns: 1fr; gap: 8px; margin: 0; }
 .shortcuts-modal-content .shortcuts-list > div { min-height: 48px; gap: 14px; padding: 8px 12px; color: #d8dce4; background: #17191e; border: 1px solid #343943; border-radius: 10px; font-size: 12px; }
 .shortcuts-modal-content .shortcuts-list kbd { min-width: 116px; padding: 7px 9px; color: var(--lime); background: #20251b; border-color: #3c4730; border-radius: 7px; font-size: 10px; }
+.shortcuts-cut-note { margin-top: 13px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 /* Every dialog uses one shared frame; only its body content remains specialized. */
 section.app-modal-dialog[role="dialog"] {
