@@ -67,7 +67,7 @@
 .pan-curves-trigger[hidden] { display: none; }
 .automation-tools .remove-point { width: 26px; min-height: 26px; flex: 0 0 auto; padding: 0; color: #ffae9b; }
 .wave-area .waveform.is-drop-target { outline: 2px dashed var(--lime); outline-offset: -4px; filter: brightness(1.2); }
-.playhead { position: absolute; z-index: 3; top: 0; bottom: 38px; left: 0; width: 14px; margin-left: -7px; cursor: ew-resize; touch-action: none; opacity: 0; outline: none; transition: opacity 0.12s ease; will-change: left; }
+.playhead { position: absolute; z-index: 8; top: 0; bottom: 38px; left: 0; width: 28px; margin-left: -14px; cursor: ew-resize; touch-action: none; pointer-events: auto; opacity: 0; outline: none; transition: opacity 0.12s ease; will-change: left; }
 .playhead::before { position: absolute; top: 0; left: 50%; width: 0; height: 0; border-top: 7px solid var(--lime); border-right: 6px solid transparent; border-left: 6px solid transparent; content: ''; transform: translateX(-50%); }
 .playhead::after { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; content: ''; background: var(--lime); box-shadow: 0 0 10px #d7ff54b3; transform: translateX(-50%); }
 .playhead.is-ready { opacity: .74; }

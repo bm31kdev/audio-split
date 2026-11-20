@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.18';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.18';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.18';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.18';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.18';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.18';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.18';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.18';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.18';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.18';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.18';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.18';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.18';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.18';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.18';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.18';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.18';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.51';
-import { lucideIcon } from './lucide.js?v=1.5.0.18';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.41';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.52';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.52';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.52';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.52';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.52';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.52';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.52';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.52';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.52';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.52';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.52';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.52';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.52';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.52';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.52';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.52';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.52';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.52';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.52';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.52';
+import { lucideIcon } from './lucide.js?v=1.5.0.52';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.52';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -38,6 +38,7 @@ export function setTrackTargets(hasBass, hasOther) { saturationTarget = hasBass 
 export function getSaturationTarget() { return saturationTarget; }
 export function getWidthTarget() { return widthTarget; }
 export let audioCtx, liveNodes = new Map(), liveMaster, playing = false, paused = false, playStartedAt = 0, playheadOffset = 0, playheadDragging = false, playheadWasPlaying = false, automationDragging = false, playheadFrame, playbackEndTimer, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
+let draggedPlayhead = null, playheadPointerId = null;
 
 export function autosaveNotice(state, detail = '') {
   const english = getLanguage() === 'en';
@@ -697,7 +698,13 @@ export function bindAutomation() {
       status(getLanguage() === 'en' ? 'Effect added to the track curve.' : 'Effet ajouté à la courbe de la piste.');
     });
   });
-  document.querySelectorAll('[data-pan-curves]').forEach(button => button.onclick = () => panCurveModalInstance?.open(button.dataset.panCurves));
+  document.querySelectorAll('[data-pan-curves]').forEach(button => button.onclick = () => {
+    if (!panCurveModalInstance) {
+      console.error('Pan curve modal is not ready yet.');
+      return;
+    }
+    panCurveModalInstance.open(button.dataset.panCurves);
+  });
   document.querySelectorAll('[data-automation-remove]').forEach(remove => remove.onclick = () => {
     const name = remove.dataset.automationRemove, automation = automationByTrack[name], lane = automation.activeLane || 'pan', points = automationPointsFor(name, lane);
     if (automation.selected > 0 && automation.selected < points.length - 1) { points.splice(automation.selected, 1); automation.selected--; refreshAutomation(name); markProjectDirty(); }
@@ -709,7 +716,13 @@ export let panCurveModalInstance;
 export function setPanCurveModal(modal) { panCurveModalInstance = modal; }
 export function bindFxButtons() {
   // Track buttons are generated after a separation, so bind them after every render.
-  document.querySelectorAll('[data-fx]').forEach(button => button.onclick = () => fxModalInstance?.open(button.dataset.fx));
+  document.querySelectorAll('[data-fx]').forEach(button => button.onclick = () => {
+    if (!fxModalInstance) {
+      console.error('Fx modal is not ready yet.');
+      return;
+    }
+    fxModalInstance.open(button.dataset.fx);
+  });
 }
 export function timelineDuration() {
   return Math.max(0, ...Object.values(tracks).map(buffer => buffer.duration));
@@ -763,26 +776,42 @@ export function seekFromPlayhead(event, playhead) {
 }
 export function bindPlayheadSeeking() {
   document.querySelectorAll('[data-playhead]').forEach(playhead => {
-    playhead.addEventListener('pointerdown', event => {
+    const waveContent = playhead.closest('.wave-content');
+    if (!waveContent || waveContent.dataset.playheadDragBound === 'true') return;
+    waveContent.dataset.playheadDragBound = 'true';
+    // Start from the visible line or its immediate area. This lets a user
+    // grab the playhead without having to hit a one-pixel stroke precisely.
+    waveContent.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || playheadDragging) return;
+      const rect = playhead.getBoundingClientRect();
+      const grabPadding = 9;
+      if (event.clientX < rect.left - grabPadding || event.clientX > rect.right + grabPadding) return;
       event.preventDefault();
       event.stopPropagation();
       playheadDragging = true;
       playheadWasPlaying = playing;
-      playhead.setPointerCapture(event.pointerId);
+      draggedPlayhead = playhead;
+      playheadPointerId = event.pointerId;
+      try { waveContent.setPointerCapture(event.pointerId); } catch {}
       seekFromPlayhead(event, playhead);
-    });
-    playhead.addEventListener('pointermove', event => {
-      if (playheadDragging) seekFromPlayhead(event, playhead);
+    }, true);
+    waveContent.addEventListener('pointermove', event => {
+      if (!playheadDragging || event.pointerId !== playheadPointerId || !draggedPlayhead) return;
+      seekFromPlayhead(event, draggedPlayhead);
     });
     const finishDrag = event => {
-      if (!playheadDragging) return;
+      if (!playheadDragging || event.pointerId !== playheadPointerId) return;
+      const capturedPlayhead = draggedPlayhead;
       playheadDragging = false;
-      try { playhead.releasePointerCapture(event.pointerId); } catch {}
+      draggedPlayhead = null;
+      playheadPointerId = null;
+      try { waveContent.releasePointerCapture(event.pointerId); } catch {}
       if (playheadWasPlaying) seekMix(playheadOffset, true);
       playheadWasPlaying = false;
+      capturedPlayhead?.blur();
     };
-    playhead.addEventListener('pointerup', finishDrag);
-    playhead.addEventListener('pointercancel', finishDrag);
+    waveContent.addEventListener('pointerup', finishDrag);
+    waveContent.addEventListener('pointercancel', finishDrag);
     playhead.addEventListener('keydown', event => {
       if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
       event.preventDefault();
