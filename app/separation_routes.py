@@ -62,7 +62,10 @@ def separation_status(request_id: str):
     if state is None and request_id in cancelled_separations:
         return {"status": "canceling", "progress": 0}
     if state is None:
-        raise HTTPException(404, "Separation not found.")
+        # The browser starts polling before the multipart upload has finished.
+        # FastAPI only enters the upload handler after parsing that body, so a
+        # valid request can briefly have no in-memory status record yet.
+        return {"status": "uploading", "progress": 0}
     return dict(state)
 
 

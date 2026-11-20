@@ -17,7 +17,7 @@ import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.18';
 import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.18';
 import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.18';
 import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.41';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.50';
 import { lucideIcon } from './lucide.js?v=1.5.0.18';
 import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.41';
 
@@ -238,6 +238,7 @@ export function startSeparationProgressPolling(requestId) {
       const progress = await apiJson(`/api/separations/${requestId}`);
       if (activeSeparationRequestId !== requestId) return;
       if (progress.status === 'canceling') status(t('status.canceling'), false, true);
+      else if (progress.status === 'uploading') status(t('status.uploading'), false, true);
       else if (progress.status === 'cancelled') status(t('status.cancelled'));
       else if (['preparing', 'queued', 'running', 'completed'].includes(progress.status) && Number.isFinite(progress.progress)) {
         const percent = Math.max(0, Math.min(100, Math.round(progress.progress)));

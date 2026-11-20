@@ -1,7 +1,7 @@
 // The Mix workspace is an independent two-deck stereo editor.
 // Source projects are flattened in the browser so a saved mix does not depend
 // on the source project still being present in the library.
-import { createTrackNodes, effectDefaults, getSaturationTarget, getWidthTarget, setTrackTargets, updateTrackEffects } from './audio-engine.js?v=1.5.0.49';
+import { createTrackNodes, effectDefaults, getSaturationTarget, getWidthTarget, setTrackTargets, updateTrackEffects } from './audio-engine.js?v=1.5.0.50';
 import { scheduleOfflineDeEsser } from './effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './effects/noise-gate.js?v=1.5.0.18';
 import { scheduleOfflineVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
