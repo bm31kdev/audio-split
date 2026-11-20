@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
   <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.20">
   <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.41">
-  <link rel="stylesheet" href="/static/styles/mix.css?v=1.5.0.43">
+  <link rel="stylesheet" href="/static/styles/mix.css?v=1.5.0.46">
 </head>
 <body>
   <main>
@@ -125,9 +125,9 @@
       </section>
       <section class="mix-save-card" aria-labelledby="mixSaveTitle"><div><p class="eyebrow">BIBLIOTHÈQUE LOCALE</p><h3 id="mixSaveTitle">Enregistrer ce mixage</h3><p>Les deux decks stéréo et les réglages de transition seront conservés dans le dossier choisi.</p></div><div class="mix-save-controls"><label><span>Nom du mixage</span><input id="mixNameInput" type="text" maxlength="120" placeholder="Nom du mixage"></label><label><span>Dossier</span><select id="mixFolderSelect"><option value="">Choisir un dossier…</option></select></label><button data-button-variant="secondary" id="mixSaveButton" type="button" disabled>Enregistrer le mixage</button><button data-button-variant="primary" id="mixExportButton" type="button" disabled>Exporter WAV stéréo</button></div><span id="mixSaveStatus" class="mix-save-status" aria-live="polite"></span></section>
     </section>
-    <div id="mixPickerModal" class="mix-picker-modal" hidden>
-      <button class="mix-picker-backdrop" type="button" aria-label="Fermer la sélection"></button>
-      <section class="mix-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="mixPickerTitle"><header><div><p class="eyebrow">AUDIO SPLIT STUDIO</p><h2 id="mixPickerTitle">Choisir un projet</h2><p>Les pistes du projet seront réduites en une piste stéréo.</p></div><button id="mixPickerClose" data-button-variant="modal" type="button" aria-label="Fermer">×</button></header><div id="mixPickerList" class="mix-picker-list"></div></section>
+    <div id="mixPickerModal" class="changelog-modal mix-picker-modal" aria-hidden="true" hidden>
+      <div class="changelog-backdrop mix-picker-backdrop" data-picker-close></div>
+      <section class="changelog-dialog mix-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="mixPickerTitle"><header class="changelog-header"><div><p class="eyebrow">AUDIO SPLIT STUDIO</p><h2 id="mixPickerTitle">Choisir un projet</h2><p>Les pistes du projet seront réduites en une piste stéréo.</p></div><button id="mixPickerClose" class="changelog-close" data-button-variant="modal" type="button" aria-label="Fermer"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button></header><div id="mixPickerList" class="mix-picker-list"></div></section>
     </div>
     <div id="transformModal" class="fx-modal" aria-hidden="true">
       <div class="fx-modal-backdrop" data-modal-close></div>
@@ -175,6 +175,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.45"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.46"></script>
 </body>
 </html>

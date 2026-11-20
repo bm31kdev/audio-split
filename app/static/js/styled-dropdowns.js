@@ -10,12 +10,16 @@ const selectLabel = select => select.getAttribute('aria-label')
   || 'Choisir une option';
 
 function closeRecord(record, { restoreFocus = false } = {}) {
-  if (!record?.menu.isConnected) return;
+  if (!record) return;
+  if (document.activeElement === record.select) record.select.blur();
+  if (!record.menu.isConnected) return;
+  const focusWasInMenu = record.menu.contains(document.activeElement);
   record.menu.remove();
   record.trigger.setAttribute('aria-expanded', 'false');
   record.wrapper.classList.remove('is-open');
   if (activeRecord === record) activeRecord = null;
   if (restoreFocus) record.trigger.focus();
+  else if (focusWasInMenu) document.activeElement?.blur?.();
 }
 
 function closeAllDropdowns() {
@@ -129,10 +133,12 @@ function enhanceSelect(select) {
   menu.setAttribute('aria-label', label);
   menu.dataset.owner = id;
   const wrapperParent = select.parentElement;
+  if (document.activeElement === select) select.blur();
   wrapperParent.insertBefore(wrapper, select);
   wrapper.append(select, trigger);
   select.dataset.styledDropdown = 'true';
   select.tabIndex = -1;
+  select.inert = true;
   select.setAttribute('aria-hidden', 'true');
 
   const record = { select, wrapper, trigger, menu, id, sync: () => syncRecord(record) };
@@ -172,6 +178,13 @@ export function enhanceStyledDropdowns(root = document) {
   root.querySelectorAll('select:not([data-native-select="true"])').forEach(select => {
     if (select.dataset.styledDropdown === 'true') selectRecords.get(select)?.sync();
     else enhanceSelect(select);
+  });
+}
+
+export function closeStyledDropdowns() {
+  closeAllDropdowns();
+  document.querySelectorAll('select[data-styled-dropdown="true"]').forEach(select => {
+    if (document.activeElement === select) select.blur();
   });
 }
 

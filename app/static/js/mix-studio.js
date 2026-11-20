@@ -5,6 +5,7 @@ import { createTrackNodes, effectDefaults, getSaturationTarget, getWidthTarget, 
 import { scheduleOfflineDeEsser } from './effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './effects/noise-gate.js?v=1.5.0.18';
 import { scheduleOfflineVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
+import { closeStyledDropdowns } from './styled-dropdowns.js?v=1.5.0.26';
 const $ = (selector, root = document) => root.querySelector(selector);
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
@@ -15,7 +16,7 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
   const liveMaster = context.createDynamicsCompressor();
   liveMaster.threshold.value = -2; liveMaster.knee.value = 3; liveMaster.ratio.value = 10; liveMaster.attack.value = .004; liveMaster.release.value = .18;
   liveMaster.connect(context.destination);
-  let pickTarget = null, activeMixId = null, offset = 0, startedAt = 0, raf = 0, sources = [], paused = true;
+  let pickTarget = null, pickerOpener = null, loadingDeck = false, activeMixId = null, offset = 0, startedAt = 0, raf = 0, sources = [], paused = true;
   let mixFolderId = null;
 
   const label = (fr, en) => language() === 'en' ? en : fr;
@@ -31,20 +32,25 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
   };
 
   function draw(deck) {
-    const canvas = $(`[data-mix-wave="${deck}"]`, page), audio = decks[deck];
+    const canvas = $(`[data-mix-wave="${deck}"]`, page), audio = decks[deck]?.buffer || null;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect(), ratio = window.devicePixelRatio || 1;
+    // The picker may finish decoding during a page transition. Wait until the
+    // deck is visible so the canvas gets its real layout dimensions.
+    if (rect.width <= 1 || rect.height <= 1) return;
     canvas.width = Math.max(1, Math.round(rect.width * ratio)); canvas.height = Math.max(1, Math.round(rect.height * ratio));
-    const ctx = canvas.getContext('2d'); ctx.scale(ratio, ratio); ctx.clearRect(0, 0, rect.width, rect.height);
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0); ctx.clearRect(0, 0, rect.width, rect.height);
     ctx.fillStyle = '#181b21'; ctx.fillRect(0, 0, rect.width, rect.height);
     if (!audio) return;
-    const data = audio.getChannelData(0), step = Math.max(1, Math.floor(data.length / rect.width));
+    const data = audio.getChannelData(0), width = Math.ceil(rect.width);
     const mid = rect.height / 2, color = deck === 'a' ? '#d7ff54' : '#73c9ff';
-    ctx.strokeStyle = color; ctx.globalAlpha = .75; ctx.lineWidth = 1;
+    ctx.strokeStyle = color; ctx.globalAlpha = .82; ctx.lineWidth = 1;
     ctx.beginPath();
-    for (let x = 0; x < rect.width; x += 1) {
-      const start = x * step; let min = 1, max = -1;
-      for (let i = 0; i < step && start + i < data.length; i += 1) { const sample = data[start + i]; min = Math.min(min, sample); max = Math.max(max, sample); }
+    for (let x = 0; x < width; x += 1) {
+      const start = Math.floor(x * data.length / width), end = Math.max(start + 1, Math.floor((x + 1) * data.length / width));
+      let min = 1, max = -1;
+      for (let i = start; i < end && i < data.length; i += 1) { const sample = data[i]; min = Math.min(min, sample); max = Math.max(max, sample); }
       ctx.moveTo(x + .5, mid + min * (mid - 3)); ctx.lineTo(x + .5, mid + max * (mid - 3));
     }
     ctx.stroke(); ctx.globalAlpha = 1;
@@ -68,6 +74,9 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
       $(`[data-mix-key="${which}"]`, card).textContent = audio.key || '—';
     }
     draw(which); updateControls();
+    // Repaint after the empty placeholder has been removed and the canvas has
+    // received its final width from the browser's layout pass.
+    requestAnimationFrame(() => draw(which));
   }
 
   function updateControls() {
@@ -242,18 +251,34 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
 
   function renderPicker() {
     const library = getLibrary(), projects = (library.folders || []).flatMap(folder => (folder.projects || []).map(project => ({ ...project, folderName: folder.name })));
+    const targetDeck = pickTarget;
     const targetName = pickTarget === 'a' ? label('Piste 1', 'Deck 1') : label('Piste 2', 'Deck 2');
     $('#mixPickerTitle').textContent = label(`Choisir un projet pour ${targetName}`, `Choose a project for ${targetName}`);
     $('#mixPickerList').innerHTML = projects.length ? projects.map(project => `<button class="mix-picker-item" type="button" data-pick-project="${project.id}"><strong>${escapeHtml(project.name)}</strong><span>${escapeHtml(project.folderName)} · ${escapeHtml(project.sourceName || '')}</span><small>${escapeHtml(project.mode === 'detailed' ? label('Séparation détaillée', 'Detailed stems') : label('Voix + accompagnement', 'Vocals + accompaniment'))}</small></button>`).join('') : `<p class="mix-empty">${label('Aucun projet enregistré. Enregistrez d’abord une séparation dans Projets.', 'No saved projects. Save a separation in Projects first.')}</p>`;
-    $('#mixPickerModal').hidden = false; requestAnimationFrame(() => $('#mixPickerModal').classList.add('is-open'));
+    closeStyledDropdowns();
+    const modal = $('#mixPickerModal'); modal.hidden = false; modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open'); requestAnimationFrame(() => modal.classList.add('is-open'));
     $('#mixPickerList').querySelectorAll('[data-pick-project]').forEach(button => button.onclick = async () => {
-      button.disabled = true; button.setAttribute('aria-busy', 'true');
-      try { status(label('Création de la piste stéréo…', 'Building the stereo deck…')); const result = await flattenProject(button.dataset.pickProject); decks[pickTarget] = result; activeMixId = null; updateDeckCard(pickTarget); closePicker(); status(label('Piste ajoutée au Mix.', 'Deck added to Mix.')); }
-      catch (error) { status(error.message, true); button.disabled = false; button.removeAttribute('aria-busy'); }
+      if (loadingDeck) return;
+      loadingDeck = true; button.disabled = true; button.setAttribute('aria-busy', 'true');
+      closePicker(); status(label('Création de la piste stéréo…', 'Building the stereo deck…'), false, true);
+      try {
+        const result = await flattenProject(button.dataset.pickProject);
+        decks[targetDeck] = result; activeMixId = null; updateDeckCard(targetDeck);
+        status(label('Piste ajoutée au Mix.', 'Deck added to Mix.'));
+      } catch (error) {
+        console.error('Could not add a project to the Mix deck.', error);
+        status(error.message || label('Impossible de créer la piste stéréo.', 'Could not build the stereo deck.'), true);
+      } finally { loadingDeck = false; }
     });
   }
 
-  function closePicker() { $('#mixPickerModal').classList.remove('is-open'); setTimeout(() => { $('#mixPickerModal').hidden = true; }, 180); }
+  function closePicker() {
+    const modal = $('#mixPickerModal');
+    modal.setAttribute('aria-hidden', 'true'); modal.classList.remove('is-open');
+    document.body.classList.remove('modal-open');
+    setTimeout(() => { modal.hidden = true; pickerOpener?.focus(); }, 240);
+  }
 
   function encodeWav(buffer) {
     const frames = buffer.length, channels = 2, dataBytes = frames * channels * 2, out = new ArrayBuffer(44 + dataBytes), view = new DataView(out);
@@ -338,7 +363,8 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
     $('#mixFolderSelect').innerHTML = folders.map(folder => `<option value="${folder.id}">${escapeHtml(folder.name)}</option>`).join('');
     if (mixFolderId && folders.some(folder => folder.id === mixFolderId)) $('#mixFolderSelect').value = mixFolderId;
     if (mixFolderId === null && folders[0]) mixFolderId = folders[0].id;
-    setLanguage(); updateControls(); draw('a'); draw('b');
+    setLanguage(); updateControls();
+    requestAnimationFrame(() => { draw('a'); draw('b'); });
   }
 
   function setLanguage() {
@@ -382,10 +408,10 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
   }
 
   page.addEventListener('click', event => {
-    const pick = event.target.closest('[data-mix-pick]'); if (pick) { pickTarget = pick.dataset.mixPick; renderPicker(); }
+    const pick = event.target.closest('[data-mix-pick]'); if (pick) { if (loadingDeck) return; pickTarget = pick.dataset.mixPick; pickerOpener = pick; renderPicker(); }
     const remove = event.target.closest('[data-mix-remove]'); if (remove) { stopAudio(); decks[remove.dataset.mixRemove] = null; updateDeckCard(remove.dataset.mixRemove); activeMixId = null; }
   });
-  $('#mixPickerClose').onclick = closePicker; $('.mix-picker-backdrop').onclick = closePicker;
+  $('#mixPickerClose').onclick = closePicker; $('[data-picker-close]').onclick = closePicker;
   $('#mixPickerModal').addEventListener('click', event => { if (event.target === $('#mixPickerModal')) closePicker(); });
   $('#mixPlayButton').onclick = () => { if (paused) void startPlayback(offset); else { offset = Math.min(totalDuration(), (performance.now() - startedAt) / 1000); stopAudio(false); updateControls(); } };
   $('#mixStopButton').onclick = () => { stopAudio(); $('#mixTimeline').value = '0'; $('#mixTimelineNow').textContent = '0:00'; };

@@ -45,16 +45,11 @@
 .mix-save-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, .8fr); gap: 10px; }
 .mix-save-controls button { min-height: 37px; font-size: 10px; }
 .mix-save-status { grid-column: 1 / -1; min-height: 14px; color: var(--lime); font: 10px Consolas, monospace; }
-.mix-picker-modal { position: fixed; z-index: 20000; inset: 0; display: grid; place-items: center; padding: 24px; }
+.mix-picker-modal { position: fixed; z-index: 20000; inset: 0; display: grid; place-items: center; padding: 36px 20px; }
 .mix-picker-modal[hidden] { display: none; }
-.mix-picker-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; background: #050609d4; border: 0; backdrop-filter: blur(5px); }
-.mix-picker-dialog { position: relative; display: flex; width: min(560px, calc(100vw - 32px)); max-height: min(680px, calc(100vh - 48px)); flex-direction: column; overflow: hidden; background: linear-gradient(145deg, #1b1e25, #111217 68%); border: 1px solid #434a3e; border-radius: 18px; box-shadow: 0 32px 100px #000c; opacity: 0; transform: translateY(10px) scale(.98); transition: opacity .18s ease, transform .18s ease; }
-.mix-picker-modal.is-open .mix-picker-dialog { opacity: 1; transform: translateY(0) scale(1); }
-.mix-picker-dialog header { display: flex; flex: 0 0 auto; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 18px; border-bottom: 1px solid #343943; }
-.mix-picker-dialog header h2 { margin-top: 4px; font-size: 22px; }
-.mix-picker-dialog header p:last-child { margin-top: 6px; color: var(--muted); font-size: 11px; }
-.mix-picker-dialog header button { width: 32px; height: 32px; padding: 0; font-size: 19px; }
-.mix-picker-list { display: grid; gap: 8px; min-height: 90px; padding: 16px 20px 20px; overflow: auto; overscroll-behavior: contain; }
+.mix-picker-backdrop { background: #05060980; backdrop-filter: blur(5px); }
+.mix-picker-dialog { position: relative; width: min(560px, calc(100vw - 40px)); max-height: calc(100vh - 72px); }
+.mix-picker-list { display: grid; gap: 8px; min-height: 90px; padding: 20px 30px 26px; overflow: auto; overscroll-behavior: contain; }
 .mix-picker-item { display: grid; gap: 4px; padding: 12px 14px; color: var(--text); text-align: left; background: #17191e; border: 1px solid #363c2e; border-radius: 10px; cursor: pointer; }
 .mix-picker-item:hover:not(:disabled) { background: #202719; border-color: #667a3f; }
 .mix-picker-item strong { font-size: 12px; }
@@ -70,6 +65,7 @@
   .mix-page-heading { align-items: flex-start; }
   .mix-heading-mark { width: 54px; height: 54px; border-radius: 16px; }
   .mix-deck, .mix-transition-card, .mix-save-card { padding: 14px; }
+  .mix-picker-list { padding: 16px; }
   .mix-transition-controls, .mix-save-controls { grid-template-columns: 1fr; }
   .mix-transport { grid-template-columns: auto auto 34px minmax(30px, 1fr) 34px; gap: 5px; }
 }
