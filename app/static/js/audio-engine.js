@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.54';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.54';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.54';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.54';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.54';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.54';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.54';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.54';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.54';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.54';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.54';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.54';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.54';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.54';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.54';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.54';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.54';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.54';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.54';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.54';
-import { lucideIcon } from './lucide.js?v=1.5.0.54';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.54';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.55';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.55';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.55';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.55';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.55';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.55';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.55';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.55';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.55';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.55';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.55';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.55';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.55';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.55';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.55';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.55';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.55';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.55';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.55';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.55';
+import { lucideIcon } from './lucide.js?v=1.5.0.55';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.55';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -865,7 +865,8 @@ export function bindPlayheadSeeking() {
       if (event.button !== 0 || playheadDragging) return;
       const rect = playhead.getBoundingClientRect();
       const grabPadding = 9;
-      if (event.clientX < rect.left - grabPadding || event.clientX > rect.right + grabPadding) return;
+      if (event.clientX < rect.left - grabPadding || event.clientX > rect.right + grabPadding
+        || event.clientY < rect.top || event.clientY > rect.bottom) return;
       event.preventDefault();
       event.stopPropagation();
       playheadDragging = true;
