@@ -222,7 +222,7 @@ document.addEventListener('keydown', event => {
 renderTaskIsland();
 onLanguageChange(() => { renderTaskIsland(); if (playing) refreshPlaybackTask(paused ? 'paused' : 'playing'); });
 export function status(message, error = false, persistent = false) {
-  if (!message) return updateTaskNotice('notice', '');
+  if (!message) return updateTaskNotice(persistent ? 'operation' : 'notice', '');
   updateTaskNotice(persistent ? 'operation' : 'notice', message, {
     state: persistent ? (error ? 'error' : 'progress') : (error ? 'error' : 'complete'),
     duration: persistent ? 0 : error ? 6000 : 3600,

@@ -8,13 +8,13 @@
   <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.18">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.41">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.49">
   <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.41">
   <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.41">
   <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
   <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.20">
   <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.41">
-  <link rel="stylesheet" href="/static/styles/mix.css?v=1.5.0.47">
+  <link rel="stylesheet" href="/static/styles/mix.css?v=1.5.0.49">
 </head>
 <body>
   <main>
@@ -105,12 +105,12 @@
       <header class="mix-page-heading"><div><p class="eyebrow">DEUX PISTES · UN MIX</p><h2 id="mixPageTitle">Mix</h2><p>Assemblez deux projets, façonnez leur transition et exportez un seul fichier stéréo.</p></div></header>
       <div class="mix-decks">
         <article class="mix-deck mix-deck-a" data-mix-deck="a">
-          <div class="mix-deck-heading"><span class="mix-deck-number">01</span><div><p>PISTE 1</p><h3 data-mix-name="a">Emplacement libre</h3></div><button class="mix-remove" type="button" data-mix-remove="a" aria-label="Retirer la piste 1">×</button></div>
+          <div class="mix-deck-heading"><span class="mix-deck-number">01</span><div><p>PISTE 1</p><h3 data-mix-name="a">Emplacement libre</h3></div><button class="mix-remove" type="button" data-mix-remove="a" aria-label="Retirer la piste 1"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
           <div class="mix-empty" data-mix-empty="a"><p>Choisissez une séparation enregistrée : elle sera réduite à une seule piste stéréo.</p><button data-button-variant="secondary" type="button" data-mix-pick="a">Choisir depuis un projet</button></div>
           <div class="mix-loaded hidden" data-mix-loaded="a"><canvas class="mix-waveform" data-mix-wave="a" aria-label="Forme d’onde de la piste 1"></canvas><div class="mix-metadata"><span data-mix-duration="a">0:00</span><span data-mix-bpm="a">— BPM</span><span data-mix-key="a">—</span></div></div>
         </article>
         <article class="mix-deck mix-deck-b" data-mix-deck="b">
-          <div class="mix-deck-heading"><span class="mix-deck-number">02</span><div><p>PISTE 2</p><h3 data-mix-name="b">Emplacement libre</h3></div><button class="mix-remove" type="button" data-mix-remove="b" aria-label="Retirer la piste 2">×</button></div>
+          <div class="mix-deck-heading"><span class="mix-deck-number">02</span><div><p>PISTE 2</p><h3 data-mix-name="b">Emplacement libre</h3></div><button class="mix-remove" type="button" data-mix-remove="b" aria-label="Retirer la piste 2"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
           <div class="mix-empty" data-mix-empty="b"><p>Choisissez une seconde séparation : le mix conservera les deux pistes sous forme de decks indépendants.</p><button data-button-variant="secondary" type="button" data-mix-pick="b">Choisir depuis un projet</button></div>
           <div class="mix-loaded hidden" data-mix-loaded="b"><canvas class="mix-waveform" data-mix-wave="b" aria-label="Forme d’onde de la piste 2"></canvas><div class="mix-metadata"><span data-mix-duration="b">0:00</span><span data-mix-bpm="b">— BPM</span><span data-mix-key="b">—</span></div></div>
         </article>
@@ -175,6 +175,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.47"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.49"></script>
 </body>
 </html>

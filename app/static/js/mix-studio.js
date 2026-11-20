@@ -1,7 +1,7 @@
 // The Mix workspace is an independent two-deck stereo editor.
 // Source projects are flattened in the browser so a saved mix does not depend
 // on the source project still being present in the library.
-import { createTrackNodes, effectDefaults, getSaturationTarget, getWidthTarget, setTrackTargets, updateTrackEffects } from './audio-engine.js?v=1.5.0.41';
+import { createTrackNodes, effectDefaults, getSaturationTarget, getWidthTarget, setTrackTargets, updateTrackEffects } from './audio-engine.js?v=1.5.0.49';
 import { scheduleOfflineDeEsser } from './effects/de-esser.js?v=1.5.0.18';
 import { scheduleOfflineNoiseGate } from './effects/noise-gate.js?v=1.5.0.18';
 import { scheduleOfflineVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.18';
@@ -45,15 +45,26 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
     if (!audio) return;
     const data = audio.getChannelData(0), width = Math.ceil(rect.width);
     const mid = rect.height / 2, color = deck === 'a' ? '#d7ff54' : '#73c9ff';
-    ctx.strokeStyle = color; ctx.globalAlpha = .82; ctx.lineWidth = 1;
-    ctx.beginPath();
+    const upper = new Float32Array(width), lower = new Float32Array(width);
     for (let x = 0; x < width; x += 1) {
       const start = Math.floor(x * data.length / width), end = Math.max(start + 1, Math.floor((x + 1) * data.length / width));
       let min = 1, max = -1;
       for (let i = start; i < end && i < data.length; i += 1) { const sample = data[i]; min = Math.min(min, sample); max = Math.max(max, sample); }
-      ctx.moveTo(x + .5, mid + min * (mid - 3)); ctx.lineTo(x + .5, mid + max * (mid - 3));
+      upper[x] = mid - max * (mid - 5); lower[x] = mid - min * (mid - 5);
     }
-    ctx.stroke(); ctx.globalAlpha = 1;
+    const envelope = new Path2D(); envelope.moveTo(0, upper[0] ?? mid);
+    for (let x = 0; x < width; x += 1) envelope.lineTo(x + .5, upper[x]);
+    for (let x = width - 1; x >= 0; x -= 1) envelope.lineTo(x + .5, lower[x]);
+    envelope.closePath();
+    const glow = ctx.createLinearGradient(0, 8, 0, rect.height - 8);
+    glow.addColorStop(0, `${color}55`); glow.addColorStop(.5, `${color}bb`); glow.addColorStop(1, `${color}55`);
+    ctx.fillStyle = glow; ctx.fill(envelope);
+    ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.strokeStyle = `${color}dd`; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x < width; x += 1) ctx.lineTo(x + .5, upper[x]);
+    for (let x = width - 1; x >= 0; x -= 1) ctx.lineTo(x + .5, lower[x]);
+    ctx.stroke(); ctx.restore();
+    ctx.strokeStyle = '#ffffff16'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, mid + .5); ctx.lineTo(rect.width, mid + .5); ctx.stroke();
     const crossfadeStart = Math.max(0, audio.duration - overlap());
     if (deck === 'a' && decks.b) {
       const x = rect.width * crossfadeStart / audio.duration;
@@ -269,7 +280,7 @@ export function createMixStudio({ apiJson, getLibrary, refreshLibrary, status, l
       } catch (error) {
         console.error('Could not add a project to the Mix deck.', error);
         status(error.message || label('Impossible de créer la piste stéréo.', 'Could not build the stereo deck.'), true);
-      } finally { loadingDeck = false; }
+      } finally { loadingDeck = false; status('', false, true); }
     });
   }
 
