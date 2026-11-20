@@ -1,20 +1,20 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.52';
-import { createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.52';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.52';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.52';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.52';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.52';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.52';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.52';
-import { lucideIcon } from './js/lucide.js?v=1.5.0.52';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.52';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.52';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.52';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.52';
-import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.52';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.53';
+import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.53';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.53';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.53';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.53';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.53';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.53';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.53';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.53';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.53';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.53';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.53';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.53';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.53';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
-let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal;
+let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal;
 let panCurvesModal;
 let resolveInteractionModalReady;
 const interactionModalReady = new Promise(resolve => { resolveInteractionModalReady = resolve; });
@@ -325,7 +325,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.52', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.53', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {
@@ -944,6 +944,20 @@ async function initializeModalComponents() {
       },
     });
     setPanCurveModal(panCurvesModal);
+    automationEffectModal = createAutomationEffectModal({
+      getTrackLabel: name => t(stemInfo[name]?.titleKey || 'stem.accompaniment'),
+      onEdit: (name, lane) => {
+        const automation = automationByTrack[name];
+        if (!automation) return;
+        automation.activeLane = lane;
+        automation.selected = 0;
+        refreshAutomation(name);
+      },
+      onRemove: (name, lane) => {
+        if (removeTrackEffect(name, lane)) status(t('automation.effectRemoved'));
+      },
+    });
+    setAutomationEffectModal(automationEffectModal);
     keyModal = createKeyModal($('#chooseKeyButton'), {
       getKeys: sourceKey => {
         const mode = String(sourceKey || '').toLowerCase().endsWith('minor') ? 'minor' : 'major';

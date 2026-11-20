@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.52';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.52';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.52';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.52';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.52';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.52';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.52';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.52';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.52';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.52';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.52';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.52';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.52';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.52';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.52';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.52';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.52';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.52';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.52';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.52';
-import { lucideIcon } from './lucide.js?v=1.5.0.52';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.52';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.53';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.53';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.53';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.53';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.53';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.53';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.53';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.53';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.53';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.53';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.53';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.53';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.53';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.53';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.53';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.53';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.53';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.53';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.53';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.53';
+import { lucideIcon } from './lucide.js?v=1.5.0.53';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.53';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -38,7 +38,7 @@ export function setTrackTargets(hasBass, hasOther) { saturationTarget = hasBass 
 export function getSaturationTarget() { return saturationTarget; }
 export function getWidthTarget() { return widthTarget; }
 export let audioCtx, liveNodes = new Map(), liveMaster, playing = false, paused = false, playStartedAt = 0, playheadOffset = 0, playheadDragging = false, playheadWasPlaying = false, automationDragging = false, playheadFrame, playbackEndTimer, playbackToken = 0, saturationTarget = 'accompaniment', widthTarget = 'accompaniment', voiceMeter;
-let draggedPlayhead = null, playheadPointerId = null;
+let draggedPlayhead = null, playheadPointerId = null, automationDragState = null;
 
 export function autosaveNotice(state, detail = '') {
   const english = getLanguage() === 'en';
@@ -464,7 +464,15 @@ export function drawWaveform(name, buffer) {
       if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
-    pointsOnGraph.forEach((point, index) => { ctx.fillStyle = index === automation.selected ? '#ffffff' : (lane === 'pan' ? '#a78bfa' : '#d7ff54'); ctx.beginPath(); ctx.arc(point.x, point.y, index === automation.selected ? 5 : 4, 0, Math.PI * 2); ctx.fill(); });
+    pointsOnGraph.forEach((point, index) => {
+      if (index === automation.selected) {
+        ctx.beginPath(); ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+        ctx.fillStyle = lane === 'pan' ? '#a78bfa35' : '#d7ff5435'; ctx.fill();
+      }
+      ctx.fillStyle = index === automation.selected ? '#ffffff' : (lane === 'pan' ? '#a78bfa' : '#d7ff54');
+      ctx.beginPath(); ctx.arc(point.x, point.y, index === automation.selected ? 6 : 5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#111318'; ctx.lineWidth = 1.5; ctx.stroke();
+    });
   }
 }
 export function bindTrackTimelineZoom() {
@@ -557,6 +565,7 @@ const effectAutomationLanes = {
   saturation: ['saturation'], bassBoost: ['bassBoost'], chorus: ['chorus'], flanger: ['flanger'], phaser: ['phaser'],
   tremolo: ['tremolo'], bitcrusher: ['bitcrusher'], gate: ['gate'], deEsser: ['deEsser'], limiter: ['limiter'], exciter: ['exciter'],
 };
+const automationLaneEffect = Object.fromEntries(Object.entries(effectAutomationLanes).flatMap(([effect, lanes]) => lanes.map(lane => [lane, effect])));
 function automationBaseValue(name, lane) {
   if (lane === 'pan') return 0;
   if (lane === 'volume') return Number(document.querySelector(`[data-control="${name}"][data-param="volume"]`)?.value ?? 100);
@@ -591,6 +600,22 @@ export function activateTrackEffect(name, key) {
   markProjectDirty();
   return true;
 }
+export function removeTrackEffect(name, lane) {
+  const effect = automationLaneEffect[lane];
+  const state = automationByTrack[name];
+  const values = effectsByTrack[name];
+  if (!effect || !state || !state.activeEffects?.includes(effect)) return false;
+  state.activeEffects = state.activeEffects.filter(active => active !== effect);
+  for (const effectLane of effectAutomationLanes[effect] || []) {
+    if (values) values[effectLane] = effectDefaults[effectLane];
+    if (state.lanes) delete state.lanes[effectLane];
+  }
+  state.activeLane = 'pan';
+  state.selected = 0;
+  refreshAutomation(name);
+  markProjectDirty();
+  return true;
+}
 export function automationCoordinates(event, canvas) {
   const name = canvas.dataset.waveform, buffer = tracks[name], rect = canvas.getBoundingClientRect(), graphHeight = rect.height - 20;
   const lane = automationByTrack[name]?.activeLane || 'pan', [min, max] = automationRanges[lane] || [0, 100];
@@ -602,7 +627,15 @@ export function automationCoordinates(event, canvas) {
 export function selectAutomationPoint(event) {
   const canvas = event.currentTarget, name = canvas.dataset.waveform, { time, value, lane } = automationCoordinates(event, canvas), buffer = tracks[name], automation = automationByTrack[name];
   const points = automationPointsFor(name, lane, buffer.duration);
-  const closeIndex = points.findIndex(point => Math.abs(point.time - time) < Math.max(.18, buffer.duration * .008));
+  const rect = canvas.getBoundingClientRect(), graphHeight = rect.height - 20;
+  const [min, max] = automationRanges[lane] || [0, 100];
+  const closeIndex = points.reduce((closest, point, index) => {
+    const x = (point.time / buffer.duration) * rect.width;
+    const pointValue = lane === 'pan' ? point.pan : point.value;
+    const y = graphHeight * (1 - (pointValue - min) / Math.max(0.001, max - min));
+    const distance = Math.hypot(event.clientX - rect.left - x, event.clientY - rect.top - y);
+    return distance <= 18 && (closest.index < 0 || distance < closest.distance) ? { index, distance } : closest;
+  }, { index: -1, distance: Infinity }).index;
   if (closeIndex >= 0) automation.selected = closeIndex;
   else {
     const point = lane === 'pan' ? { time, pan: value } : { time, value };
@@ -613,10 +646,12 @@ export function selectAutomationPoint(event) {
 }
 export function moveAutomationPoint(event) {
   if (!automationDragging) return;
-  const canvas = event.currentTarget, name = canvas.dataset.waveform, automation = automationByTrack[name], lane = automation.activeLane || 'pan', points = automationPointsFor(name, lane), point = points[automation.selected], { time, value } = automationCoordinates(event, canvas), last = points.length - 1;
+  const canvas = event.currentTarget, name = canvas.dataset.waveform, automation = automationByTrack[name], drag = automationDragState;
+  if (!drag || drag.canvas !== canvas || drag.pointerId !== event.pointerId) return;
+  const { lane, point } = drag, points = automationPointsFor(name, lane), { time, value } = automationCoordinates(event, canvas), pointIndex = points.indexOf(point), last = points.length - 1;
   if (!point) return;
   if (lane === 'pan') point.pan = value; else point.value = value;
-  if (automation.selected > 0 && automation.selected < last) point.time = Math.max(points[automation.selected - 1].time + .05, Math.min(points[automation.selected + 1].time - .05, time));
+  if (pointIndex > 0 && pointIndex < last) point.time = Math.max(points[pointIndex - 1].time + .05, Math.min(points[pointIndex + 1].time - .05, time));
   refreshAutomation(name);
   markProjectDirty();
 }
@@ -643,7 +678,13 @@ export function refreshAutomation(name) {
       laneButtons.querySelectorAll('[data-select-automation-lane]').forEach(button => button.onclick = () => {
         const currentAutomation = automationByTrack[name];
         if (!currentAutomation) return;
-        currentAutomation.activeLane = button.dataset.lane;
+        const lane = button.dataset.lane;
+        if (lane !== 'pan' && lane !== 'volume') {
+          if (!automationEffectModalInstance) return;
+          automationEffectModalInstance.open(name, lane);
+          return;
+        }
+        currentAutomation.activeLane = lane;
         currentAutomation.selected = 0;
         refreshAutomation(name);
       });
@@ -662,9 +703,27 @@ export function refreshAutomation(name) {
 }
 export function bindAutomation() {
   document.querySelectorAll('[data-waveform]').forEach(canvas => {
-    canvas.addEventListener('pointerdown', event => { selectAutomationPoint(event); automationDragging = true; canvas.setPointerCapture(event.pointerId); });
+    canvas.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || playheadDragging) return;
+      event.preventDefault();
+      selectAutomationPoint(event);
+      const name = canvas.dataset.waveform, automation = automationByTrack[name], lane = automation?.activeLane || 'pan';
+      const points = automation ? automationPointsFor(name, lane) : [];
+      automationDragState = { canvas, pointerId: event.pointerId, lane, point: points[automation?.selected] };
+      automationDragging = Boolean(automationDragState.point);
+      if (automationDragging) {
+        try { canvas.setPointerCapture(event.pointerId); } catch {}
+      }
+    });
     canvas.addEventListener('pointermove', moveAutomationPoint);
-    canvas.addEventListener('pointerup', event => { automationDragging = false; try { canvas.releasePointerCapture(event.pointerId); } catch {} });
+    const finishAutomationDrag = event => {
+      if (!automationDragState || automationDragState.canvas !== canvas || automationDragState.pointerId !== event.pointerId) return;
+      automationDragging = false;
+      automationDragState = null;
+      try { canvas.releasePointerCapture(event.pointerId); } catch {}
+    };
+    canvas.addEventListener('pointerup', finishAutomationDrag);
+    canvas.addEventListener('pointercancel', finishAutomationDrag);
     canvas.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; canvas.classList.add('is-drop-target'); });
     canvas.addEventListener('dragleave', () => canvas.classList.remove('is-drop-target'));
     canvas.addEventListener('drop', event => {
@@ -714,6 +773,8 @@ export let fxModalInstance;
 export function setFxModal(modal) { fxModalInstance = modal; }
 export let panCurveModalInstance;
 export function setPanCurveModal(modal) { panCurveModalInstance = modal; }
+export let automationEffectModalInstance;
+export function setAutomationEffectModal(modal) { automationEffectModalInstance = modal; }
 export function bindFxButtons() {
   // Track buttons are generated after a separation, so bind them after every render.
   document.querySelectorAll('[data-fx]').forEach(button => button.onclick = () => {

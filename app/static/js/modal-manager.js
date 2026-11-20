@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.52';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.52';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.52';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.53';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.53';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.53';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -22,7 +22,7 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, settingsModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, settingsModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
@@ -30,9 +30,10 @@ export async function mountModalComponents(root) {
     loadComponent('interaction-modal.html'),
     loadComponent('key-modal.html'),
     loadComponent('pan-curves-modal.html'),
+    loadComponent('automation-effect-modal.html'),
     loadComponent('settings-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${settingsModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${settingsModal}`;
 }
 
 /**
@@ -382,6 +383,37 @@ export function createPanCurveModal({ getTrackLabel, getActiveLane, onApply }) {
         }
       });
     });
+    animated.show();
+  };
+
+  return { open, close: animated.close };
+}
+
+/** Offer curve editing and removal actions for an effect lane on one track. */
+export function createAutomationEffectModal({ getTrackLabel, onEdit, onRemove }) {
+  const modal = document.querySelector('#automationEffectModal');
+  const animated = createAnimatedModal(modal, '.automation-effect-close');
+  const title = modal.querySelector('#automationEffectTitle');
+  const description = modal.querySelector('#automationEffectDescription');
+  const editButton = modal.querySelector('[data-automation-effect-action="edit"]');
+  const removeButton = modal.querySelector('[data-automation-effect-action="remove"]');
+  let activeTrack = null;
+  let activeLane = null;
+
+  const open = (track, lane) => {
+    activeTrack = track;
+    activeLane = lane;
+    const parameter = t(`automation.param.${lane}`);
+    title.textContent = parameter;
+    description.textContent = t('automation.effectDescription', { track: getTrackLabel(track) });
+    editButton.onclick = () => {
+      onEdit(activeTrack, activeLane);
+      animated.close();
+    };
+    removeButton.onclick = () => {
+      onRemove(activeTrack, activeLane);
+      animated.close();
+    };
     animated.show();
   };
 
