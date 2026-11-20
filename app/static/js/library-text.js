@@ -1,4 +1,4 @@
-import { getLanguage } from './i18n.js?v=1.5.0.57';
+import { getLanguage } from './i18n.js?v=1.5.0.58';
 
 export function libraryLabels() {
   return getLanguage() === 'en' ? {
