@@ -14,7 +14,6 @@
   <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.18">
   <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.20">
   <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.41">
-  <link rel="stylesheet" href="/static/styles/mix.css?v=1.5.0.49">
 </head>
 <body>
   <main>
@@ -24,7 +23,7 @@
         <img class="brand-logo" src="/logo/logov2snas%20fond%20%21.png" alt="AudioSplit Studio">
         <div><h1>AudioSplit <span>Studio</span></h1><p data-i18n="app.tagline">Séparez. Mixez. Exportez.</p></div>
       </div>
-      <nav class="app-nav" aria-label="Navigation"><button data-button-variant="primary" data-page="projects" id="libraryButton" class="library-button" type="button" title="Projets enregistrés">Projets</button><button data-button-variant="primary" data-page="home" class="nav-button" type="button" data-i18n="nav.home">Accueil</button><button data-button-variant="primary" data-page="studio" class="nav-button" type="button" data-i18n="nav.studio">Studio</button><button data-button-variant="primary" data-page="mix" class="nav-button" type="button">Mix</button></nav>
+      <nav class="app-nav" aria-label="Navigation"><button data-button-variant="primary" data-page="projects" id="libraryButton" class="library-button" type="button" title="Projets enregistrés">Projets</button><button data-button-variant="primary" data-page="home" class="nav-button" type="button" data-i18n="nav.home">Accueil</button><button data-button-variant="primary" data-page="studio" class="nav-button" type="button" data-i18n="nav.studio">Studio</button></nav>
       <div class="header-tools">
         <div class="header-utilities">
           <button data-button-variant="primary" data-button-size="header-icon" id="languageButton" class="language-button" type="button" data-i18n-title="language.triggerTitle" data-i18n-aria-label="language.triggerTitle" title="Changer la langue" aria-label="Changer la langue"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg><span data-i18n="language.trigger">FR</span></button>
@@ -101,34 +100,6 @@
         <button data-button-variant="secondary" id="exportButton" class="export" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg><span data-i18n="export">Exporter le mixage WAV stéréo</span></button>
       </div>
     </section></section>
-    <section id="mixPage" class="app-page mix-page hidden" aria-labelledby="mixPageTitle">
-      <header class="mix-page-heading"><div><p class="eyebrow">DEUX PISTES · UN MIX</p><h2 id="mixPageTitle">Mix</h2><p>Assemblez deux projets, façonnez leur transition et exportez un seul fichier stéréo.</p></div></header>
-      <div class="mix-decks">
-        <article class="mix-deck mix-deck-a" data-mix-deck="a">
-          <div class="mix-deck-heading"><span class="mix-deck-number">01</span><div><p>PISTE 1</p><h3 data-mix-name="a">Emplacement libre</h3></div><button class="mix-remove" type="button" data-mix-remove="a" aria-label="Retirer la piste 1"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
-          <div class="mix-empty" data-mix-empty="a"><p>Choisissez une séparation enregistrée : elle sera réduite à une seule piste stéréo.</p><button data-button-variant="secondary" type="button" data-mix-pick="a">Choisir depuis un projet</button></div>
-          <div class="mix-loaded hidden" data-mix-loaded="a"><canvas class="mix-waveform" data-mix-wave="a" aria-label="Forme d’onde de la piste 1"></canvas><div class="mix-metadata"><span data-mix-duration="a">0:00</span><span data-mix-bpm="a">— BPM</span><span data-mix-key="a">—</span></div></div>
-        </article>
-        <article class="mix-deck mix-deck-b" data-mix-deck="b">
-          <div class="mix-deck-heading"><span class="mix-deck-number">02</span><div><p>PISTE 2</p><h3 data-mix-name="b">Emplacement libre</h3></div><button class="mix-remove" type="button" data-mix-remove="b" aria-label="Retirer la piste 2"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
-          <div class="mix-empty" data-mix-empty="b"><p>Choisissez une seconde séparation : le mix conservera les deux pistes sous forme de decks indépendants.</p><button data-button-variant="secondary" type="button" data-mix-pick="b">Choisir depuis un projet</button></div>
-          <div class="mix-loaded hidden" data-mix-loaded="b"><canvas class="mix-waveform" data-mix-wave="b" aria-label="Forme d’onde de la piste 2"></canvas><div class="mix-metadata"><span data-mix-duration="b">0:00</span><span data-mix-bpm="b">— BPM</span><span data-mix-key="b">—</span></div></div>
-        </article>
-      </div>
-      <section class="mix-transition-card" aria-labelledby="mixTransitionTitle">
-        <div class="mix-transition-heading"><div><p class="eyebrow">TRANSITION</p><h3 id="mixTransitionTitle">Passage entre les pistes</h3><p>Le croisement se place à la fin de la piste 1 et au début de la piste 2.</p></div><span class="mix-transition-symbol" aria-hidden="true">↗</span></div>
-        <div class="mix-transition-controls">
-          <label><span>Type de transition</span><select id="mixTransitionStyle"><option value="crossfade">Fondu croisé</option><option value="eq">Échange des basses</option><option value="filter">Balayage de filtre</option></select></label>
-          <label class="mix-duration-control"><span>Durée du passage <output id="mixTransitionDurationValue">8 s</output></span><input id="mixTransitionDuration" type="range" min="1" max="30" value="8"></label>
-        </div>
-        <div class="mix-transport"><button data-button-variant="secondary" id="mixPlayButton" type="button" disabled>Lecture</button><button data-button-variant="modal" id="mixStopButton" type="button" disabled>Début</button><span id="mixTimelineNow">0:00</span><input id="mixTimeline" aria-label="Position de lecture du mix" type="range" min="0" max="1" value="0" disabled><span id="mixTimelineEnd">0:00</span></div>
-      </section>
-      <section class="mix-save-card" aria-labelledby="mixSaveTitle"><div><p class="eyebrow">BIBLIOTHÈQUE LOCALE</p><h3 id="mixSaveTitle">Enregistrer ce mixage</h3><p>Les deux decks stéréo et les réglages de transition seront conservés dans le dossier choisi.</p></div><div class="mix-save-controls"><label><span>Nom du mixage</span><input id="mixNameInput" type="text" maxlength="120" placeholder="Nom du mixage"></label><label><span>Dossier</span><select id="mixFolderSelect"><option value="">Choisir un dossier…</option></select></label><button data-button-variant="secondary" id="mixSaveButton" type="button" disabled>Enregistrer le mixage</button><button data-button-variant="primary" id="mixExportButton" type="button" disabled>Exporter WAV stéréo</button></div><span id="mixSaveStatus" class="mix-save-status" aria-live="polite"></span></section>
-    </section>
-    <div id="mixPickerModal" class="changelog-modal mix-picker-modal" aria-hidden="true" inert hidden>
-      <div class="changelog-backdrop mix-picker-backdrop" data-picker-close></div>
-      <section class="changelog-dialog mix-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="mixPickerTitle"><header class="changelog-header"><div><p class="eyebrow">AUDIO SPLIT STUDIO</p><h2 id="mixPickerTitle">Choisir un projet</h2><p>Les pistes du projet seront réduites en une piste stéréo.</p></div><button id="mixPickerClose" class="changelog-close" data-button-variant="modal" type="button" aria-label="Fermer"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button></header><div id="mixPickerList" class="mix-picker-list"></div></section>
-    </div>
     <div id="transformModal" class="fx-modal" aria-hidden="true">
       <div class="fx-modal-backdrop" data-modal-close></div>
       <section class="fx-dialog transform-dialog" role="dialog" aria-modal="true" aria-labelledby="transformTitle">
