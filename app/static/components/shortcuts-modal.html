@@ -6,7 +6,7 @@
       <div>
         <p class="eyebrow" data-i18n="shortcuts.eyebrow">AUDIO SPLIT STUDIO</p>
         <h2 id="shortcutsTitle" data-i18n="shortcuts.title">Raccourcis clavier</h2>
-        <p id="shortcutsDescription" data-i18n="shortcuts.description">Commandes disponibles dans le studio lorsqu’un mix est chargé.</p>
+        <p id="shortcutsDescription" data-i18n="shortcuts.description">Personnalisez les touches. Vos choix sont enregistrés sur cet ordinateur.</p>
       </div>
       <button type="button" data-button-variant="modal" class="changelog-close shortcuts-close" data-modal-close data-i18n-title="close" data-i18n-aria-label="close" aria-label="Fermer" title="Fermer">
         <svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
@@ -14,14 +14,20 @@
     </header>
     <div class="shortcuts-modal-content">
       <div class="shortcuts-list">
-        <div><kbd data-i18n="shortcuts.space">Espace</kbd><span data-i18n="shortcuts.play">Lecture / pause</span></div>
-        <div><kbd>← / →</kbd><span data-i18n="shortcuts.seek">Reculer / avancer de 10 s</span></div>
-        <div><kbd data-i18n="shortcuts.shiftArrows">Maj + ← / →</kbd><span data-i18n="shortcuts.seekLarge">Reculer / avancer de 30 s</span></div>
-        <div><kbd data-i18n="shortcuts.homeEnd">Début / Fin</kbd><span data-i18n="shortcuts.ends">Aller au début / à la fin</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="playPause" aria-label="Modifier le raccourci"><kbd data-shortcut-value="playPause">Espace</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.play">Lecture / pause</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="seekBack10" aria-label="Modifier le raccourci"><kbd data-shortcut-value="seekBack10">←</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.seekBack">Reculer de 10 s</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="seekForward10" aria-label="Modifier le raccourci"><kbd data-shortcut-value="seekForward10">→</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.seekForward">Avancer de 10 s</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="seekBack30" aria-label="Modifier le raccourci"><kbd data-shortcut-value="seekBack30">Maj + ←</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.seekBackLarge">Reculer de 30 s</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="seekForward30" aria-label="Modifier le raccourci"><kbd data-shortcut-value="seekForward30">Maj + →</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.seekForwardLarge">Avancer de 30 s</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="goToStart" aria-label="Modifier le raccourci"><kbd data-shortcut-value="goToStart">Début</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.start">Aller au début</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="goToEnd" aria-label="Modifier le raccourci"><kbd data-shortcut-value="goToEnd">Fin</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.end">Aller à la fin</span></div>
         <div><kbd data-i18n="shortcuts.ctrlWheel">Ctrl + molette</kbd><span data-i18n="shortcuts.zoom">Zoomer la piste sous le pointeur</span></div>
-        <div><kbd data-i18n="shortcuts.doubleR">R · deux fois</kbd><span data-i18n="shortcuts.cutVocal">Couper la voix entre les deux pressions</span></div>
+        <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="vocalCut" aria-label="Modifier le raccourci"><kbd data-shortcut-value="vocalCut">R</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.cutVocal">Couper la voix entre les deux pressions</span></div>
       </div>
+      <p class="shortcuts-cut-note" data-i18n="shortcuts.keyboardHelp">Cliquez sur « Modifier », puis appuyez sur la touche voulue. Une combinaison ne peut servir qu’à une seule commande.</p>
       <p class="shortcuts-cut-note" data-i18n="shortcuts.cutNote">La lecture doit être en cours. La courbe de volume de la voix revient à son niveau précédent à la fin de la coupure.</p>
+      <p class="shortcuts-binding-feedback" data-shortcuts-feedback role="status" aria-live="polite"></p>
+      <div class="shortcuts-modal-actions"><button type="button" data-button-variant="modal" data-i18n="shortcuts.reset" data-shortcuts-reset>Réinitialiser les raccourcis</button></div>
     </div>
   </section>
 </div>

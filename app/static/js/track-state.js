@@ -1,6 +1,6 @@
-import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.62';
-import { t } from './i18n.js?v=1.5.0.62';
-import { lucideIcon } from './lucide.js?v=1.5.0.62';
+import { $, tracks, automationByTrack, effectDefaults, effectsByTrack, stemInfo, icon, speakerIcon, updateOutputs, markProjectDirty, updateLiveMix, bindAutomation, bindPlayheadSeeking, bindFxButtons, bindTrackTimelineZoom, setTrackTargets, ensureAutomation, refreshAutomation } from './audio-engine.js?v=1.5.0.63';
+import { t } from './i18n.js?v=1.5.0.63';
+import { lucideIcon } from './lucide.js?v=1.5.0.63';
 
 export function snapshotTrackControls(names) {
   return Object.fromEntries(names.map((name) => {

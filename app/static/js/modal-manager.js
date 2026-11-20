@@ -1,6 +1,7 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.62';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.62';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.62';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.63';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.63';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.63';
+import { assignShortcut, formatShortcut, getShortcutBindings, resetShortcuts, shortcutFromEvent } from './keyboard-shortcuts.js?v=1.5.0.63';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -481,6 +482,56 @@ export function createLanguageModal(trigger) {
 export function createShortcutsModal(trigger) {
   const modal = document.querySelector('#shortcutsModal');
   const animated = createAnimatedModal(modal, '.shortcuts-close', trigger);
+  const feedback = modal.querySelector('[data-shortcuts-feedback]');
+  let listeningAction = null;
+  const renderBindings = () => {
+    const language = getLanguage();
+    const bindings = getShortcutBindings();
+    modal.querySelectorAll('[data-shortcut-bind]').forEach(button => {
+      const action = button.dataset.shortcutBind;
+      const label = formatShortcut(bindings[action], language);
+      button.querySelector('[data-shortcut-value]').textContent = label;
+      button.classList.toggle('is-listening', action === listeningAction);
+      button.querySelector('span').textContent = action === listeningAction ? t('shortcuts.listening') : t('shortcuts.change');
+      button.setAttribute('aria-label', `${t('shortcuts.change')}: ${label}`);
+    });
+  };
+  modal.querySelectorAll('[data-shortcut-bind]').forEach(button => {
+    button.onclick = () => {
+      listeningAction = button.dataset.shortcutBind;
+      feedback.textContent = t('shortcuts.listeningHint');
+      renderBindings();
+    };
+  });
+  modal.addEventListener('keydown', event => {
+    if (!listeningAction) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.key === 'Escape') {
+      listeningAction = null;
+      feedback.textContent = t('shortcuts.cancelled');
+      renderBindings();
+      return;
+    }
+    const binding = shortcutFromEvent(event);
+    if (!binding || event.repeat) return;
+    const result = assignShortcut(listeningAction, binding);
+    if (!result.ok) {
+      feedback.textContent = result.reason === 'duplicate' ? t('shortcuts.duplicate') : t('shortcuts.invalidKey');
+      return;
+    }
+    listeningAction = null;
+    feedback.textContent = t('shortcuts.saved');
+    renderBindings();
+  }, true);
+  modal.querySelector('[data-shortcuts-reset]').onclick = () => {
+    listeningAction = null;
+    resetShortcuts();
+    feedback.textContent = t('shortcuts.resetDone');
+    renderBindings();
+  };
+  onLanguageChange(renderBindings);
+  renderBindings();
   trigger.onclick = animated.show;
   return { close: animated.close };
 }

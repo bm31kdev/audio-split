@@ -330,9 +330,15 @@
 
 .shortcuts-modal-content { min-height: 0; padding: 18px 26px 25px; overflow: auto; overscroll-behavior: contain; }
 .shortcuts-modal-content .shortcuts-list { grid-template-columns: 1fr; gap: 8px; margin: 0; }
-.shortcuts-modal-content .shortcuts-list > div { min-height: 48px; gap: 14px; padding: 8px 12px; color: #d8dce4; background: #17191e; border: 1px solid #343943; border-radius: 10px; font-size: 12px; }
-.shortcuts-modal-content .shortcuts-list kbd { min-width: 116px; padding: 7px 9px; color: var(--lime); background: #20251b; border-color: #3c4730; border-radius: 7px; font-size: 10px; }
-.shortcuts-cut-note { margin-top: 13px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.shortcuts-modal-content .shortcuts-list > div { min-height: 44px; gap: 14px; padding: 6px 10px; color: #d8dce4; background: #17191e; border: 1px solid #343943; border-radius: 10px; font-size: 12px; }
+.shortcuts-modal-content .shortcuts-list kbd { min-width: 0; padding: 0; color: var(--lime); background: transparent; border: 0; border-radius: 0; box-shadow: none; font-size: 10px; }
+.shortcuts-modal-content .shortcuts-list .shortcut-binding { width: 142px; min-width: 142px; min-height: 32px; flex: 0 0 142px; justify-content: space-between; gap: 8px; padding: 0 9px; }
+.shortcuts-modal-content .shortcuts-list .shortcut-binding span { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; }
+.shortcuts-modal-content .shortcuts-list .shortcut-binding.is-listening { color: var(--lime); border-color: var(--lime); box-shadow: 0 0 14px #d7ff542b; }
+.shortcuts-binding-feedback { min-height: 16px; margin-top: 10px; color: var(--lime); font-size: 11px; }
+.shortcuts-modal-actions { display: flex; justify-content: flex-end; margin-top: 9px; }
+.shortcuts-modal-actions button { min-height: 34px; }
+.shortcuts-cut-note { margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 
 /* Every dialog uses one shared frame; only its body content remains specialized. */
 section.app-modal-dialog[role="dialog"] {
@@ -364,7 +370,7 @@ section.app-modal-dialog[role="dialog"] .changelog-header {
   }
   section.app-modal-dialog[role="dialog"] .changelog-header { padding: 19px 18px 15px; }
   .shortcuts-modal-content { padding: 15px 18px 20px; }
-  .shortcuts-modal-content .shortcuts-list > div { gap: 10px; padding: 8px; font-size: 11px; }
-  .shortcuts-modal-content .shortcuts-list kbd { min-width: 100px; }
+  .shortcuts-modal-content .shortcuts-list > div { gap: 8px; padding: 6px 8px; font-size: 10px; }
+  .shortcuts-modal-content .shortcuts-list .shortcut-binding { width: 125px; min-width: 125px; flex-basis: 125px; padding: 0 7px; }
 }
 @media (max-width: 520px) { .pan-curve-grid { grid-template-columns: 1fr; } }
