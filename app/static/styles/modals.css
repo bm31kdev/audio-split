@@ -28,16 +28,16 @@
 .fx-empty-state span { color: #d8ccff; }
 .fx-done { display: flex; margin-left: auto; color: #101407; background: var(--lime); border-color: var(--lime); }
 
-/* Keep effect removal clear, compact, and comfortably padded inside its dialog. */
+/* Match the effect library's compact card layout for the delete confirmation. */
 .automation-effect-dialog { width: min(480px, calc(100vw - 40px)); }
-.automation-effect-actions { display: flex; justify-content: center; margin: 28px 0 10px; }
-.automation-effect-action { display: inline-flex; align-items: center; justify-content: center; gap: 11px; width: fit-content; min-width: min(230px, 100%); min-height: 50px; padding: 0 22px; color: #e8eaf0; text-align: center; background: #222630; border: 1px solid #414653; border-radius: 11px; cursor: pointer; transition: background .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
-.automation-effect-action:hover { background: #382522; border-color: #a6564d; box-shadow: 0 0 18px #ff785526; transform: translateY(-1px); }
-.automation-effect-action-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; color: #ff9f90; background: #302020; border: 1px solid #533333; border-radius: 8px; }
-.automation-effect-action-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.automation-effect-action strong { font-size: 12px; }
-.automation-effect-note { max-width: 360px; margin: 0 auto 18px; color: var(--muted); font-size: 11px; line-height: 1.5; text-align: center; }
-.automation-effect-action:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.automation-effect-actions { display: flex; justify-content: center; margin: 22px 0; }
+.automation-effect-card { width: min(100%, 340px); padding: 17px; }
+.automation-effect-card .fx-effect-state { color: #ffc3b9; background: #2d201f; border-color: #59403d; }
+.automation-effect-card .fx-effect-state::before { background: var(--orange); }
+.automation-effect-card h3 { font-size: 15px; }
+.automation-effect-card p { min-height: 38px; margin-top: 8px; }
+.automation-effect-remove { width: 100%; min-height: 42px; justify-content: center; margin-top: 15px; padding: 0 14px; }
+.automation-effect-remove svg { width: 16px; height: 16px; }
 
 /* The language picker mirrors the existing modal motion at a compact size. */
 .language-modal { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 48px 20px; visibility: hidden; transition: visibility 0s linear 0.22s; }
