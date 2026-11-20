@@ -1,0 +1,37 @@
+<div id="musicAnalysisModal" class="fx-modal music-analysis-modal" aria-hidden="true">
+  <div class="fx-modal-backdrop" data-modal-close></div>
+  <section class="fx-dialog music-analysis-dialog" role="dialog" aria-modal="true" aria-labelledby="analysisTitle">
+    <header class="changelog-header">
+      <div>
+        <p class="eyebrow">AUDIO SPLIT STUDIO</p>
+        <h2 id="analysisTitle" data-i18n="analysis.title">Analyse musicale</h2>
+        <p data-i18n="analysis.description">Vérifiez les estimations et corrigez-les si besoin.</p>
+      </div>
+      <button type="button" data-button-variant="modal" class="changelog-close music-analysis-close" data-modal-close data-i18n-title="close" data-i18n-aria-label="close" aria-label="Fermer" title="Fermer">
+        <svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
+      </button>
+    </header>
+    <section id="musicAnalysis" class="music-analysis" aria-live="polite">
+      <div class="analysis-heading"><div><h4 data-i18n="analysis.reviewTitle">Informations détectées</h4><p data-i18n="analysis.reviewDescription">L’analyse est prête. Validez les valeurs avant d’ouvrir le studio.</p></div><span id="analysisStatus" class="analysis-status" data-i18n="analysis.waiting">Analyse en attente</span></div>
+      <dl class="analysis-metadata">
+        <div><dt data-i18n="analysis.duration">Durée</dt><dd id="analysisDuration">—</dd></div>
+        <div><dt data-i18n="analysis.channels">Canaux</dt><dd id="analysisChannels">—</dd></div>
+        <div><dt data-i18n="analysis.sampleRate">Fréquence</dt><dd id="analysisSampleRate">—</dd></div>
+        <div><dt data-i18n="analysis.bitDepth">Profondeur</dt><dd id="analysisBitDepth">—</dd></div>
+        <div><dt data-i18n="analysis.peak">Crête</dt><dd id="analysisPeak">—</dd></div>
+        <div><dt data-i18n="analysis.rms">Niveau RMS</dt><dd id="analysisRms">—</dd></div>
+        <div><dt data-i18n="analysis.meter">Mesure probable</dt><dd id="analysisMeter">—</dd></div>
+      </dl>
+      <div class="analysis-editors">
+        <label><span data-i18n="analysis.bpm">Tempo (BPM)</span><input id="analysisBpm" type="number" min="40" max="240" step="0.1" inputmode="decimal" disabled></label>
+        <span id="analysisBpmOrigin" class="analysis-origin" data-i18n="analysis.estimated">Estimation</span>
+        <label><span data-i18n="analysis.key">Tonalité</span><select id="analysisKey" disabled><option value="" data-i18n="analysis.unknown">Indéterminée</option></select></label>
+        <span id="analysisKeyOrigin" class="analysis-origin" data-i18n="analysis.estimated">Estimation</span>
+      </div>
+      <p class="analysis-note" data-i18n="analysis.acceptNote">Les valeurs acceptées serviront de référence au tempo et à la tonalité du projet.</p>
+    </section>
+    <footer class="music-analysis-footer">
+      <button type="button" class="music-analysis-accept" data-button-variant="secondary" id="acceptAnalysisButton" data-i18n="analysis.accept">Accepter et ouvrir le studio</button>
+    </footer>
+  </section>
+</div>

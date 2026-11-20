@@ -53,7 +53,7 @@ export function createButton({ label, variant = 'secondary', icon = '', title = 
 
 /** Load the shared template once, then keep all current and future buttons styled. */
 export async function mountButtonComponent(root) {
-  const response = await fetch(new URL('../components/button.html?v=1.5.0.55', import.meta.url));
+  const response = await fetch(new URL('../components/button.html?v=1.5.0.56', import.meta.url));
   if (!response.ok) throw new Error('Unable to load the shared button component.');
   root.innerHTML = await response.text();
   applyButtonStyles(document);

@@ -1,6 +1,6 @@
-import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.55';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.55';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.55';
+import { getLanguage, setLanguage, t } from './i18n.js?v=1.5.0.56';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.56';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.56';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -22,7 +22,7 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, settingsModal] = await Promise.all([
+  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, musicAnalysisModal, settingsModal] = await Promise.all([
     loadComponent('fx-modal.html'),
     loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
@@ -31,9 +31,10 @@ export async function mountModalComponents(root) {
     loadComponent('key-modal.html'),
     loadComponent('pan-curves-modal.html'),
     loadComponent('automation-effect-modal.html'),
+    loadComponent('music-analysis-modal.html'),
     loadComponent('settings-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${settingsModal}`;
+  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${musicAnalysisModal}${settingsModal}`;
 }
 
 /**
@@ -413,6 +414,35 @@ export function createAutomationEffectModal({ getTrackLabel, onRemove }) {
   };
 
   return { open, close: animated.close };
+}
+
+/** Wait for the user to review the local music analysis before opening Studio. */
+export function createMusicAnalysisModal({ validate = () => true } = {}) {
+  const modal = document.querySelector('#musicAnalysisModal');
+  const animated = createAnimatedModal(modal, '.music-analysis-close');
+  const acceptButton = modal.querySelector('#acceptAnalysisButton');
+  let resolveReview = null;
+
+  const finish = accepted => {
+    if (!resolveReview) return;
+    const resolve = resolveReview;
+    resolveReview = null;
+    animated.close();
+    resolve(accepted);
+  };
+  acceptButton.onclick = () => {
+    if (validate() !== false) finish(true);
+  };
+  modal.addEventListener('click', event => {
+    if (event.target.closest('[data-modal-close]')) finish(false);
+  });
+
+  const open = () => new Promise(resolve => {
+    if (resolveReview) finish(false);
+    resolveReview = resolve;
+    animated.show();
+  });
+  return { open, close: () => finish(false) };
 }
 
 /** Create the version-history modal controlled by the fixed version badge. */

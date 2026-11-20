@@ -16,6 +16,10 @@
 .analysis-editors :disabled { opacity: .55; }
 .analysis-origin { align-self: end; min-height: 34px; padding: 0 0 9px; color: var(--muted); font: 9px Consolas, 'Courier New', monospace; }
 .analysis-note { margin-top: 11px; }
+.music-analysis-dialog { width: min(680px, calc(100vw - 40px)); }
+.music-analysis-dialog .music-analysis { max-width: none; margin: 18px 0 0; padding: 0; background: transparent; border: 0; border-radius: 0; }
+.music-analysis-footer { display: flex; justify-content: flex-end; margin-top: 14px; padding-top: 13px; border-top: 1px solid #30343d; }
+.music-analysis-accept { min-height: 42px; padding: 0 17px; }
 @media (max-width: 620px) {
   .analysis-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .analysis-editors { grid-template-columns: 1fr auto; }

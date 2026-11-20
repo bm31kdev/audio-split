@@ -1,28 +1,30 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.55';
-import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.55';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.55';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.55';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.55';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.55';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.55';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.55';
-import { lucideIcon } from './js/lucide.js?v=1.5.0.55';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.55';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.55';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.55';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.55';
-import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.55';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.56';
+import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createSettingsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.56';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.56';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.56';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.56';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.56';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.56';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.56';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.56';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.56';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.56';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.56';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.56';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.56';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
-let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal;
+let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal, musicAnalysisModal;
 let panCurvesModal;
 let resolveInteractionModalReady;
 const interactionModalReady = new Promise(resolve => { resolveInteractionModalReady = resolve; });
+let resolveAnalysisModalReady;
+const analysisModalReady = new Promise(resolve => { resolveAnalysisModalReady = resolve; });
 const getInteractionModal = () => interactionModal ? Promise.resolve(interactionModal) : interactionModalReady;
 let currentJobId = null, currentSourceName = '', currentMode = 'simple', currentEngine = 'mdx', activeProjectId = null;
 let projectDirty = false, projectSaving = false, projectRevision = 0;
 let activeSeparationRequestId = null, separationCancelRequested = false;
-let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting';
+let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting', currentAnalysisFile = null, analysisPromise = Promise.resolve(null);
 let currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
 let renderedTransform = { ...currentMixTransform }, transformBusy = false;
 function showAppPage(page, { updateHash = true } = {}) {
@@ -325,7 +327,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.55', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.56', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {
@@ -713,29 +715,41 @@ function displayMusicAnalysis(result) {
   updateAnalysisOrigins();
   setAnalysisStatus(result.confidence >= 0.2 && result.keyConfidence >= 0.05 ? 'analysis.complete' : 'analysis.lowConfidence', result.confidence >= 0.2 && result.keyConfidence >= 0.05 ? '' : 'uncertain');
 }
-$('#analysisBpm').oninput = updateAnalysisOrigins;
-$('#analysisKey').onchange = () => { updateAnalysisOrigins(); syncTransformUi(); };
 $('#fileInput').onchange = async (event) => {
   const file = event.target.files[0];
+  await analysisModalReady;
   const requestId = ++analysisRequestId;
+  currentAnalysisFile = file || null;
+  analysisPromise = Promise.resolve(null);
   currentMusicAnalysis = null;
   $('#analysisBpm').value = '';
   $('#analysisKey').value = '';
   $('#fileName').textContent = file ? file.name : '';
   $('#separateButton').disabled = !file;
-  $('#musicAnalysis').classList.toggle('hidden', !file);
   $('#analysisBpm').disabled = true;
   $('#analysisKey').disabled = true;
   if (file) {
     $('#analysisDuration').textContent = $('#analysisChannels').textContent = $('#analysisSampleRate').textContent = $('#analysisBitDepth').textContent = $('#analysisPeak').textContent = $('#analysisRms').textContent = $('#analysisMeter').textContent = '—';
     setAnalysisStatus('analysis.decoding');
-    try {
-      const result = await analyzeAudioFile(file, ensureAudioContext(), stage => setAnalysisStatus(stage === 'decoding' ? 'analysis.decoding' : 'analysis.calculating'));
-      if (requestId === analysisRequestId) displayMusicAnalysis(result);
-    } catch (error) {
-      console.warn('Local music analysis could not complete.', error);
-      if (requestId === analysisRequestId) setAnalysisStatus('analysis.error', 'error');
-    }
+    analysisPromise = (async () => {
+      try {
+        const result = await analyzeAudioFile(file, ensureAudioContext(), stage => {
+          if (requestId === analysisRequestId) setAnalysisStatus(stage === 'decoding' ? 'analysis.decoding' : 'analysis.calculating');
+        });
+        if (requestId === analysisRequestId) displayMusicAnalysis(result);
+        return result;
+      } catch (error) {
+        console.warn('Local music analysis could not complete.', error);
+        if (requestId === analysisRequestId) {
+          $('#analysisBpm').disabled = false;
+          setupAnalysisKeyOptions();
+          $('#analysisKey').disabled = false;
+          setAnalysisStatus('analysis.error', 'error');
+        }
+        return null;
+      }
+    })();
+    await analysisPromise;
   }
   status('');
 };
@@ -743,6 +757,7 @@ $('#fileInput').onchange = async (event) => {
 async function separateAudio() {
   const file = $('#fileInput').files[0];
   if (!file) return;
+  const fileAnalysisPromise = currentAnalysisFile === file ? analysisPromise : Promise.resolve(null);
   const button = $('#separateButton');
   if (button.disabled) return;
   button.disabled = true;
@@ -791,6 +806,13 @@ async function separateAudio() {
       decoded.push([name, await getAudioContext().decodeAudioData(bytes)]);
     }
 
+    // Keep the import screen quiet during separation; let the user review the
+    // analysis only when the separated audio is ready to enter the Studio.
+    await fileAnalysisPromise;
+    const analysisAccepted = currentAnalysisFile === file && musicAnalysisModal
+      ? await musicAnalysisModal.open()
+      : false;
+
     currentJobId = data.jobId;
     currentSourceName = file.name;
     setPlaybackLabel(file.name.replace(/\.[^.]+$/, ''));
@@ -799,9 +821,9 @@ async function separateAudio() {
     activeProjectId = null;
     updateStudioProjectButton();
     projectDirty = false;
-    const detectedBpm = Number($('#analysisBpm').value);
+    const detectedBpm = analysisAccepted ? Number($('#analysisBpm').value) : NaN;
     const sourceBpm = Number.isFinite(detectedBpm) && detectedBpm >= 40 && detectedBpm <= 240 ? detectedBpm : null;
-    const sourceKey = $('#analysisKey').value || currentMusicAnalysis?.key || null;
+    const sourceKey = analysisAccepted ? ($('#analysisKey').value || currentMusicAnalysis?.key || null) : null;
     currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, pitchTrack: defaultPitchTrack(decoded.map(([name]) => name)), sourceBpm, targetBpm: sourceBpm, sourceKey, targetKey: sourceKey };
     renderedTransform = { ...currentMixTransform };
     setTransformInputs(currentMixTransform);
@@ -912,6 +934,15 @@ async function initializeModalComponents() {
     await mountModalComponents($('#modalRoot'));
     enhanceStyledDropdowns($('#modalRoot'));
     applyTranslations();
+    $('#analysisBpm').oninput = updateAnalysisOrigins;
+    $('#analysisKey').onchange = updateAnalysisOrigins;
+    musicAnalysisModal = createMusicAnalysisModal({
+      validate: () => {
+        const bpm = $('#analysisBpm');
+        return !bpm.value || bpm.reportValidity();
+      },
+    });
+    resolveAnalysisModalReady(musicAnalysisModal);
     $('#clearCacheButton').onclick = () => { void confirmClearAudioSplitCache(); };
     const separationEngineSelect = $('#separationEngineSelect');
     separationEngineSelect.value = getSavedSeparationEngine();
@@ -1014,6 +1045,7 @@ async function initializeModalComponents() {
   } catch (error) {
     // A missing component should not block audio separation or mixing.
     console.error('Modal components could not be loaded.', error);
+    resolveAnalysisModalReady(null);
     $('#versionButton').disabled = true;
   }
 }
