@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.70';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.70';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.70';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.70';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.70';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.70';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.70';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.70';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.70';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.70';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.70';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.70';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.70';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.70';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.70';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.70';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.70';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.70';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.70';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.70';
-import { lucideIcon } from './lucide.js?v=1.5.0.70';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.70';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.72';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.72';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.72';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.72';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.72';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.72';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.72';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.72';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.72';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.72';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.72';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.72';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.72';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.72';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.72';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.72';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.72';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.72';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.72';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.72';
+import { lucideIcon } from './lucide.js?v=1.5.0.72';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.72';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -474,7 +474,9 @@ export function drawWaveform(name, buffer) {
       if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
+    const markerStride = Math.max(1, Math.ceil(pointsOnGraph.length / 80));
     pointsOnGraph.forEach((point, index) => {
+      if (index !== automation.selected && index !== pointsOnGraph.length - 1 && index % markerStride !== 0) return;
       if (index === automation.selected) {
         ctx.beginPath(); ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
         ctx.fillStyle = lane === 'pan' ? '#a78bfa35' : '#d7ff5435'; ctx.fill();
@@ -558,6 +560,8 @@ const automationRanges = {
 };
 export function generateAutomationCurvePoints(name, preset, lane = 'pan') {
   const duration = tracks[name]?.duration;
+  const presetConfig = AUTOMATION_CURVE_PRESETS.find(item => item.id === preset);
+  if (presetConfig?.panOnly && lane !== 'pan') return null;
   const template = generateCurveTemplatePoints(preset, duration);
   if (!template) return null;
   if (lane === 'pan') return template;

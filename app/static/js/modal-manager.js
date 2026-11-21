@@ -1,7 +1,7 @@
-import { getLanguage, onLanguageChange, setLanguage, t } from './i18n.js?v=1.5.0.70';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.70';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.70';
-import { assignShortcut, formatShortcut, getShortcutBindings, resetShortcuts, shortcutFromEvent } from './keyboard-shortcuts.js?v=1.5.0.70';
+import { getLanguage, onLanguageChange, setLanguage, t } from './i18n.js?v=1.5.0.72';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.72';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.72';
+import { assignShortcut, formatShortcut, getShortcutBindings, resetShortcuts, shortcutFromEvent } from './keyboard-shortcuts.js?v=1.5.0.72';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
@@ -365,7 +365,7 @@ export function createPanCurveModal({ getTrackLabel, getActiveLane, onApply }) {
     activeLane = getActiveLane(track) || 'pan';
     title.textContent = `${t('panCurves.title')} · ${getTrackLabel(track)}`;
     description.textContent = t('panCurves.description', { parameter: t(`automation.param.${activeLane}`) });
-    content.innerHTML = AUTOMATION_CURVE_PRESETS.map(preset => {
+    content.innerHTML = AUTOMATION_CURVE_PRESETS.filter(preset => !preset.panOnly || activeLane === 'pan').map(preset => {
       const points = generateCurveTemplatePoints(preset.id, 100);
       const path = points.map((point, index) => `${index ? 'L' : 'M'} ${point.time.toFixed(1)} ${(13 - point.pan * 0.1).toFixed(1)}`).join(' ');
       return `<article class="fx-effect-card is-draggable pan-curve-card" role="button" tabindex="0" draggable="true" data-pan-curve-preset="${preset.id}" title="${t('panCurves.dragHint')}"><span class="fx-effect-state">${t('panCurves.drag')}</span><div class="fx-effect-heading"><h3>${t(preset.titleKey)}</h3><svg class="pan-curve-preview" viewBox="0 0 100 26" aria-hidden="true"><path class="pan-curve-midline" d="M2 13H98"/><path class="pan-curve-line" d="${path}"/></svg></div><p>${t(preset.descriptionKey)}</p></article>`;
