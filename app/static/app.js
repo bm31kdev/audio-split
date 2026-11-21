@@ -1,18 +1,18 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.69';
-import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.69';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.69';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.69';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.69';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.69';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.69';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.69';
-import { lucideIcon } from './js/lucide.js?v=1.5.0.69';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.69';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.69';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.69';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.69';
-import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.69';
-import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.69';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.70';
+import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.70';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.70';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.70';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.70';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.70';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.70';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.70';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.70';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.70';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.70';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.70';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.70';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.70';
+import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.70';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal, musicAnalysisModal, shortcutsModal;
@@ -331,7 +331,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.69', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.70', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {

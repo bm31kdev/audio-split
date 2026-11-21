@@ -65,7 +65,7 @@ export async function analyzeAudioFile(file, audioContext, onProgress = () => {}
   decoded = null;
   bytes = null;
   onProgress('analyzing');
-  const worker = new Worker(new URL('./music-analysis-worker.js?v=1.5.0.69', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./music-analysis-worker.js?v=1.5.0.70', import.meta.url), { type: 'module' });
   return new Promise((resolve, reject) => {
     worker.onmessage = ({ data }) => {
       worker.terminate();
