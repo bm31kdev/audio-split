@@ -95,9 +95,9 @@ header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .global-status.is-error .dynamic-island-glyph { color: #ff987f; background: #30201e; }
 .global-status.is-complete .dynamic-island-glyph { color: #a7e5a7; background: #1b2b20; }
 @keyframes dynamic-island-wave { to { transform: scaleY(.46); opacity: .66; } }
-#statusMoreButton { position: absolute; top: 50%; right: -42px; display: grid; width: 32px; height: 32px; min-height: 32px; place-items: center; padding: 0; color: var(--lime); background: #10120e; border: 1px solid #414b34; border-radius: 50%; box-shadow: 0 4px 16px #0008, inset 0 1px #ffffff0a; opacity: 0; transform: translateY(-50%) scale(.72); transition: color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease, opacity .2s ease, transform .32s cubic-bezier(.2,.8,.2,1); }
+#statusMoreButton { position: absolute; top: 50%; right: -42px; display: grid; width: 32px; height: 32px; min-height: 32px; place-items: center; padding: 0; color: var(--lime); background: transparent; border: 0; border-radius: 50%; box-shadow: none; opacity: 0; transform: translateY(-50%) scale(.72); transition: color .2s ease, background .2s ease, opacity .2s ease, transform .32s cubic-bezier(.2,.8,.2,1); }
 #statusMoreButton:not([hidden]) { opacity: 1; transform: translateY(-50%) scale(1); animation: dynamic-island-secondary-in .38s cubic-bezier(.2,.8,.2,1) both; }
-#statusMoreButton:hover:not(:disabled) { color: #e4ff91; background: #303a24; border-color: #6c8045; box-shadow: 0 0 14px #d7ff542c; transform: translateY(-50%) scale(1.07); }
+#statusMoreButton:hover:not(:disabled) { color: #e4ff91; background: #ffffff0c; transform: translateY(-50%) scale(1.07); }
 #statusMoreButton[hidden] { display: none; }
 #statusMoreButton svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 #statusMoreButton .dynamic-island-secondary-glyph { display: grid; width: 20px; height: 20px; place-items: center; }
@@ -108,7 +108,6 @@ header p, .status { margin-top: 4px; color: var(--muted); font-size: 12px; }
 #statusMoreButton[data-task-state="progress"] svg, #statusMoreButton[data-task-state="saving"] svg, #statusMoreButton[data-task-state="playing"] svg { animation: dynamic-island-icon-pulse .9s ease-in-out infinite alternate; }
 @keyframes dynamic-island-secondary-in { from { opacity: 0; transform: translateY(-50%) scale(.55); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
 @keyframes dynamic-island-icon-pulse { to { opacity: .64; transform: scale(.82); } }
-.dynamic-island-count { position: absolute; right: -4px; bottom: -3px; display: grid; min-width: 14px; height: 14px; place-items: center; padding: 0 3px; color: #101407; background: var(--lime); border: 1px solid #171a1e; border-radius: 999px; font: 700 8px/1 Segoe UI, Arial, sans-serif; }
 .dynamic-island-progress { position: absolute; right: 15px; bottom: 2px; left: 15px; height: 2px; overflow: hidden; border-radius: 2px; background: #ffffff12; opacity: 0; transition: opacity .2s ease; }
 .dynamic-island-progress i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--lime); box-shadow: 0 0 8px #d7ff5480; transition: width .45s cubic-bezier(.22, 1, .36, 1); }
 .global-status.is-progress .dynamic-island-progress { opacity: 1; }

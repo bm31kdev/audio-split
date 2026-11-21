@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.68';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.68';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.68';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.68';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.68';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.68';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.68';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.68';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.68';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.68';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.68';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.68';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.68';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.68';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.68';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.68';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.68';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.68';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.68';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.68';
-import { lucideIcon } from './lucide.js?v=1.5.0.68';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.68';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.69';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.69';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.69';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.69';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.69';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.69';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.69';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.69';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.69';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.69';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.69';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.69';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.69';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.69';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.69';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.69';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.69';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.69';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.69';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.69';
+import { lucideIcon } from './lucide.js?v=1.5.0.69';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.69';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -83,11 +83,13 @@ const islandStateLabel = state => {
 function renderTaskIsland() {
   const island = $('#status'), message = $('#statusText'), more = $('#statusMoreButton');
   if (!island || !message || !more) return;
-  const tasks = [...islandTasks.values()].sort((a, b) => b.priority - a.priority || b.updatedAt - a.updatedAt);
+  // Keep equal-priority tasks in their insertion order instead of making the island jump on every update.
+  const tasks = [...islandTasks.values()].sort((a, b) => b.priority - a.priority);
   const primary = tasks[0];
   const secondary = tasks[1];
   const english = getLanguage() === 'en';
-  message.textContent = primary?.message || '';
+  const primaryMessage = primary?.message || '';
+  if (message.textContent !== primaryMessage) message.textContent = primaryMessage;
   island.setAttribute('aria-label', primary?.message || (english ? 'AudioSplit Studio is ready' : 'AudioSplit Studio est prêt'));
   island.classList.toggle('is-idle', !primary);
   island.classList.toggle('is-active', Boolean(primary));
@@ -121,10 +123,13 @@ function renderTaskIsland() {
     complete: '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/>',
     error: '<path d="M10.3 3.9 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/>',
   };
-  $('#statusSecondaryGlyph').innerHTML = `<svg viewBox="0 0 24 24">${glyphs[secondary?.state] || '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>'}</svg>`;
+  const secondaryGlyph = $('#statusSecondaryGlyph');
+  const secondaryState = secondary?.state || 'default';
+  if (secondaryGlyph && secondaryGlyph.dataset.state !== secondaryState) {
+    secondaryGlyph.innerHTML = `<svg viewBox="0 0 24 24">${glyphs[secondary?.state] || '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>'}</svg>`;
+    secondaryGlyph.dataset.state = secondaryState;
+  }
   const extraCount = Math.max(0, tasks.length - 2);
-  $('#statusTaskCount').hidden = extraCount === 0;
-  $('#statusTaskCount').textContent = extraCount > 9 ? '9+' : `+${extraCount}`;
   more.title = secondary?.message || '';
   more.setAttribute('aria-label', secondary
     ? (english ? `Next: ${secondary.message}${extraCount ? `. ${extraCount} more tasks` : ''}. Show activity` : `Ensuite : ${secondary.message}${extraCount ? `. ${extraCount} autre${extraCount > 1 ? 's' : ''} tâche${extraCount > 1 ? 's' : ''}` : ''}. Afficher l’activité`)
@@ -139,7 +144,7 @@ function renderTaskIsland() {
     details.setAttribute('aria-hidden', String(!detailsOpen));
     details.inert = !detailsOpen;
     const existingRows = new Map([...list.children].map(row => [row.dataset.taskId, row]));
-    for (const task of tasks) {
+    tasks.forEach((task, index) => {
       let row = existingRows.get(task.id);
       if (!row) {
         row = document.createElement('div');
@@ -153,12 +158,17 @@ function renderTaskIsland() {
         state.className = 'dynamic-island-task-state';
         row.append(light, text, state);
       }
-      row.className = `dynamic-island-task is-${task.state}`;
-      row.querySelector('.dynamic-island-task-text').textContent = task.message;
-      row.querySelector('.dynamic-island-task-state').textContent = islandStateLabel(task.state);
-      list.append(row);
+      const rowClass = `dynamic-island-task is-${task.state}`;
+      if (row.className !== rowClass) row.className = rowClass;
+      const rowText = row.querySelector('.dynamic-island-task-text');
+      if (rowText.textContent !== task.message) rowText.textContent = task.message;
+      const rowState = row.querySelector('.dynamic-island-task-state');
+      const stateLabel = islandStateLabel(task.state);
+      if (rowState.textContent !== stateLabel) rowState.textContent = stateLabel;
+      const currentRow = list.children[index];
+      if (currentRow !== row) list.insertBefore(row, currentRow || null);
       existingRows.delete(task.id);
-    }
+    });
     existingRows.forEach(row => row.remove());
   }
 }
@@ -169,7 +179,7 @@ function updateTaskNotice(id, message, { state = 'progress', duration = 0, progr
   if (!message) islandTasks.delete(id);
   else {
     const priority = ({ progress: 100, saving: 90, error: 80, playing: 75, paused: 75, dirty: 70, complete: 60, waiting: 20 })[state] || 50;
-    islandTasks.set(id, { id, message, state, priority, progress, updatedAt: Date.now() });
+    islandTasks.set(id, { id, message, state, priority, progress });
     if (duration > 0) islandTaskTimers.set(id, setTimeout(() => {
       islandTasks.delete(id);
       islandTaskTimers.delete(id);
