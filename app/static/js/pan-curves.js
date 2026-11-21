@@ -9,6 +9,19 @@ export const AUTOMATION_CURVE_PRESETS = [
   { id: 'pan-sweep-2s', titleKey: 'panCurves.sweep2s', descriptionKey: 'panCurves.sweep2sHint', periodSeconds: 4, valueAtTime: time => -100 * Math.cos(Math.PI * time / 2) },
 ];
 
+// Build a smooth 8D pan cycle, with a phase offset for each stem in the mix.
+export function generateEightDPanPoints(duration, trackIndex, trackCount, cycleSeconds = 4, amount = 92) {
+  if (!Number.isFinite(duration) || duration <= 0) return null;
+  const step = cycleSeconds / 16;
+  const lastIndex = Math.ceil(duration / step);
+  const phase = cycleSeconds * trackIndex / Math.max(1, trackCount);
+  return Array.from({ length: lastIndex + 1 }, (_, index) => {
+    const time = index === lastIndex ? duration : Math.min(duration, index * step);
+    const pan = -amount * Math.cos((2 * Math.PI * (time + phase)) / cycleSeconds);
+    return { time: Math.round(time * 1000) / 1000, pan: Math.round(pan * 100) / 100 };
+  });
+}
+
 // Convert a preset into points on the target track's own timeline.
 export function generateCurveTemplatePoints(presetId, duration) {
   const preset = AUTOMATION_CURVE_PRESETS.find(item => item.id === presetId);
