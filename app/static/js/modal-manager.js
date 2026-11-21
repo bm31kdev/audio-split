@@ -1,13 +1,12 @@
-import { getLanguage, onLanguageChange, setLanguage, t } from './i18n.js?v=1.5.0.77';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.77';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.77';
-import { assignShortcut, formatShortcut, getShortcutBindings, resetShortcuts, shortcutFromEvent } from './keyboard-shortcuts.js?v=1.5.0.77';
+import { getLanguage, onLanguageChange, setLanguage, t } from './i18n.js?v=1.5.0.79';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.79';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.79';
+import { assignShortcut, formatShortcut, getShortcutBindings, resetShortcuts, shortcutFromEvent } from './keyboard-shortcuts.js?v=1.5.0.79';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
 
-// Modal fragments must share the module cache version, otherwise a browser can
-// keep an older changelog even after index.html and app.js have been updated.
+// Modal fragments share the module cache version so page updates also refresh them.
 const componentPath = (name) => {
   const url = new URL(`../components/${name}`, import.meta.url);
   url.search = new URL(import.meta.url).search;
@@ -23,9 +22,8 @@ async function loadComponent(name) {
 
 /** Mount every modal in one shared root to keep index.html intentionally small. */
 export async function mountModalComponents(root) {
-  const [fxModal, changelogModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, musicAnalysisModal, settingsModal, releaseDetailsModal, shortcutsModal] = await Promise.all([
+  const [fxModal, languageModal, libraryModal, interactionModal, keyModal, panCurvesModal, automationEffectModal, musicAnalysisModal, settingsModal, releaseDetailsModal, shortcutsModal] = await Promise.all([
     loadComponent('fx-modal.html'),
-    loadComponent('changelog-modal.html'),
     loadComponent('language-modal.html'),
     loadComponent('library-modal.html'),
     loadComponent('interaction-modal.html'),
@@ -37,7 +35,7 @@ export async function mountModalComponents(root) {
     loadComponent('release-details-modal.html'),
     loadComponent('shortcuts-modal.html'),
   ]);
-  root.innerHTML = `${fxModal}${changelogModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${musicAnalysisModal}${settingsModal}${releaseDetailsModal}${shortcutsModal}`;
+  root.innerHTML = `${fxModal}${languageModal}${libraryModal}${interactionModal}${keyModal}${panCurvesModal}${automationEffectModal}${musicAnalysisModal}${settingsModal}${releaseDetailsModal}${shortcutsModal}`;
 }
 
 /**
@@ -448,22 +446,6 @@ export function createMusicAnalysisModal({ validate = () => true } = {}) {
   return { open, close: () => finish(false) };
 }
 
-/** Create the version-history modal controlled by the fixed version badge. */
-export function createChangelogModal(trigger) {
-  const modal = document.querySelector('#changelogModal');
-  const animated = createAnimatedModal(modal, '.changelog-close', trigger);
-  const list = modal.querySelector('.release-list');
-  const releases = [...list.querySelectorAll('.release')];
-  releases.sort((a, b) => {
-    const version = element => (element.dataset.version || '0.0').split('.').map(Number);
-    const [aMajor, aMinor] = version(a), [bMajor, bMinor] = version(b);
-    return bMajor - aMajor || bMinor - aMinor;
-  });
-  list.replaceChildren(...releases);
-  trigger.onclick = animated.show;
-  return { close: animated.close };
-}
-
 /** Create the compact language picker controlled by the globe button. */
 export function createLanguageModal(trigger) {
   const modal = document.querySelector('#languageModal');
@@ -544,7 +526,7 @@ export function createSettingsModal(trigger) {
   return { close: animated.close };
 }
 
-/** Open detailed 1.6.0 notes from the settings footer. */
+/** Open the complete 1.6.0 notes from Settings. */
 export function createReleaseDetailsModal(trigger) {
   const modal = document.querySelector('#releaseDetailsModal');
   const animated = createAnimatedModal(modal, '.release-details-close', trigger);
