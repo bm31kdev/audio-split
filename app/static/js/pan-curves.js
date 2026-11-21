@@ -6,7 +6,7 @@ export const AUTOMATION_CURVE_PRESETS = [
   { id: 'center-right-center', titleKey: 'panCurves.centerRight', descriptionKey: 'panCurves.centerRightHint', valueAt: progress => -92 * Math.sin(Math.PI * progress) },
   { id: 'slow-ping-pong', titleKey: 'panCurves.pingPong', descriptionKey: 'panCurves.pingPongHint', valueAt: progress => 82 * Math.sin(2 * Math.PI * progress) },
   { id: 'fast-ping-pong', titleKey: 'panCurves.fastPingPong', descriptionKey: 'panCurves.fastPingPongHint', valueAt: progress => 82 * Math.sin(4 * Math.PI * progress) },
-  { id: 'pan-sweep-2s', titleKey: 'panCurves.sweep2s', descriptionKey: 'panCurves.sweep2sHint', panOnly: true, periodSeconds: 4, valueAtTime: time => -100 * Math.cos(Math.PI * time / 2) },
+  { id: 'pan-sweep-2s', titleKey: 'panCurves.sweep2s', descriptionKey: 'panCurves.sweep2sHint', periodSeconds: 4, valueAtTime: time => -100 * Math.cos(Math.PI * time / 2) },
 ];
 
 // Convert a preset into points on the target track's own timeline.
