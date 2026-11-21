@@ -339,8 +339,7 @@
 .shortcuts-modal-actions { display: flex; justify-content: flex-end; margin-top: 9px; }
 .shortcuts-modal-actions button { min-height: 34px; }
 .shortcuts-cut-note { margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.5; }
-.shortcuts-cut-target { display: grid; gap: 7px; margin-top: 14px; padding: 12px; color: #d8dce4; background: #17191e; border: 1px solid #343943; border-radius: 10px; font-size: 11px; }
-.shortcuts-cut-target > .styled-select { width: 100%; }
+.shortcuts-cut-target-hint { margin-top: 12px; padding: 10px 12px; color: #c8d3ad; background: #191d17; border: 1px solid #39452c; border-radius: 9px; font-size: 11px; line-height: 1.45; }
 
 /* Every dialog uses one shared frame; only its body content remains specialized. */
 section.app-modal-dialog[role="dialog"] {
@@ -516,6 +515,17 @@ section.app-modal-dialog[role="dialog"] > .transform-panel .transform-actions {
 section.app-modal-dialog[role="dialog"] > .transform-panel .transform-actions button {
   min-height: 40px;
   padding: 0 14px;
+}
+section.app-modal-dialog[role="dialog"] *,
+section.app-modal-dialog[role="dialog"] *::before,
+section.app-modal-dialog[role="dialog"] *::after {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+section.app-modal-dialog[role="dialog"] *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 @media (max-width: 540px) {

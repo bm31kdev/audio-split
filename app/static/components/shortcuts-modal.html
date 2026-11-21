@@ -24,13 +24,7 @@
         <div><kbd data-i18n="shortcuts.ctrlWheel">Ctrl + molette</kbd><span data-i18n="shortcuts.zoom">Zoomer la piste sous le pointeur</span></div>
         <div><button type="button" data-button-variant="modal" data-button-size="compact" class="shortcut-binding" data-shortcut-bind="vocalCut" aria-label="Modifier le raccourci"><kbd data-shortcut-value="vocalCut">R</kbd><span data-i18n="shortcuts.change">Modifier</span></button><span data-i18n="shortcuts.cutTrack">Créer une coupure sur la piste choisie entre les deux pressions</span></div>
       </div>
-      <label class="shortcuts-cut-target"><span data-i18n="shortcuts.cutTarget">Piste ciblée par la touche R</span><select id="vocalCutTrack" aria-label="Piste ciblée par la touche R" data-i18n-aria-label="shortcuts.cutTarget">
-        <option value="vocals" data-i18n="stem.vocals">Voix</option>
-        <option value="accompaniment" data-i18n="stem.accompaniment">Accompagnement</option>
-        <option value="drums" data-i18n="stem.drums">Batterie</option>
-        <option value="bass" data-i18n="stem.bass">Basse</option>
-        <option value="other" data-i18n="stem.other">Instruments</option>
-      </select></label>
+      <p class="shortcuts-cut-target-hint" data-i18n="shortcuts.cutTarget">Placez le pointeur sur la piste souhaitée : elle sera détectée automatiquement.</p>
       <p class="shortcuts-cut-note" data-i18n="shortcuts.keyboardHelp">Cliquez sur « Modifier », puis appuyez sur la touche voulue. Une combinaison ne peut servir qu’à une seule commande.</p>
       <p class="shortcuts-cut-note" data-i18n="shortcuts.cutNote">Pendant la lecture, appuyez une première fois sur R au début, puis une seconde fois à la fin. La courbe de volume de la piste choisie revient ensuite à son niveau précédent.</p>
       <p class="shortcuts-binding-feedback" data-shortcuts-feedback role="status" aria-live="polite"></p>
