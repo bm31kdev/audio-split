@@ -150,12 +150,13 @@ async def run_demucs_with_progress(command: list[str], request_id: str, source_d
     process = None
     started = asyncio.get_running_loop().time()
     timed_out = False
+    audio_started = False
     with log_path.open("wb") as log:
         try:
             launch = partial(subprocess.Popen, command, stdout=log, stderr=subprocess.STDOUT, env=runtime_env, cwd=ROOT)
             process = await run_in_threadpool(launch)
             active_processes[request_id] = process
-            update_separation_state(request_id, status="running", progress=0)
+            update_separation_state(request_id, status="model_loading", progress=0)
 
             while process.poll() is None:
                 if request_id in cancelled_separations:
@@ -172,9 +173,29 @@ async def run_demucs_with_progress(command: list[str], request_id: str, source_d
                         pass
                     break
                 output = read_log_tail(log_path)
-                progress = extract_demucs_progress(output)
-                if progress is not None:
-                    update_separation_state(request_id, progress=max(0, min(99, progress)))
+                # Demucs may download its checkpoint before it starts processing
+                # audio. Keep those tqdm percentages separate from audio progress.
+                track_marker = "separating track"
+                if track_marker in output.lower():
+                    audio_started = True
+                if audio_started:
+                    marker_index = output.lower().rfind(track_marker)
+                    audio_output = output[marker_index:] if marker_index >= 0 else output
+                    progress = extract_demucs_progress(audio_output)
+                    update_separation_state(
+                        request_id,
+                        status="running",
+                        progress=max(0, min(99, progress)) if progress is not None else 0,
+                    )
+                elif "downloading:" in output.lower() or "downloaded " in output.lower():
+                    progress = extract_demucs_progress(output)
+                    update_separation_state(
+                        request_id,
+                        status="downloading_model",
+                        progress=max(0, min(99, progress)) if progress is not None else 0,
+                    )
+                else:
+                    update_separation_state(request_id, status="model_loading", progress=0)
                 await asyncio.sleep(0.35)
 
             try:
@@ -193,7 +214,7 @@ async def run_demucs_with_progress(command: list[str], request_id: str, source_d
     elif timed_out:
         update_separation_state(request_id, status="failed", error="timeout")
     elif process is not None and process.returncode == 0:
-        update_separation_state(request_id, status="completed", progress=100)
+        update_separation_state(request_id, status="finalizing", progress=99)
     else:
         update_separation_state(request_id, status="failed", error="demucs")
     return (process.returncode if process is not None else 1), output, was_cancelled, timed_out

@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.76';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.76';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.76';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.76';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.76';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.76';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.76';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.76';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.76';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.76';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.76';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.76';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.76';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.76';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.76';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.76';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.76';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.76';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.76';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.76';
-import { lucideIcon } from './lucide.js?v=1.5.0.76';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.76';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.77';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.77';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.77';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.77';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.77';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.77';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.77';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.77';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.77';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.77';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.77';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.77';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.77';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.77';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.77';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.77';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.77';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.77';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.77';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.77';
+import { lucideIcon } from './lucide.js?v=1.5.0.77';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.77';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -256,7 +256,14 @@ export function startSeparationProgressPolling(requestId) {
       if (progress.status === 'canceling') status(t('status.canceling'), false, true);
       else if (progress.status === 'uploading') status(t('status.uploading'), false, true);
       else if (progress.status === 'cancelled') status(t('status.cancelled'));
-      else if (['preparing', 'queued', 'running', 'completed'].includes(progress.status) && Number.isFinite(progress.progress)) {
+      else if (progress.status === 'downloading_model') {
+        const percent = Math.max(0, Math.min(99, Math.round(progress.progress || 0)));
+        status(t('status.downloadingModel', { percent }), false, true);
+      } else if (progress.status === 'model_loading') status(t('status.loadingModel'), false, true);
+      else if (progress.status === 'preparing') status(t('status.preparing'), false, true);
+      else if (progress.status === 'queued') status(t('status.queued'), false, true);
+      else if (progress.status === 'finalizing') status(t('status.finalizing'), false, true);
+      else if (progress.status === 'running' && Number.isFinite(progress.progress)) {
         const percent = Math.max(0, Math.min(100, Math.round(progress.progress)));
         status(t('status.progress', { percent }), false, true);
       }

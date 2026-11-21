@@ -1,20 +1,20 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, bindTrackTimelineZoom, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, activateTrackEffect, rebuildPlaybackGraph, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.76';
-import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.76';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.76';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.76';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.76';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.76';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.76';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.76';
-import { lucideIcon } from './js/lucide.js?v=1.5.0.76';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.76';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.76';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.76';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.76';
-import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.76';
-import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.76';
-import { generateEightDPanPoints } from './js/pan-curves.js?v=1.5.0.76';
-import { createUndoHistory } from './js/undo-history.js?v=1.5.0.76';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, bindTrackTimelineZoom, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, activateTrackEffect, rebuildPlaybackGraph, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.77';
+import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.77';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.77';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.77';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.77';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.77';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.77';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.77';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.77';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.77';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.77';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.77';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.77';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.77';
+import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.77';
+import { generateEightDPanPoints } from './js/pan-curves.js?v=1.5.0.77';
+import { createUndoHistory } from './js/undo-history.js?v=1.5.0.77';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal, musicAnalysisModal, shortcutsModal;
@@ -157,7 +157,7 @@ window.addEventListener('audiosplit:project-dirty', () => {
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 function formatBytes(value) { let size = Number(value || 0), unit = 'B'; for (const next of ['KiB', 'MiB', 'GiB']) { if (size < 1024) break; size /= 1024; unit = next; } return `${size.toFixed(unit === 'B' ? 0 : 1)} ${unit}`; }
-const separationEngineIds = new Set(['mdx', 'mdx_extra', 'htdemucs', 'htdemucs_ft']);
+const separationEngineIds = new Set(['mdx', 'mdx_fast', 'mdx_extra', 'mdx_extra_fast', 'htdemucs', 'htdemucs_fast', 'htdemucs_ft', 'hdemucs_mmi']);
 function normalizeSeparationEngine(engine) {
   const aliases = { fast: 'mdx', studio: 'htdemucs' };
   const normalized = aliases[engine] || engine;
@@ -412,7 +412,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.76', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.77', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {
@@ -865,7 +865,7 @@ async function separateAudio() {
   cancelButton.disabled = false;
   cancelButton.classList.remove('hidden');
   startSeparationProgressPolling(requestId);
-  const engineNames = { mdx: 'MDX', mdx_extra: 'MDX Extra', htdemucs: 'HTDemucs', htdemucs_ft: 'HTDemucs FT' };
+  const engineNames = { mdx: 'MDX', mdx_fast: 'MDX rapide', mdx_extra: 'MDX Extra', mdx_extra_fast: 'MDX Extra rapide', htdemucs: 'HTDemucs', htdemucs_fast: 'HTDemucs rapide', htdemucs_ft: 'HTDemucs FT', hdemucs_mmi: 'HDemucs MMI' };
   status(t('status.separatingEngine', { engine: engineNames[engine] }), false, true);
   const form = new FormData();
   form.append('file', file);
@@ -876,6 +876,11 @@ async function separateAudio() {
 
   try {
     const data = await apiJson('/api/separate', { method: 'POST', body: form });
+    // The server is done separating. Do not keep showing its 100% state while
+    // the browser downloads and decodes the generated stems.
+    stopSeparationProgressPolling();
+    cancelButton.disabled = true;
+    cancelButton.classList.add('hidden');
     const estimatedDecodedBytes = data.duration * 44_100 * 2 * 4 * Object.keys(data.stems).length;
     const estimatedPeakDecodeBytes = estimatedDecodedBytes * (1 + 0.5 / Object.keys(data.stems).length);
     if (estimatedPeakDecodeBytes > MAX_DECODED_STEM_BYTES) throw new Error(t('status.decodeMemoryLimit'));

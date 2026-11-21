@@ -190,6 +190,7 @@ async def separate(file: UploadFile = File(...), mode: str = Form("simple"), eng
     if mode == "simple":
         command.extend(["--two-stems", "vocals"])
     command.append(str(source))
+    update_separation_state(request_id, status="queued", progress=0)
     async with demucs_semaphore:
         if request_id in cancelled_separations:
             cancelled_separations.discard(request_id)
