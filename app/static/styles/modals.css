@@ -117,17 +117,6 @@
 .library-search-row input { min-width: 0; padding: 9px 11px; color: var(--text); background: #111318; border: 1px solid #3b414e; border-radius: 8px; font: 12px Segoe UI, Arial, sans-serif; }
 .library-search-row input { flex: 1; }
 .library-search-row > .styled-select { width: 170px; flex: 0 0 170px; }
-.mix-presets { margin-top: 15px; padding: 13px; border: 1px solid #3b414e; border-radius: 11px; background: #15171d; }
-.presets-heading, .presets-heading > div:last-child, .preset-card, .preset-card > div:last-child { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.presets-heading h3 { font-size: 13px; }
-.presets-heading p, .preset-card p { margin-top: 4px; color: var(--muted); font-size: 10px; }
-.presets-heading > div:last-child { flex-wrap: wrap; justify-content: flex-end; }
-.presets-heading button, .preset-card button { padding: 7px 9px; font-size: 10px; }
-.preset-workspace { display: grid; gap: 7px; margin-top: 10px; }
-.preset-card { padding: 9px; border: 1px solid #303540; border-radius: 9px; background: #111318; }
-.preset-card h4 { overflow: hidden; font-size: 11px; text-overflow: ellipsis; }
-.preset-card > div:first-child { min-width: 0; }
-.preset-card > div:last-child { flex: 0 0 auto; }
 .library-toolbar button, .save-project-controls button { flex: 0 0 auto; margin: 0; padding: 9px 12px; font-size: 11px; }
 .library-workspace { display: grid; min-height: 190px; grid-template-columns: minmax(130px, .7fr) minmax(0, 1.6fr); gap: 14px; margin-top: 16px; }
 .library-folders { display: grid; align-content: start; gap: 6px; }
@@ -183,8 +172,6 @@
   .library-workspace { grid-template-columns: 1fr; }
   .library-folders { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .library-project { align-items: stretch; }
-  .library-search-row, .presets-heading, .preset-card { align-items: stretch; flex-direction: column; }
-  .preset-card > div:last-child, .presets-heading > div:last-child { justify-content: flex-start; flex-wrap: wrap; }
   .library-toolbar, .save-project-controls { flex-wrap: wrap; }
   .save-project-controls > .styled-select, .save-project-controls input { flex: 1 1 40%; }
 }

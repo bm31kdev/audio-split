@@ -33,11 +33,11 @@ Use the globe button in the top-right corner to switch the app between English a
 
 ## Projects and files
 
-In **Projects**, create folders and save separations as projects. A project keeps the stems and mix settings; after the first save, changes are saved automatically every 10 seconds. You can also save mix presets and export or import them.
+In **Projects**, create folders and save separations as projects. A project keeps the stems and mix settings; after the first save, changes are saved automatically every 10 seconds.
 
 Everything stays on this computer, with no database and no upload of your music to an online service:
 
-- Projects and presets are in `data/library/` and remain available after restarting the app.
+- Projects are in `data/library/` and remain available after restarting the app.
 - Generated separations and temporary audio copies are in `data/jobs/` and `data/uploads/`.
 - **Clear AudioSplit cache** removes temporary data, not the project library.
 
@@ -54,7 +54,7 @@ Run the setup command above again: it checks the environment and can repair depe
 
 ## Contributing
 
-The server uses Python and FastAPI; Demucs handles source separation. The interface and Web Audio mixer are in `app/static/`. API routes, the local project library, and presets are split into modules under `app/`. The app does not use a database.
+The server uses Python and FastAPI; Demucs handles source separation. The interface and Web Audio mixer are in `app/static/`. API routes and the local project library are split into modules under `app/`. The app does not use a database.
 
 The Windows launcher uses Python 3.11 and `requirements-windows-py311.lock` for pinned dependencies. Direct dependencies are listed in `requirements.txt`.
 

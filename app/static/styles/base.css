@@ -184,7 +184,6 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .projects-page-header h2 { font-size: clamp(32px, 5vw, 48px); letter-spacing: -1.8px; }
 .projects-page-header p:last-child { margin-top: 8px; color: var(--muted); font-size: 13px; }
 .projects-page .library-content { padding: 0; overflow: visible; }
-.projects-page .mix-presets { margin-top: 20px; }
 
 /* The shell collapses safely on narrow displays. */
 @media (max-width: 1000px) {

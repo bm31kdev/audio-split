@@ -20,7 +20,7 @@ from starlette.concurrency import run_in_threadpool
 
 from .config import (
     ALLOWED, LIBRARY, MAX_LIBRARY_BYTES, MAX_PROJECT_ARCHIVE_BYTES, MIN_FREE_DISK_BYTES,
-    JOBS, UPLOADS, PRESETS,
+    JOBS, UPLOADS,
 )
 from .state import job_sources, job_stems
 from .runtime import measure_tree_bytes, remove_temp_file, serialized_cache_operation
@@ -134,10 +134,9 @@ def list_library():
         folder_bytes = measure_tree_bytes(path)
         folder["sizeBytes"] = folder_bytes
         folders.append(folder)
-    preset_bytes = measure_tree_bytes(PRESETS)
     project_bytes = sum(folder["sizeBytes"] for folder in folders)
     job_bytes, upload_bytes = measure_tree_bytes(JOBS), measure_tree_bytes(UPLOADS)
-    return {"folders": sorted(folders, key=lambda folder: folder.get("createdAt", "")), "warnings": warnings, "recovery": dict(project_recovery_status), "storage": {"libraryBytes": project_bytes + preset_bytes, "projectBytes": project_bytes, "presetBytes": preset_bytes, "jobBytes": job_bytes, "uploadBytes": upload_bytes, "temporaryBytes": job_bytes + upload_bytes, "libraryLimitBytes": MAX_LIBRARY_BYTES, "cacheLimitBytes": 10 * 1024**3, "freeBytes": shutil.disk_usage(LIBRARY).free}}
+    return {"folders": sorted(folders, key=lambda folder: folder.get("createdAt", "")), "warnings": warnings, "recovery": dict(project_recovery_status), "storage": {"libraryBytes": project_bytes, "projectBytes": project_bytes, "jobBytes": job_bytes, "uploadBytes": upload_bytes, "temporaryBytes": job_bytes + upload_bytes, "libraryLimitBytes": MAX_LIBRARY_BYTES, "cacheLimitBytes": 10 * 1024**3, "freeBytes": shutil.disk_usage(LIBRARY).free}}
 
 
 @router.post("/api/library/folders")

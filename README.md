@@ -33,11 +33,11 @@ Le bouton globe en haut à droite permet de passer l’application du français 
 
 ## Projets et fichiers
 
-Dans **Projets**, créez des dossiers et enregistrez vos séparations sous forme de projets. Un projet conserve les pistes et les réglages du mix ; après le premier enregistrement, il est sauvegardé automatiquement toutes les 10 secondes. Vous pouvez aussi enregistrer des préréglages de mix, puis les exporter ou les importer.
+Dans **Projets**, créez des dossiers et enregistrez vos séparations sous forme de projets. Un projet conserve les pistes et les réglages du mix ; après le premier enregistrement, il est sauvegardé automatiquement toutes les 10 secondes.
 
 Tout reste sur cet ordinateur, sans base de données ni envoi de vos musiques à un service en ligne :
 
-- Les projets et préréglages sont dans `data/library/` et restent disponibles après redémarrage.
+- Les projets sont dans `data/library/` et restent disponibles après redémarrage.
 - Les séparations calculées et copies temporaires sont dans `data/jobs/` et `data/uploads/`.
 - **Vider le cache AudioSplit** supprime les données temporaires, pas la bibliothèque de projets.
 
@@ -54,7 +54,7 @@ Relancez la commande d’installation ci-dessus : elle vérifie l’environnemen
 
 ## Pour contribuer
 
-Le serveur est écrit en Python avec FastAPI ; Demucs réalise la séparation. L’interface et le mixeur Web Audio sont dans `app/static/`. Les routes, la bibliothèque locale et les préréglages sont organisés en modules sous `app/`. Il n’y a pas de base de données.
+Le serveur est écrit en Python avec FastAPI ; Demucs réalise la séparation. L’interface et le mixeur Web Audio sont dans `app/static/`. Les routes et la bibliothèque locale sont organisées en modules sous `app/`. Il n’y a pas de base de données.
 
 Le lanceur Windows utilise Python 3.11 et le fichier `requirements-windows-py311.lock` pour installer des dépendances verrouillées. Les dépendances directes sont listées dans `requirements.txt`.
 
