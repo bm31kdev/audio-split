@@ -339,6 +339,8 @@
 .shortcuts-modal-actions { display: flex; justify-content: flex-end; margin-top: 9px; }
 .shortcuts-modal-actions button { min-height: 34px; }
 .shortcuts-cut-note { margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.shortcuts-cut-target { display: grid; gap: 7px; margin-top: 14px; padding: 12px; color: #d8dce4; background: #17191e; border: 1px solid #343943; border-radius: 10px; font-size: 11px; }
+.shortcuts-cut-target > .styled-select { width: 100%; }
 
 /* Every dialog uses one shared frame; only its body content remains specialized. */
 section.app-modal-dialog[role="dialog"] {
