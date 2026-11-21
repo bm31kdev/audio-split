@@ -1,19 +1,20 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, activateTrackEffect, rebuildPlaybackGraph, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.75';
-import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.75';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.75';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.75';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.75';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.75';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.75';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.75';
-import { lucideIcon } from './js/lucide.js?v=1.5.0.75';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.75';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.75';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.75';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.75';
-import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.75';
-import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.75';
-import { generateEightDPanPoints } from './js/pan-curves.js?v=1.5.0.75';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, bindTrackTimelineZoom, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, activateTrackEffect, rebuildPlaybackGraph, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.76';
+import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.76';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.76';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.76';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.76';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.76';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.76';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.76';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.76';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.76';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.76';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.76';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.76';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.76';
+import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.76';
+import { generateEightDPanPoints } from './js/pan-curves.js?v=1.5.0.76';
+import { createUndoHistory } from './js/undo-history.js?v=1.5.0.76';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal, musicAnalysisModal, shortcutsModal;
@@ -32,6 +33,83 @@ let activeSeparationRequestId = null, separationCancelRequested = false;
 let analysisRequestId = 0, currentMusicAnalysis = null, currentAnalysisStatusKey = 'analysis.waiting', currentAnalysisFile = null, analysisPromise = Promise.resolve(null);
 let currentMixTransform = { tempoRatio: 1, pitchSemitones: 0, sourceBpm: null, targetBpm: null };
 let renderedTransform = { ...currentMixTransform }, transformBusy = false;
+function captureUndoState() {
+  return { payload: savePayload(), currentMixTransform: { ...currentMixTransform }, renderedTransform: { ...renderedTransform } };
+}
+async function restoreUndoState(snapshot) {
+  const targetTransform = snapshot.renderedTransform || snapshot.currentMixTransform;
+  if (!sameRenderParameters(targetTransform, renderedTransform)) await renderTransform(targetTransform);
+  currentMixTransform = { ...snapshot.currentMixTransform };
+  renderedTransform = { ...targetTransform };
+  setTransformInputs(currentMixTransform);
+  syncTransformUi();
+  Object.keys(effectsByTrack).forEach(name => delete effectsByTrack[name]);
+  Object.keys(automationByTrack).forEach(name => delete automationByTrack[name]);
+  Object.entries(snapshot.payload.effects || {}).forEach(([name, values]) => { effectsByTrack[name] = { ...values }; });
+  Object.entries(snapshot.payload.automation || {}).forEach(([name, state]) => {
+    automationByTrack[name] = {
+      ...state,
+      points: (state.points || []).map(point => ({ ...point })),
+      lanes: Object.fromEntries(Object.entries(state.lanes || {}).map(([lane, points]) => [lane, points.map(point => ({ ...point }))])),
+    };
+  });
+  const names = Object.keys(tracks);
+  const viewState = Object.fromEntries(names.map(name => {
+    const track = document.querySelector(`[data-track="${name}"]`);
+    return [name, { zoom: track?.dataset.timelineZoom || '1', scrollLeft: track?.querySelector('.wave-area')?.scrollLeft || 0 }];
+  }));
+  renderTracks(names, snapshot.payload.settings || {});
+  updateLiveMix();
+  names.forEach(name => {
+    const track = document.querySelector(`[data-track="${name}"]`);
+    if (track) {
+      const zoom = Number(viewState[name]?.zoom || 1);
+      track.dataset.timelineZoom = String(zoom);
+      track.classList.toggle('is-timeline-zoomed', zoom > 1);
+      const content = track.querySelector('[data-wave-content]');
+      if (content) content.style.width = zoom > 1 ? `${zoom * 100}%` : '';
+    }
+  });
+  bindTrackTimelineZoom();
+  names.forEach(name => {
+    if (tracks[name]) drawWaveform(name, tracks[name]);
+  });
+  requestAnimationFrame(() => names.forEach(name => {
+    const area = document.querySelector(`[data-track="${name}"] .wave-area`);
+    if (area) area.scrollLeft = viewState[name]?.scrollLeft || 0;
+  }));
+  names.forEach(refreshAutomation);
+  if (playing) await rebuildPlaybackGraph();
+  markProjectDirty();
+}
+function updateUndoButtons({ canUndo = false, canRedo = false, busy = false } = {}) {
+  const disabled = transformBusy || busy || !Object.keys(tracks).length;
+  $('#undoButton').disabled = disabled || !canUndo;
+  $('#redoButton').disabled = disabled || !canRedo;
+}
+const undoHistory = createUndoHistory({ capture: captureUndoState, restore: restoreUndoState, onChange: updateUndoButtons });
+document.addEventListener('pointerdown', event => {
+  if (event.target instanceof Element && event.target.closest('input[type="range"], canvas[data-waveform]')) undoHistory.beginInteraction('pointer');
+}, true);
+document.addEventListener('pointerup', () => undoHistory.endInteraction('pointer'), true);
+document.addEventListener('pointercancel', () => undoHistory.endInteraction('pointer'), true);
+document.addEventListener('keydown', event => {
+  if (event.target instanceof Element && event.target.closest('input[type="range"]') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) undoHistory.beginInteraction('keyboard-range');
+}, true);
+document.addEventListener('keyup', () => undoHistory.endInteraction('keyboard-range'), true);
+document.addEventListener('audiosplit:project-dirty', () => undoHistory.recordChange());
+$('#undoButton').addEventListener('click', () => { void undoHistory.undo().catch(error => { console.error('Could not undo mix change.', error); status(t('history.undoFailed'), true); }); });
+$('#redoButton').addEventListener('click', () => { void undoHistory.redo().catch(error => { console.error('Could not redo mix change.', error); status(t('history.redoFailed'), true); }); });
+document.addEventListener('keydown', event => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || event.repeat) return;
+  const key = event.key.toLowerCase();
+  const redo = key === 'y' || (key === 'z' && event.shiftKey);
+  if (key !== 'z' && key !== 'y') return;
+  if (event.target instanceof Element && event.target.closest('input:not([type="range"]), textarea, [contenteditable="true"], .key-modal[aria-hidden="false"]')) return;
+  if (transformBusy || !Object.keys(tracks).length || $('#studioPage').classList.contains('hidden')) return;
+  event.preventDefault();
+  void (redo ? undoHistory.redo() : undoHistory.undo()).catch(error => { console.error(`Could not ${redo ? 'redo' : 'undo'} mix change.`, error); status(t(redo ? 'history.redoFailed' : 'history.undoFailed'), true); });
+});
 function showAppPage(page, { updateHash = true } = {}) {
   const requested = ['home', 'projects', 'studio'].includes(page) ? page : 'projects';
   // Audio buffers only live in memory. After a browser reload, never reveal an empty studio shell.
@@ -269,6 +347,7 @@ async function openSavedProject(projectId) {
     autosaveNotice('ready');
     requestAnimationFrame(() => { project.stems.forEach(name => drawWaveform(name, tracks[name])); project.stems.forEach(refreshAutomation); });
     showAppPage('studio'); status(getLanguage() === 'en' ? 'Project loaded from local storage.' : 'Projet chargé depuis le stockage local.');
+    undoHistory.reset();
   } catch (error) { console.error('Could not load local project.', error); status(userFacingError(error, 'status.actionError'), true); }
 }
 async function saveCurrentProject({ automatic = false } = {}) {
@@ -315,6 +394,7 @@ function clearMixerForReplacement() {
   // Release decoded buffers before loading a replacement so both mixes are
   // never resident in memory at the same time.
   stop();
+  undoHistory.reset();
   Object.keys(tracks).forEach(name => delete tracks[name]);
   Object.keys(effectsByTrack).forEach(name => delete effectsByTrack[name]);
   Object.keys(automationByTrack).forEach(name => delete automationByTrack[name]);
@@ -332,7 +412,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.75', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.76', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {
@@ -574,6 +654,7 @@ async function renderTransform(transform, { startPreview = false } = {}) {
   if (transformBusy) return false;
   if (!currentJobId && !activeProjectId) throw new Error(t('transform.noSource'));
   transformBusy = true;
+  updateUndoButtons();
   setTransformStatus('transform.rendering');
   $('#previewTransformButton').disabled = true;
   $('#applyTransformButton').disabled = true;
@@ -642,6 +723,7 @@ async function renderTransform(transform, { startPreview = false } = {}) {
   } finally {
     if (progressTimer) window.clearInterval(progressTimer);
     transformBusy = false;
+    updateUndoButtons();
     $('#previewTransformButton').disabled = false;
     $('#applyTransformButton').disabled = false;
     $('#resetTransformButton').disabled = false;
@@ -838,6 +920,7 @@ async function separateAudio() {
       ensureAutomation(name, buffer.duration);
     });
     renderTracks(names);
+    undoHistory.reset();
     setTransportState();
     $('#mixer').classList.remove('hidden');
     showAppPage('studio');
@@ -933,6 +1016,7 @@ async function transformMixTo8D() {
 
   button.disabled = true;
   button.dataset.busy = 'true';
+  undoHistory.beginInteraction('spatialize-8d');
   try {
     status(t('spatial.analyzing', { count: names.length }), false, true);
     await new Promise(resolve => requestAnimationFrame(resolve));
@@ -971,6 +1055,7 @@ async function transformMixTo8D() {
     status('', false, true);
     status(t('spatial.failed'), true);
   } finally {
+    undoHistory.endInteraction('spatialize-8d');
     delete button.dataset.busy;
     button.disabled = !Object.keys(tracks).length;
   }

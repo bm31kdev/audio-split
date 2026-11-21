@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AudioSplit Studio</title>
   <!-- Brand assets keep their own cache version to refresh after a release. -->
-  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.75">
-  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.75">
+  <link rel="icon" type="image/png" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.76">
+  <link rel="apple-touch-icon" href="/logo/logov2snas%20fond%20%21.png?v=1.5.0.76">
   <!-- Styles are separated by responsibility: shell, mixer, and modal components. -->
-  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.75">
-  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.75">
-  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.75">
-  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.75">
-  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.75">
-  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.75">
+  <link rel="stylesheet" href="/static/styles/base.css?v=1.5.0.76">
+  <link rel="stylesheet" href="/static/styles/mixer.css?v=1.5.0.76">
+  <link rel="stylesheet" href="/static/styles/modals.css?v=1.5.0.76">
+  <link rel="stylesheet" href="/static/styles/buttons.css?v=1.5.0.76">
+  <link rel="stylesheet" href="/static/styles/music-analysis.css?v=1.5.0.76">
+  <link rel="stylesheet" href="/static/styles/transform.css?v=1.5.0.76">
 </head>
 <body>
   <main>
@@ -63,6 +63,8 @@
         <div><p class="eyebrow" data-i18n="mixer.eyebrow">MIXAGE</p><h2 data-i18n="mixer.title">Vos pistes</h2></div>
         <div class="transport-group" role="group" aria-label="Commandes de lecture" data-i18n-aria-label="mixer.playbackGroup">
           <div class="transport">
+            <button data-button-variant="primary" id="undoButton" class="history-button" type="button" aria-label="Annuler la dernière modification" title="Annuler la dernière modification" data-i18n-title="history.undo" data-i18n-aria-label="history.undo" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a8 8 0 0 0-13.7-5.7L3 13"/></svg></button>
+            <button data-button-variant="primary" id="redoButton" class="history-button" type="button" aria-label="Rétablir la dernière modification" title="Rétablir la dernière modification" data-i18n-title="history.redo" data-i18n-aria-label="history.redo" disabled><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7v6h-6"/><path d="M3 17a8 8 0 0 1 13.7-5.7L21 13"/></svg></button>
             <button data-button-variant="secondary" id="playButton" class="play" type="button" aria-label="Écouter le mix" title="Écouter le mix"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 13 8-13 8V4Z"/></svg></button>
             <button data-button-variant="primary" id="stopButton" class="transport-stop" type="button" aria-label="Arrêter" title="Arrêter" disabled data-i18n-title="stop.title" data-i18n-aria-label="stop.title"><svg class="lucide transport-stop-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></button>
           </div>
@@ -122,6 +124,6 @@
   <div id="buttonComponentRoot" hidden></div>
 
   <!-- app.js is an ES module so it can import the audio and modal modules. -->
-  <script type="module" src="/static/app.js?v=1.5.0.75"></script>
+  <script type="module" src="/static/app.js?v=1.5.0.76"></script>
 </body>
 </html>
