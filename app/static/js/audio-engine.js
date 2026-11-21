@@ -1,25 +1,25 @@
-import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.74';
-import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.74';
-import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.74';
-import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.74';
-import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.74';
-import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.74';
-import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.74';
-import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.74';
-import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.74';
-import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.74';
-import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.74';
-import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.74';
-import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.74';
-import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.74';
-import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.74';
-import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.74';
-import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.74';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.74';
-import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.74';
-import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.74';
-import { lucideIcon } from './lucide.js?v=1.5.0.74';
-import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.74';
+import { createBassSaturation, updateBassSaturation } from './effects/bass-saturation.js?v=1.5.0.75';
+import { createBassBoost, updateBassBoost } from './effects/bass-boost.js?v=1.5.0.75';
+import { createCompressor, updateCompressor } from './effects/compressor.js?v=1.5.0.75';
+import { createThreeBandEq, updateThreeBandEq } from './effects/three-band-eq.js?v=1.5.0.75';
+import { createReverb, updateReverb } from './effects/reverb.js?v=1.5.0.75';
+import { createDelay, updateDelay } from './effects/delay.js?v=1.5.0.75';
+import { createFilters, updateFilters } from './effects/filters.js?v=1.5.0.75';
+import { createStereoWidth, updateStereoWidth } from './effects/stereo-width.js?v=1.5.0.75';
+import { createChorus, updateChorus } from './effects/chorus.js?v=1.5.0.75';
+import { createFlanger, updateFlanger } from './effects/flanger.js?v=1.5.0.75';
+import { createPhaser, updatePhaser } from './effects/phaser.js?v=1.5.0.75';
+import { createTremolo, updateTremolo } from './effects/tremolo.js?v=1.5.0.75';
+import { createBitcrusher, updateBitcrusher } from './effects/bitcrusher.js?v=1.5.0.75';
+import { createNoiseGate, scheduleOfflineNoiseGate, updateNoiseGate } from './effects/noise-gate.js?v=1.5.0.75';
+import { createDeEsser, scheduleOfflineDeEsser, updateDeEsser } from './effects/de-esser.js?v=1.5.0.75';
+import { createLimiter, updateLimiter } from './effects/limiter.js?v=1.5.0.75';
+import { createExciter, updateExciter } from './effects/exciter.js?v=1.5.0.75';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.75';
+import { createVoiceDucker, createVoiceMeter, readVoiceLevel, scheduleOfflineVoiceDucking, updateVoiceDucking } from './effects/voice-ducking.js?v=1.5.0.75';
+import { getLanguage, onLanguageChange, t } from './i18n.js?v=1.5.0.75';
+import { lucideIcon } from './lucide.js?v=1.5.0.75';
+import { generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.75';
 
 // Small DOM helper kept in the entry module so the UI code stays readable.
 export const $ = (sel) => document.querySelector(sel);
@@ -111,7 +111,12 @@ function renderTaskIsland() {
     island.classList.toggle('is-indeterminate', Boolean(primary?.state === 'progress' && progress === null));
   }
 
-  more.hidden = !secondary;
+  const hasSecondary = Boolean(secondary);
+  more.classList.toggle('is-visible', hasSecondary);
+  more.classList.toggle('is-absorbing', !hasSecondary);
+  more.setAttribute('aria-hidden', String(!hasSecondary));
+  more.tabIndex = hasSecondary ? 0 : -1;
+  if (!hasSecondary && document.activeElement === more) more.blur();
   more.dataset.taskState = secondary?.state || '';
   const glyphs = {
     progress: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -1022,6 +1027,22 @@ export function stop() {
   playheadOffset = 0;
   updatePlayheads();
   setTransportState();
+}
+export async function rebuildPlaybackGraph() {
+  if (!playing || !audioCtx) return;
+  const offset = paused ? playheadOffset : Math.max(0, audioCtx.currentTime - playStartedAt);
+  const preservePause = paused;
+  stop();
+  playheadOffset = offset;
+  if (!preservePause) return playMix();
+
+  // Recreate paused sources while the audio context stays suspended.
+  playStartedAt = audioCtx.currentTime - offset;
+  playing = true;
+  paused = true;
+  setTransportState('paused');
+  startPlaybackSources(offset);
+  updatePlayheads(offset);
 }
 export async function playMix() {
   if (playing && audioCtx) {

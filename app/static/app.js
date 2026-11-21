@@ -1,19 +1,19 @@
-import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.74';
-import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.74';
-import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.74';
-import { libraryLabels } from './js/library-text.js?v=1.5.0.74';
-import { mountButtonComponent } from './js/button-component.js?v=1.5.0.74';
-import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.74';
-import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.74';
-import { userFacingError } from './js/ui-errors.js?v=1.5.0.74';
-import { lucideIcon } from './js/lucide.js?v=1.5.0.74';
-import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.74';
-import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.74';
-import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.74';
-import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.74';
-import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.74';
-import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.74';
-import { generateEightDPanPoints } from './js/pan-curves.js?v=1.5.0.74';
+import { $, tracks, automationByTrack, effectDefaults, MAX_DECODED_STEM_BYTES, MAX_EXPORT_WORKING_BYTES, WAV_RIFF_MAX_BYTES, effectsByTrack, audioCtx, autosaveNotice, clockTime, status, startSeparationProgressPolling, stopSeparationProgressPolling, ensureAudioContext, getAudioContext, settings, updateLiveMix, updateOutputs, formatTime, tickStep, getAutomationPan, automationValue, combinedPan, disposeTrackNodes, createTrackNodes, updateTrackEffects, schedulePan, drawWaveform, stemInfo, icon, speakerIcon, playIcon, pauseIcon, setTransportState, setPlaybackLabel, ensureAutomation, automationCoordinates, selectAutomationPoint, moveAutomationPoint, refreshAutomation, bindAutomation, fxModalInstance, setFxModal, panCurveModalInstance, setPanCurveModal, setAutomationEffectModal, removeTrackEffect, activateTrackEffect, rebuildPlaybackGraph, bindFxButtons, getSaturationTarget, getWidthTarget, timelineDuration, updatePlayheads, seekMix, seekFromPlayhead, bindPlayheadSeeking, startPlaybackSources, createMasterLimiter, effectTailSeconds, animatePlayheads, stop, playMix, playing, paused, playStartedAt, playheadOffset, apiJson, generateAutomationCurvePoints } from './js/audio-engine.js?v=1.5.0.75';
+import { createAutomationEffectModal, createChangelogModal, createFxModal, createInteractionModal, createKeyModal, createLanguageModal, createMusicAnalysisModal, createPanCurveModal, createReleaseDetailsModal, createSettingsModal, createShortcutsModal, createTransformModal, mountModalComponents } from './js/modal-manager.js?v=1.5.0.75';
+import { applyTranslations, onLanguageChange, getLanguage, t } from './js/i18n.js?v=1.5.0.75';
+import { libraryLabels } from './js/library-text.js?v=1.5.0.75';
+import { mountButtonComponent } from './js/button-component.js?v=1.5.0.75';
+import { snapshotTrackControls, savePayload, renderTracks } from './js/track-state.js?v=1.5.0.75';
+import { renderPresets, bindPresetControls } from './js/library-presets.js?v=1.5.0.75';
+import { userFacingError } from './js/ui-errors.js?v=1.5.0.75';
+import { lucideIcon } from './js/lucide.js?v=1.5.0.75';
+import { scheduleOfflineDeEsser } from './js/effects/de-esser.js?v=1.5.0.75';
+import { scheduleOfflineNoiseGate } from './js/effects/noise-gate.js?v=1.5.0.75';
+import { scheduleOfflineVoiceDucking } from './js/effects/voice-ducking.js?v=1.5.0.75';
+import { analyzeAudioFile, formatDbfs, formatDuration } from './js/music-analysis.js?v=1.5.0.75';
+import { enhanceStyledDropdowns } from './js/styled-dropdowns.js?v=1.5.0.75';
+import { getShortcutAction } from './js/keyboard-shortcuts.js?v=1.5.0.75';
+import { generateEightDPanPoints } from './js/pan-curves.js?v=1.5.0.75';
 enhanceStyledDropdowns(document);
 await mountButtonComponent($('#buttonComponentRoot'));
 let fxModal, changelogModal, languageModal, settingsModal, interactionModal, keyModal, transformModal, automationEffectModal, musicAnalysisModal, shortcutsModal;
@@ -332,7 +332,7 @@ function clearMixerForReplacement() {
   $('#exportButton').disabled = true;
 }
 function encodeWavInWorker(buffer, confirmPeak) {
-  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.74', import.meta.url), { type: 'module' });
+  const worker = new Worker(new URL('./js/wav-encoder-worker.js?v=1.5.0.75', import.meta.url), { type: 'module' });
   const channels = Array.from({ length: buffer.numberOfChannels }, (_, channel) => new Float32Array(buffer.getChannelData(channel)));
   return new Promise((resolve, reject) => {
     worker.onmessage = async ({ data }) => {
@@ -936,20 +936,39 @@ async function transformMixTo8D() {
   try {
     status(t('spatial.analyzing', { count: names.length }), false, true);
     await new Promise(resolve => requestAnimationFrame(resolve));
+    let addedSpatialEffects = false;
+    const addSpatialEffect = (name, key, amount) => {
+      const automation = automationByTrack[name];
+      if (automation.activeEffects?.includes(key)) return;
+      if (!activateTrackEffect(name, key)) return;
+      addedSpatialEffects = true;
+      const values = effectsByTrack[name] ||= { ...effectDefaults };
+      values[key] = amount;
+      automation.lanes?.[key]?.forEach(point => { point.value = amount; });
+    };
     for (const [index, name] of names.entries()) {
       status(t('spatial.processing', { current: index + 1, total: names.length, track: t(stemInfo[name]?.titleKey || 'stem.accompaniment') }), false, true);
       const automation = automationByTrack[name] ||= { points: [], lanes: {}, selected: 0, activeEffects: [] };
       automation.points = generateEightDPanPoints(tracks[name].duration, index, names.length);
+      if (name === 'vocals') {
+        addSpatialEffect(name, 'reverb', 20);
+        addSpatialEffect(name, 'delay', 18);
+      }
+      if (name === 'accompaniment' || name === 'other') addSpatialEffect(name, 'chorus', 12);
+      if (name === getWidthTarget()) addSpatialEffect(name, 'width', 132);
       automation.activeLane = 'pan';
       automation.selected = 0;
       refreshAutomation(name);
       await new Promise(resolve => requestAnimationFrame(resolve));
     }
     updateLiveMix();
+    if (addedSpatialEffects) await rebuildPlaybackGraph();
     markProjectDirty();
+    status('', false, true);
     status(t('spatial.done', { count: names.length }));
   } catch (error) {
     console.error('8D track transformation failed.', error);
+    status('', false, true);
     status(t('spatial.failed'), true);
   } finally {
     delete button.dataset.busy;
