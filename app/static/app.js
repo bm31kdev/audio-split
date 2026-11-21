@@ -96,7 +96,7 @@ document.addEventListener('keydown', event => {
   if (event.target instanceof Element && event.target.closest('input[type="range"]') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) undoHistory.beginInteraction('keyboard-range');
 }, true);
 document.addEventListener('keyup', () => undoHistory.endInteraction('keyboard-range'), true);
-document.addEventListener('audiosplit:project-dirty', () => undoHistory.recordChange());
+window.addEventListener('audiosplit:project-dirty', () => undoHistory.recordChange());
 $('#undoButton').addEventListener('click', () => { void undoHistory.undo().catch(error => { console.error('Could not undo mix change.', error); status(t('history.undoFailed'), true); }); });
 $('#redoButton').addEventListener('click', () => { void undoHistory.redo().catch(error => { console.error('Could not redo mix change.', error); status(t('history.redoFailed'), true); }); });
 document.addEventListener('keydown', event => {
