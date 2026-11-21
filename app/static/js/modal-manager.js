@@ -1,7 +1,7 @@
-import { getLanguage, onLanguageChange, setLanguage, t } from './i18n.js?v=1.5.0.65';
-import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.65';
-import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.65';
-import { assignShortcut, formatShortcut, getShortcutBindings, resetShortcuts, shortcutFromEvent } from './keyboard-shortcuts.js?v=1.5.0.65';
+import { getLanguage, onLanguageChange, setLanguage, t } from './i18n.js?v=1.5.0.66';
+import { effectCatalog, effectIsAvailable } from './effects/catalog.js?v=1.5.0.66';
+import { AUTOMATION_CURVE_PRESETS, generateCurveTemplatePoints } from './pan-curves.js?v=1.5.0.66';
+import { assignShortcut, formatShortcut, getShortcutBindings, resetShortcuts, shortcutFromEvent } from './keyboard-shortcuts.js?v=1.5.0.66';
 
 // Modal markup is stored as HTML components. This module loads those components
 // once and owns their open/close animation and keyboard-friendly focus behavior.
